@@ -1,6 +1,6 @@
-# [Project name]
+# MK Digital Operations Center (MK DOC)
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A centralized internal platform to register, monitor, secure, and manage all digital assets, applications, infrastructure, databases, repositories, releases, and technology operations from one dashboard.
 
 ## Run & Operate
 
@@ -14,7 +14,8 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
+- Frontend: React + Vite + wouter routing + Recharts + TanStack Query
+- API: Express 5 + OpenAPI-first with Orval codegen
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
@@ -22,15 +23,36 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — single source of truth for all API contracts
+- `lib/db/src/schema/` — Drizzle table definitions (one file per domain)
+- `artifacts/api-server/src/routes/` — Express route handlers matching the spec
+- `artifacts/mk-doc/src/` — React frontend (pages, layout, components)
+- `lib/api-client-react/src/generated/` — auto-generated React Query hooks (do not edit)
+- `lib/api-zod/src/generated/` — auto-generated Zod validation schemas (do not edit)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Contract-first: OpenAPI spec is written first, then codegen produces typed hooks and Zod validators
+- Single Express server handles all 12 modules via path-based routing under `/api`
+- Audit logging: all CREATE/UPDATE/DELETE mutations write to `audit_logs` table automatically
+- Dashboard stats are computed in real-time from DB queries (no materialized views for MVP)
+- `cloudflarEnabled` typo in DB schema — matches the OpenAPI spec, do not rename without running codegen again
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+12 modules covering the full operational scope:
+1. **Executive Dashboard** — live KPIs, alerts, activity feed
+2. **Application Registry** — master record for every application (50+)
+3. **Infrastructure** — servers, VPS, Docker, containers
+4. **Databases** — PostgreSQL, MySQL, Redis tracking with backup/encryption status
+5. **Domains & SSL** — expiry monitoring with countdown alerts
+6. **Repositories** — GitHub repo tracking with PR/issue counts
+7. **Releases** — deployment history with approval workflow
+8. **Security Center** — vulnerability tracking with severity scoring
+9. **Software Inventory** — frameworks/libraries with EOL status
+10. **Documentation** — central repo for PRD, TRD, SOP, ERD, etc.
+11. **Reports & Analytics** — inventory and security reports
+12. **Administration** — user management and audit logs
 
 ## User preferences
 
@@ -38,7 +60,11 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Always run `pnpm --filter @workspace/api-spec run codegen` after any OpenAPI spec change before writing routes
+- Grep `lib/api-zod/src/generated/api.ts` for exact Zod schema export names before writing route handlers (Orval naming is `<OperationIdPascal>Body` for body, `<OperationIdPascal>QueryParams` for query)
+- Route for `/applications/summary` must come BEFORE `/:id` in the router — Express matches routes in order
+- `domains/expiring` route similarly must precede `/:id`
+- DB dates stored as `text` for flexibility in the schema; format as ISO strings in API responses
 
 ## Pointers
 

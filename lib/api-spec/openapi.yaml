@@ -2,21 +2,45 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 1.0.0
+  description: MK Digital Operations Center API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Executive dashboard
+  - name: applications
+    description: Application registry
+  - name: infrastructure
+    description: Infrastructure management
+  - name: databases
+    description: Database management
+  - name: domains
+    description: Domain and SSL management
+  - name: repositories
+    description: Repository management
+  - name: releases
+    description: Release management
+  - name: security
+    description: Security center
+  - name: software
+    description: Software inventory
+  - name: documentation
+    description: Documentation center
+  - name: reports
+    description: Reports and analytics
+  - name: admin
+    description: Administration
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +48,1066 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Executive Dashboard ──────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/alerts:
+    get:
+      operationId: getDashboardAlerts
+      tags: [dashboard]
+      summary: Get upcoming renewals and critical alerts
+      responses:
+        "200":
+          description: Alerts list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # ─── Application Registry ─────────────────────────────────────────────────
+  /applications:
+    get:
+      operationId: listApplications
+      tags: [applications]
+      summary: List all applications
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Create a new application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInput"
+      responses:
+        "201":
+          description: Created application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /applications/{id}:
+    get:
+      operationId: getApplication
+      tags: [applications]
+      summary: Get application by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateApplication
+      tags: [applications]
+      summary: Update application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationUpdate"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+    delete:
+      operationId: deleteApplication
+      tags: [applications]
+      summary: Delete application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /applications/summary:
+    get:
+      operationId: getApplicationSummary
+      tags: [applications]
+      summary: Get application counts by category, status, and environment
+      responses:
+        "200":
+          description: Application summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationSummary"
+
+  # ─── Infrastructure ───────────────────────────────────────────────────────
+  /infrastructure:
+    get:
+      operationId: listInfrastructure
+      tags: [infrastructure]
+      summary: List infrastructure items
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Infrastructure list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfrastructureItem"
+    post:
+      operationId: createInfrastructure
+      tags: [infrastructure]
+      summary: Create infrastructure item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InfrastructureInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureItem"
+
+  /infrastructure/{id}:
+    get:
+      operationId: getInfrastructure
+      tags: [infrastructure]
+      summary: Get infrastructure item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Infrastructure item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureItem"
+    patch:
+      operationId: updateInfrastructure
+      tags: [infrastructure]
+      summary: Update infrastructure item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InfrastructureUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureItem"
+    delete:
+      operationId: deleteInfrastructure
+      tags: [infrastructure]
+      summary: Delete infrastructure item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Databases ────────────────────────────────────────────────────────────
+  /databases:
+    get:
+      operationId: listDatabases
+      tags: [databases]
+      summary: List database records
+      responses:
+        "200":
+          description: Databases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DatabaseRecord"
+    post:
+      operationId: createDatabase
+      tags: [databases]
+      summary: Create database record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRecord"
+
+  /databases/{id}:
+    get:
+      operationId: getDatabaseRecord
+      tags: [databases]
+      summary: Get database record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Database record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRecord"
+    patch:
+      operationId: updateDatabaseRecord
+      tags: [databases]
+      summary: Update database record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRecord"
+    delete:
+      operationId: deleteDatabaseRecord
+      tags: [databases]
+      summary: Delete database record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Domains ──────────────────────────────────────────────────────────────
+  /domains:
+    get:
+      operationId: listDomains
+      tags: [domains]
+      summary: List domains
+      responses:
+        "200":
+          description: Domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Domain"
+    post:
+      operationId: createDomain
+      tags: [domains]
+      summary: Create domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DomainInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+
+  /domains/{id}:
+    get:
+      operationId: getDomain
+      tags: [domains]
+      summary: Get domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+    patch:
+      operationId: updateDomain
+      tags: [domains]
+      summary: Update domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DomainUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+    delete:
+      operationId: deleteDomain
+      tags: [domains]
+      summary: Delete domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /domains/expiring:
+    get:
+      operationId: getExpiringDomains
+      tags: [domains]
+      summary: Get domains expiring soon (SSL or registration)
+      responses:
+        "200":
+          description: Expiring domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Domain"
+
+  # ─── Repositories ─────────────────────────────────────────────────────────
+  /repositories:
+    get:
+      operationId: listRepositories
+      tags: [repositories]
+      summary: List repositories
+      responses:
+        "200":
+          description: Repositories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Repository"
+    post:
+      operationId: createRepository
+      tags: [repositories]
+      summary: Create repository record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepositoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repository"
+
+  /repositories/{id}:
+    get:
+      operationId: getRepository
+      tags: [repositories]
+      summary: Get repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Repository
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repository"
+    patch:
+      operationId: updateRepository
+      tags: [repositories]
+      summary: Update repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepositoryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repository"
+    delete:
+      operationId: deleteRepository
+      tags: [repositories]
+      summary: Delete repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Releases ─────────────────────────────────────────────────────────────
+  /releases:
+    get:
+      operationId: listReleases
+      tags: [releases]
+      summary: List releases
+      parameters:
+        - name: applicationId
+          in: query
+          schema:
+            type: integer
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Releases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Release"
+    post:
+      operationId: createRelease
+      tags: [releases]
+      summary: Create release
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReleaseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+
+  /releases/{id}:
+    get:
+      operationId: getRelease
+      tags: [releases]
+      summary: Get release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Release
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+    patch:
+      operationId: updateRelease
+      tags: [releases]
+      summary: Update release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReleaseUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+    delete:
+      operationId: deleteRelease
+      tags: [releases]
+      summary: Delete release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Security ─────────────────────────────────────────────────────────────
+  /security/vulnerabilities:
+    get:
+      operationId: listVulnerabilities
+      tags: [security]
+      summary: List vulnerabilities
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vulnerabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vulnerability"
+    post:
+      operationId: createVulnerability
+      tags: [security]
+      summary: Create vulnerability record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VulnerabilityInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vulnerability"
+
+  /security/vulnerabilities/{id}:
+    patch:
+      operationId: updateVulnerability
+      tags: [security]
+      summary: Update vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VulnerabilityUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vulnerability"
+    delete:
+      operationId: deleteVulnerability
+      tags: [security]
+      summary: Delete vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /security/summary:
+    get:
+      operationId: getSecuritySummary
+      tags: [security]
+      summary: Get security score and vulnerability counts by severity
+      responses:
+        "200":
+          description: Security summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecuritySummary"
+
+  # ─── Software Inventory ───────────────────────────────────────────────────
+  /software:
+    get:
+      operationId: listSoftware
+      tags: [software]
+      summary: List software inventory
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: endOfLife
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Software list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoftwareItem"
+    post:
+      operationId: createSoftware
+      tags: [software]
+      summary: Add software to inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SoftwareInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoftwareItem"
+
+  /software/{id}:
+    patch:
+      operationId: updateSoftware
+      tags: [software]
+      summary: Update software record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SoftwareUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoftwareItem"
+    delete:
+      operationId: deleteSoftware
+      tags: [software]
+      summary: Delete software record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Documentation ────────────────────────────────────────────────────────
+  /documentation:
+    get:
+      operationId: listDocuments
+      tags: [documentation]
+      summary: List documents
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: applicationId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createDocument
+      tags: [documentation]
+      summary: Create document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documentation/{id}:
+    get:
+      operationId: getDocument
+      tags: [documentation]
+      summary: Get document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+    patch:
+      operationId: updateDocument
+      tags: [documentation]
+      summary: Update document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+    delete:
+      operationId: deleteDocument
+      tags: [documentation]
+      summary: Delete document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Reports ──────────────────────────────────────────────────────────────
+  /reports/inventory:
+    get:
+      operationId: getInventoryReport
+      tags: [reports]
+      summary: Get full asset inventory report
+      responses:
+        "200":
+          description: Inventory report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReport"
+
+  /reports/security:
+    get:
+      operationId: getSecurityReport
+      tags: [reports]
+      summary: Get security status report
+      responses:
+        "200":
+          description: Security report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityReport"
+
+  /reports/renewals:
+    get:
+      operationId: getRenewalReport
+      tags: [reports]
+      summary: Get upcoming renewals report (domains, SSL, licenses)
+      responses:
+        "200":
+          description: Renewal report
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RenewalItem"
+
+  # ─── Admin ────────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List users
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [admin]
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [admin]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [admin]
+      summary: List audit log entries
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  /search:
+    get:
+      operationId: globalSearch
+      tags: [dashboard]
+      summary: Global search across all modules
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1115,1247 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # ── Dashboard ──────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      properties:
+        totalApplications:
+          type: integer
+        productionSystems:
+          type: integer
+        testSystems:
+          type: integer
+        mobileApps:
+          type: integer
+        websites:
+          type: integer
+        apis:
+          type: integer
+        databases:
+          type: integer
+        servers:
+          type: integer
+        domains:
+          type: integer
+        sslCertificates:
+          type: integer
+        repositories:
+          type: integer
+        openIncidents:
+          type: integer
+        criticalVulnerabilities:
+          type: integer
+        highVulnerabilities:
+          type: integer
+        upcomingRenewals:
+          type: integer
+        securityScore:
+          type: integer
+        recentReleases:
+          type: integer
+      required:
+        - totalApplications
+        - productionSystems
+        - testSystems
+        - mobileApps
+        - websites
+        - apis
+        - databases
+        - servers
+        - domains
+        - sslCertificates
+        - repositories
+        - openIncidents
+        - criticalVulnerabilities
+        - highVulnerabilities
+        - upcomingRenewals
+        - securityScore
+        - recentReleases
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        severity:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        dueDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, type, severity, title, message, createdAt]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        entityType:
+          type: string
+        entityName:
+          type: string
+        user:
+          type: string
+        createdAt:
+          type: string
+      required: [id, action, entityType, entityName, user, createdAt]
+
+    # ── Applications ──────────────────────────────────────────────────────
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        shortName:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        classification:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        criticality:
+          type: string
+        ministry:
+          type: ["string", "null"]
+        department:
+          type: ["string", "null"]
+        businessOwner:
+          type: ["string", "null"]
+        technicalOwner:
+          type: ["string", "null"]
+        productOwner:
+          type: ["string", "null"]
+        supportContact:
+          type: ["string", "null"]
+        frontend:
+          type: ["string", "null"]
+        backend:
+          type: ["string", "null"]
+        framework:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+        database:
+          type: ["string", "null"]
+        hostingProvider:
+          type: ["string", "null"]
+        domain:
+          type: ["string", "null"]
+        currentVersion:
+          type: ["string", "null"]
+        launchDate:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - category
+        - classification
+        - environment
+        - status
+        - priority
+        - criticality
+        - createdAt
+        - updatedAt
+
+    ApplicationInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        shortName:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        classification:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        criticality:
+          type: string
+        ministry:
+          type: string
+        department:
+          type: string
+        businessOwner:
+          type: string
+        technicalOwner:
+          type: string
+        productOwner:
+          type: string
+        supportContact:
+          type: string
+        frontend:
+          type: string
+        backend:
+          type: string
+        framework:
+          type: string
+        language:
+          type: string
+        database:
+          type: string
+        hostingProvider:
+          type: string
+        domain:
+          type: string
+        currentVersion:
+          type: string
+        launchDate:
+          type: string
+        tags:
+          type: string
+      required: [name, category, classification, environment, status, priority, criticality]
+
+    ApplicationUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        shortName:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        classification:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        criticality:
+          type: string
+        ministry:
+          type: string
+        department:
+          type: string
+        businessOwner:
+          type: string
+        technicalOwner:
+          type: string
+        productOwner:
+          type: string
+        supportContact:
+          type: string
+        frontend:
+          type: string
+        backend:
+          type: string
+        framework:
+          type: string
+        language:
+          type: string
+        database:
+          type: string
+        hostingProvider:
+          type: string
+        domain:
+          type: string
+        currentVersion:
+          type: string
+        launchDate:
+          type: string
+        tags:
+          type: string
+
+    ApplicationSummary:
+      type: object
+      properties:
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required: [category, count]
+        byStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+              count:
+                type: integer
+            required: [status, count]
+        byEnvironment:
+          type: array
+          items:
+            type: object
+            properties:
+              environment:
+                type: string
+              count:
+                type: integer
+            required: [environment, count]
+        byClassification:
+          type: array
+          items:
+            type: object
+            properties:
+              classification:
+                type: string
+              count:
+                type: integer
+            required: [classification, count]
+      required: [byCategory, byStatus, byEnvironment, byClassification]
+
+    # ── Infrastructure ────────────────────────────────────────────────────
+    InfrastructureItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        provider:
+          type: ["string", "null"]
+        status:
+          type: string
+        ipAddress:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        cpuCores:
+          type: ["integer", "null"]
+        ramGb:
+          type: ["integer", "null"]
+        diskGb:
+          type: ["integer", "null"]
+        os:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, type, status, createdAt, updatedAt]
+
+    InfrastructureInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          type: string
+        provider:
+          type: string
+        status:
+          type: string
+        ipAddress:
+          type: string
+        location:
+          type: string
+        cpuCores:
+          type: integer
+        ramGb:
+          type: integer
+        diskGb:
+          type: integer
+        os:
+          type: string
+        notes:
+          type: string
+      required: [name, type, status]
+
+    InfrastructureUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        provider:
+          type: string
+        status:
+          type: string
+        ipAddress:
+          type: string
+        location:
+          type: string
+        cpuCores:
+          type: integer
+        ramGb:
+          type: integer
+        diskGb:
+          type: integer
+        os:
+          type: string
+        notes:
+          type: string
+
+    # ── Databases ─────────────────────────────────────────────────────────
+    DatabaseRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        version:
+          type: ["string", "null"]
+        server:
+          type: ["string", "null"]
+        sizeGb:
+          type: ["number", "null"]
+        owner:
+          type: ["string", "null"]
+        backupEnabled:
+          type: boolean
+        encryptionEnabled:
+          type: boolean
+        status:
+          type: string
+        lastBackupAt:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, type, backupEnabled, encryptionEnabled, status, createdAt, updatedAt]
+
+    DatabaseInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          type: string
+        version:
+          type: string
+        server:
+          type: string
+        sizeGb:
+          type: number
+        owner:
+          type: string
+        backupEnabled:
+          type: boolean
+        encryptionEnabled:
+          type: boolean
+        status:
+          type: string
+        lastBackupAt:
+          type: string
+        notes:
+          type: string
+      required: [name, type, status]
+
+    DatabaseUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        version:
+          type: string
+        server:
+          type: string
+        sizeGb:
+          type: number
+        owner:
+          type: string
+        backupEnabled:
+          type: boolean
+        encryptionEnabled:
+          type: boolean
+        status:
+          type: string
+        lastBackupAt:
+          type: string
+        notes:
+          type: string
+
+    # ── Domains ───────────────────────────────────────────────────────────
+    Domain:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        registrar:
+          type: ["string", "null"]
+        registrationExpiry:
+          type: ["string", "null"]
+        sslProvider:
+          type: ["string", "null"]
+        sslExpiry:
+          type: ["string", "null"]
+        sslStatus:
+          type: string
+        dnsProvider:
+          type: ["string", "null"]
+        cloudflarEnabled:
+          type: boolean
+        status:
+          type: string
+        applicationId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, sslStatus, cloudflarEnabled, status, createdAt, updatedAt]
+
+    DomainInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        registrar:
+          type: string
+        registrationExpiry:
+          type: string
+        sslProvider:
+          type: string
+        sslExpiry:
+          type: string
+        sslStatus:
+          type: string
+        dnsProvider:
+          type: string
+        cloudflarEnabled:
+          type: boolean
+        status:
+          type: string
+        applicationId:
+          type: integer
+        notes:
+          type: string
+      required: [name, status]
+
+    DomainUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        registrar:
+          type: string
+        registrationExpiry:
+          type: string
+        sslProvider:
+          type: string
+        sslExpiry:
+          type: string
+        sslStatus:
+          type: string
+        dnsProvider:
+          type: string
+        cloudflarEnabled:
+          type: boolean
+        status:
+          type: string
+        applicationId:
+          type: integer
+        notes:
+          type: string
+
+    # ── Repositories ──────────────────────────────────────────────────────
+    Repository:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: ["string", "null"]
+        defaultBranch:
+          type: ["string", "null"]
+        visibility:
+          type: string
+        language:
+          type: ["string", "null"]
+        openPullRequests:
+          type: integer
+        openIssues:
+          type: integer
+        lastCommitAt:
+          type: ["string", "null"]
+        applicationId:
+          type: ["integer", "null"]
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, visibility, openPullRequests, openIssues, status, createdAt, updatedAt]
+
+    RepositoryInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        url:
+          type: string
+        defaultBranch:
+          type: string
+        visibility:
+          type: string
+        language:
+          type: string
+        openPullRequests:
+          type: integer
+        openIssues:
+          type: integer
+        lastCommitAt:
+          type: string
+        applicationId:
+          type: integer
+        status:
+          type: string
+        notes:
+          type: string
+      required: [name, visibility, status]
+
+    RepositoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        defaultBranch:
+          type: string
+        visibility:
+          type: string
+        language:
+          type: string
+        openPullRequests:
+          type: integer
+        openIssues:
+          type: integer
+        lastCommitAt:
+          type: string
+        applicationId:
+          type: integer
+        status:
+          type: string
+        notes:
+          type: string
+
+    # ── Releases ──────────────────────────────────────────────────────────
+    Release:
+      type: object
+      properties:
+        id:
+          type: integer
+        applicationId:
+          type: integer
+        applicationName:
+          type: ["string", "null"]
+        version:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        releaseDate:
+          type: ["string", "null"]
+        releasedBy:
+          type: ["string", "null"]
+        releaseNotes:
+          type: ["string", "null"]
+        rollbackAvailable:
+          type: boolean
+        approved:
+          type: boolean
+        approvedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, applicationId, version, environment, status, rollbackAvailable, approved, createdAt, updatedAt]
+
+    ReleaseInput:
+      type: object
+      properties:
+        applicationId:
+          type: integer
+        version:
+          type: string
+          minLength: 1
+        environment:
+          type: string
+        status:
+          type: string
+        releaseDate:
+          type: string
+        releasedBy:
+          type: string
+        releaseNotes:
+          type: string
+        rollbackAvailable:
+          type: boolean
+        approved:
+          type: boolean
+        approvedBy:
+          type: string
+      required: [applicationId, version, environment, status]
+
+    ReleaseUpdate:
+      type: object
+      properties:
+        version:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        releaseDate:
+          type: string
+        releasedBy:
+          type: string
+        releaseNotes:
+          type: string
+        rollbackAvailable:
+          type: boolean
+        approved:
+          type: boolean
+        approvedBy:
+          type: string
+
+    # ── Security ──────────────────────────────────────────────────────────
+    Vulnerability:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        severity:
+          type: string
+        status:
+          type: string
+        applicationId:
+          type: ["integer", "null"]
+        applicationName:
+          type: ["string", "null"]
+        cveId:
+          type: ["string", "null"]
+        affectedComponent:
+          type: ["string", "null"]
+        discoveredAt:
+          type: ["string", "null"]
+        resolvedAt:
+          type: ["string", "null"]
+        assignedTo:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, title, severity, status, createdAt, updatedAt]
+
+    VulnerabilityInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        applicationId:
+          type: integer
+        cveId:
+          type: string
+        affectedComponent:
+          type: string
+        discoveredAt:
+          type: string
+        resolvedAt:
+          type: string
+        assignedTo:
+          type: string
+        notes:
+          type: string
+      required: [title, severity, status]
+
+    VulnerabilityUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        applicationId:
+          type: integer
+        cveId:
+          type: string
+        affectedComponent:
+          type: string
+        discoveredAt:
+          type: string
+        resolvedAt:
+          type: string
+        assignedTo:
+          type: string
+        notes:
+          type: string
+
+    SecuritySummary:
+      type: object
+      properties:
+        securityScore:
+          type: integer
+        critical:
+          type: integer
+        high:
+          type: integer
+        medium:
+          type: integer
+        low:
+          type: integer
+        open:
+          type: integer
+        inProgress:
+          type: integer
+        resolved:
+          type: integer
+      required: [securityScore, critical, high, medium, low, open, inProgress, resolved]
+
+    # ── Software ──────────────────────────────────────────────────────────
+    SoftwareItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        installedVersion:
+          type: ["string", "null"]
+        latestVersion:
+          type: ["string", "null"]
+        vendor:
+          type: ["string", "null"]
+        license:
+          type: ["string", "null"]
+        supported:
+          type: boolean
+        endOfLife:
+          type: boolean
+        endOfLifeDate:
+          type: ["string", "null"]
+        upgradeAvailable:
+          type: boolean
+        applicationId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, type, supported, endOfLife, upgradeAvailable, createdAt, updatedAt]
+
+    SoftwareInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          type: string
+        installedVersion:
+          type: string
+        latestVersion:
+          type: string
+        vendor:
+          type: string
+        license:
+          type: string
+        supported:
+          type: boolean
+        endOfLife:
+          type: boolean
+        endOfLifeDate:
+          type: string
+        upgradeAvailable:
+          type: boolean
+        applicationId:
+          type: integer
+        notes:
+          type: string
+      required: [name, type]
+
+    SoftwareUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        installedVersion:
+          type: string
+        latestVersion:
+          type: string
+        vendor:
+          type: string
+        license:
+          type: string
+        supported:
+          type: boolean
+        endOfLife:
+          type: boolean
+        endOfLifeDate:
+          type: string
+        upgradeAvailable:
+          type: boolean
+        applicationId:
+          type: integer
+        notes:
+          type: string
+
+    # ── Documentation ─────────────────────────────────────────────────────
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+        content:
+          type: ["string", "null"]
+        url:
+          type: ["string", "null"]
+        applicationId:
+          type: ["integer", "null"]
+        applicationName:
+          type: ["string", "null"]
+        version:
+          type: ["string", "null"]
+        author:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, title, type, createdAt, updatedAt]
+
+    DocumentInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+        content:
+          type: string
+        url:
+          type: string
+        applicationId:
+          type: integer
+        version:
+          type: string
+        author:
+          type: string
+        tags:
+          type: string
+      required: [title, type]
+
+    DocumentUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+        url:
+          type: string
+        applicationId:
+          type: integer
+        version:
+          type: string
+        author:
+          type: string
+        tags:
+          type: string
+
+    # ── Reports ───────────────────────────────────────────────────────────
+    InventoryReport:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+        totalApplications:
+          type: integer
+        totalServers:
+          type: integer
+        totalDatabases:
+          type: integer
+        totalDomains:
+          type: integer
+        totalRepositories:
+          type: integer
+        totalSoftware:
+          type: integer
+        applicationsByCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required: [category, count]
+        serversByType:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              count:
+                type: integer
+            required: [type, count]
+      required:
+        - generatedAt
+        - totalApplications
+        - totalServers
+        - totalDatabases
+        - totalDomains
+        - totalRepositories
+        - totalSoftware
+        - applicationsByCategory
+        - serversByType
+
+    SecurityReport:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+        overallScore:
+          type: integer
+        totalVulnerabilities:
+          type: integer
+        criticalCount:
+          type: integer
+        highCount:
+          type: integer
+        mediumCount:
+          type: integer
+        lowCount:
+          type: integer
+        resolvedLast30Days:
+          type: integer
+        topAffectedApplications:
+          type: array
+          items:
+            type: object
+            properties:
+              applicationName:
+                type: string
+              count:
+                type: integer
+            required: [applicationName, count]
+      required:
+        - generatedAt
+        - overallScore
+        - totalVulnerabilities
+        - criticalCount
+        - highCount
+        - mediumCount
+        - lowCount
+        - resolvedLast30Days
+        - topAffectedApplications
+
+    RenewalItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        name:
+          type: string
+        expiryDate:
+          type: string
+        daysUntilExpiry:
+          type: integer
+        status:
+          type: string
+      required: [id, type, name, expiryDate, daysUntilExpiry, status]
+
+    # ── Admin ─────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: ["string", "null"]
+        status:
+          type: string
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, name, email, role, status, createdAt]
+
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        role:
+          type: string
+        department:
+          type: string
+        status:
+          type: string
+      required: [name, email, role, status]
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        status:
+          type: string
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        entityName:
+          type: ["string", "null"]
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+        changes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, action, entityType, createdAt]
+
+    # ── Search ────────────────────────────────────────────────────────────
+    SearchResults:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        infrastructure:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfrastructureItem"
+        databases:
+          type: array
+          items:
+            $ref: "#/components/schemas/DatabaseRecord"
+        domains:
+          type: array
+          items:
+            $ref: "#/components/schemas/Domain"
+        repositories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+      required: [applications, infrastructure, databases, domains, repositories, documents]

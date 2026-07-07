@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MK Digital Operations Center"
+version = "1.0.0"
+id = "artifacts/mk-doc"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24966
+
+[services.development]
+run = "pnpm --filter @workspace/mk-doc run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mk-doc", "run", "build" ]
+publicDir = "artifacts/mk-doc/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24966"
+BASE_PATH = "/"

@@ -1,0 +1,150 @@
+import { Router } from "express";
+import type { Request, Response } from "express";
+import { db } from "@workspace/db";
+import { applicationsTable, infrastructureTable, databasesTable, domainsTable, repositoriesTable, vulnerabilitiesTable, releasesTable, auditLogsTable } from "@workspace/db";
+import { sql, count, and, lt, gt } from "drizzle-orm";
+
+const router = Router();
+
+router.get("/stats", async (req: Request, res: Response) => {
+  try {
+    const [
+      appRows,
+      infraRows,
+      dbRows,
+      domainRows,
+      repoRows,
+      vulnRows,
+      releaseRows,
+    ] = await Promise.all([
+      db.select().from(applicationsTable),
+      db.select().from(infrastructureTable),
+      db.select().from(databasesTable),
+      db.select().from(domainsTable),
+      db.select().from(repositoriesTable),
+      db.select().from(vulnerabilitiesTable),
+      db.select().from(releasesTable),
+    ]);
+
+    const totalApplications = appRows.length;
+    const productionSystems = appRows.filter(a => a.environment === "Production").length;
+    const testSystems = appRows.filter(a => a.environment === "Testing").length;
+    const mobileApps = appRows.filter(a => a.classification === "Mobile App").length;
+    const websites = appRows.filter(a => a.classification === "Website").length;
+    const apis = appRows.filter(a => a.classification === "API").length;
+    const servers = infraRows.filter(i => ["Server", "VPS"].includes(i.type)).length;
+    const sslCertificates = domainRows.filter(d => d.sslExpiry).length;
+    const criticalVulnerabilities = vulnRows.filter(v => v.severity === "Critical" && v.status === "Open").length;
+    const highVulnerabilities = vulnRows.filter(v => v.severity === "High" && v.status === "Open").length;
+    const openIncidents = vulnRows.filter(v => v.status === "Open").length;
+
+    // Upcoming renewals (next 90 days)
+    const now = new Date();
+    const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const upcomingRenewals = domainRows.filter(d => {
+      if (!d.sslExpiry && !d.registrationExpiry) return false;
+      const expiry = d.sslExpiry || d.registrationExpiry;
+      if (!expiry) return false;
+      const date = new Date(expiry);
+      return date >= now && date <= in90Days;
+    }).length;
+
+    const resolvedVulns = vulnRows.filter(v => v.status !== "Open").length;
+    const total = vulnRows.length;
+    const securityScore = total === 0 ? 100 : Math.max(0, Math.round(100 - (criticalVulnerabilities * 20 + highVulnerabilities * 10 + openIncidents * 2)));
+
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const recentReleases = releaseRows.filter(r => r.createdAt > new Date(thirtyDaysAgo)).length;
+
+    return res.json({
+      totalApplications,
+      productionSystems,
+      testSystems,
+      mobileApps,
+      websites,
+      apis,
+      databases: dbRows.length,
+      servers,
+      domains: domainRows.length,
+      sslCertificates,
+      repositories: repoRows.length,
+      openIncidents,
+      criticalVulnerabilities,
+      highVulnerabilities,
+      upcomingRenewals,
+      securityScore,
+      recentReleases,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching dashboard stats");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/alerts", async (req: Request, res: Response) => {
+  try {
+    const vulns = await db.select().from(vulnerabilitiesTable).limit(10);
+    const domains = await db.select().from(domainsTable);
+    const alerts: Array<{ id: number; type: string; severity: string; title: string; message: string; dueDate: string | null; createdAt: string }> = [];
+    let id = 1;
+
+    // Critical vulnerabilities as alerts
+    vulns.filter(v => v.severity === "Critical" && v.status === "Open").slice(0, 3).forEach(v => {
+      alerts.push({
+        id: id++,
+        type: "vulnerability",
+        severity: "critical",
+        title: `Critical Vulnerability: ${v.title}`,
+        message: v.affectedComponent ? `Affects: ${v.affectedComponent}` : "Requires immediate attention",
+        dueDate: null,
+        createdAt: v.createdAt.toISOString(),
+      });
+    });
+
+    // Expiring domains/SSL
+    const now = new Date();
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    domains.forEach(d => {
+      const expiry = d.sslExpiry || d.registrationExpiry;
+      if (expiry) {
+        const date = new Date(expiry);
+        if (date >= now && date <= in30Days) {
+          const days = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          alerts.push({
+            id: id++,
+            type: "renewal",
+            severity: days <= 7 ? "critical" : "warning",
+            title: `${d.sslExpiry ? "SSL" : "Domain"} Expiring: ${d.name}`,
+            message: `Expires in ${days} day${days !== 1 ? "s" : ""}`,
+            dueDate: expiry,
+            createdAt: now.toISOString(),
+          });
+        }
+      }
+    });
+
+    return res.json(alerts.slice(0, 10));
+  } catch (err) {
+    req.log.error({ err }, "Error fetching alerts");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/activity", async (req: Request, res: Response) => {
+  try {
+    const logs = await db.select().from(auditLogsTable).orderBy(sql`${auditLogsTable.createdAt} DESC`).limit(20);
+    return res.json(logs.map(l => ({
+      id: l.id,
+      action: l.action,
+      entityType: l.entityType,
+      entityName: l.entityName ?? l.entityType,
+      user: l.userName ?? "System",
+      createdAt: l.createdAt.toISOString(),
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Error fetching activity");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default router;
