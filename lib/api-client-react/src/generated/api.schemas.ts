@@ -715,6 +715,8 @@ export interface SoftwareItem {
   name: string;
   type: string;
   /** @nullable */
+  category?: string | null;
+  /** @nullable */
   installedVersion?: string | null;
   /** @nullable */
   latestVersion?: string | null;
@@ -722,6 +724,10 @@ export interface SoftwareItem {
   vendor?: string | null;
   /** @nullable */
   license?: string | null;
+  /** @nullable */
+  installationDate?: string | null;
+  /** @nullable */
+  licenseExpiration?: string | null;
   supported: boolean;
   endOfLife: boolean;
   /** @nullable */
@@ -741,10 +747,13 @@ export interface SoftwareInput {
   /** @minLength 1 */
   name: string;
   type: string;
+  category?: string;
   installedVersion?: string;
   latestVersion?: string;
   vendor?: string;
   license?: string;
+  installationDate?: string;
+  licenseExpiration?: string;
   supported?: boolean;
   endOfLife?: boolean;
   endOfLifeDate?: string;
@@ -757,10 +766,13 @@ export interface SoftwareInput {
 export interface SoftwareUpdate {
   name?: string;
   type?: string;
+  category?: string;
   installedVersion?: string;
   latestVersion?: string;
   vendor?: string;
   license?: string;
+  installationDate?: string;
+  licenseExpiration?: string;
   supported?: boolean;
   endOfLife?: boolean;
   endOfLifeDate?: string;

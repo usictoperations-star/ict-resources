@@ -9,10 +9,13 @@
 export interface SoftwareUpdate {
   name?: string;
   type?: string;
+  category?: string;
   installedVersion?: string;
   latestVersion?: string;
   vendor?: string;
   license?: string;
+  installationDate?: string;
+  licenseExpiration?: string;
   supported?: boolean;
   endOfLife?: boolean;
   endOfLifeDate?: string;

@@ -2512,6 +2512,8 @@ components:
           type: string
         type:
           type: string
+        category:
+          type: ["string", "null"]
         installedVersion:
           type: ["string", "null"]
         latestVersion:
@@ -2519,6 +2521,10 @@ components:
         vendor:
           type: ["string", "null"]
         license:
+          type: ["string", "null"]
+        installationDate:
+          type: ["string", "null"]
+        licenseExpiration:
           type: ["string", "null"]
         supported:
           type: boolean
@@ -2548,6 +2554,8 @@ components:
           minLength: 1
         type:
           type: string
+        category:
+          type: string
         installedVersion:
           type: string
         latestVersion:
@@ -2555,6 +2563,10 @@ components:
         vendor:
           type: string
         license:
+          type: string
+        installationDate:
+          type: string
+        licenseExpiration:
           type: string
         supported:
           type: boolean
@@ -2579,6 +2591,8 @@ components:
           type: string
         type:
           type: string
+        category:
+          type: string
         installedVersion:
           type: string
         latestVersion:
@@ -2586,6 +2600,10 @@ components:
         vendor:
           type: string
         license:
+          type: string
+        installationDate:
+          type: string
+        licenseExpiration:
           type: string
         supported:
           type: boolean

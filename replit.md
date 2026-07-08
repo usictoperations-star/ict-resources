@@ -53,7 +53,7 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 6. **Repositories** — GitHub repo tracking with PR/issue counts
 7. **Releases** — deployment history with approval workflow
 8. **Security Center** — Security Dashboard answering 10 cybersecurity KPIs (systems in production, servers missing patches, apps with critical vulns, SSL certs expiring <30d, domains expiring soon, failed backups, admin users, repos with exposed secrets, outdated dependencies, apps not recently scanned) plus vulnerability tracking with severity scoring
-9. **Software Inventory** — frameworks/libraries with EOL status
+9. **Software Inventory** — frameworks/libraries with version, vendor, category, installation date, license type/expiration, and EOL status
 10. **Documentation** — central repo for PRD, TRD, SOP, ERD, etc.
 11. **Reports & Analytics** — inventory and security reports
 12. **Administration** — user management and audit logs
