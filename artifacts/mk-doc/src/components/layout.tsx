@@ -62,7 +62,7 @@ function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () 
             </Link>
 
             {isSecurityActive && (
-              <div className="ml-3 pl-3 border-l border-white/20 space-y-0.5 py-0.5">
+              <div className="ml-4 pl-2.5 border-l border-white/15 mt-0.5 mb-1">
                 {SECURITY_SUB_ITEMS.map((sub) => {
                   const SubIcon = sub.icon;
                   return (
@@ -73,9 +73,9 @@ function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () 
                         onNavigate?.();
                         scrollToSection(sub.id);
                       }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs text-blue-200 hover:bg-[#1B56A5] hover:text-white transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors text-left leading-none"
                     >
-                      <SubIcon className="h-3.5 w-3.5 flex-shrink-0 opacity-75" />
+                      <SubIcon className="h-3 w-3 flex-shrink-0 opacity-70" />
                       {sub.label}
                     </button>
                   );
