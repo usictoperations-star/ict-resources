@@ -11,8 +11,6 @@ export interface SoftwareItem {
   name: string;
   type: string;
   /** @nullable */
-  category?: string | null;
-  /** @nullable */
   installedVersion?: string | null;
   /** @nullable */
   latestVersion?: string | null;
@@ -20,10 +18,6 @@ export interface SoftwareItem {
   vendor?: string | null;
   /** @nullable */
   license?: string | null;
-  /** @nullable */
-  installationDate?: string | null;
-  /** @nullable */
-  licenseExpiration?: string | null;
   supported: boolean;
   endOfLife: boolean;
   /** @nullable */

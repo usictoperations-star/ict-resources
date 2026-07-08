@@ -26,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "info"];
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "accepted", "false_positive"];
+const CATEGORY_OPTIONS = ["productivity", "security", "development", "database", "infrastructure", "communication", "analytics", "other"];
 
 const vulnFormSchema = CreateVulnerabilityBody.extend({
   severity: CreateVulnerabilityBody.shape.severity.min(1, "Severity is required"),
@@ -51,9 +52,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { title: "", description: "", severity: "medium", status: "open", applicationId: "", cveId: "", affectedComponent: "", discoveredAt: "", assignedTo: "", notes: "", teamId: "" };
+const EMPTY_FORM = { title: "", description: "", severity: "medium", status: "open", applicationId: "", cveId: "", affectedComponent: "", version: "", vendor: "", category: "", installationDate: "", licenseType: "", licenseExpiration: "", endOfLifeDate: "", discoveredAt: "", assignedTo: "", notes: "", teamId: "" };
 
-type VulnRow = { id: number; title: string; description?: string | null; severity: string; status: string; applicationId?: number | null; applicationName?: string | null; cveId?: string | null; affectedComponent?: string | null; discoveredAt?: string | null; assignedTo?: string | null; notes?: string | null; teamId?: number | null };
+type VulnRow = { id: number; title: string; description?: string | null; severity: string; status: string; applicationId?: number | null; applicationName?: string | null; cveId?: string | null; affectedComponent?: string | null; version?: string | null; vendor?: string | null; category?: string | null; installationDate?: string | null; licenseType?: string | null; licenseExpiration?: string | null; endOfLifeDate?: string | null; discoveredAt?: string | null; assignedTo?: string | null; notes?: string | null; teamId?: number | null };
 
 function KpiCard({ title, value, icon: Icon, tone = "default" }: { title: string; value: React.ReactNode; icon: React.ComponentType<{ className?: string }>; tone?: "default" | "danger" | "warning" | "ok" }) {
   const iconColor = tone === "danger" ? "text-destructive" : tone === "warning" ? "text-yellow-500" : tone === "ok" ? "text-green-500" : "text-primary";
@@ -121,6 +122,11 @@ export default function Security() {
       severity: v.severity ?? "medium", status: v.status ?? "open",
       applicationId: v.applicationId?.toString() ?? "", cveId: v.cveId ?? "",
       affectedComponent: v.affectedComponent ?? "",
+      version: v.version ?? "", vendor: v.vendor ?? "", category: v.category ?? "",
+      installationDate: v.installationDate ? v.installationDate.substring(0, 10) : "",
+      licenseType: v.licenseType ?? "",
+      licenseExpiration: v.licenseExpiration ? v.licenseExpiration.substring(0, 10) : "",
+      endOfLifeDate: v.endOfLifeDate ? v.endOfLifeDate.substring(0, 10) : "",
       discoveredAt: v.discoveredAt ? v.discoveredAt.substring(0, 10) : "",
       assignedTo: v.assignedTo ?? "", notes: v.notes ?? "",
       teamId: v.teamId?.toString() ?? "",
@@ -142,6 +148,13 @@ export default function Security() {
       description: parsed.description || undefined,
       cveId: parsed.cveId || undefined,
       affectedComponent: parsed.affectedComponent || undefined,
+      version: form.version || undefined,
+      vendor: form.vendor || undefined,
+      category: form.category || undefined,
+      installationDate: form.installationDate || undefined,
+      licenseType: form.licenseType || undefined,
+      licenseExpiration: form.licenseExpiration || undefined,
+      endOfLifeDate: form.endOfLifeDate || undefined,
       discoveredAt: parsed.discoveredAt || undefined,
       assignedTo: parsed.assignedTo || undefined,
       notes: parsed.notes || undefined,
@@ -443,6 +456,13 @@ export default function Security() {
                     <TableHead>Application</TableHead>
                     <TableHead>CVE</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Installed On</TableHead>
+                    <TableHead>License Type</TableHead>
+                    <TableHead>License Expires</TableHead>
+                    <TableHead>EOL Date</TableHead>
                     <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
@@ -455,6 +475,19 @@ export default function Security() {
                       <TableCell>{appLabel(vuln as VulnRow)}</TableCell>
                       <TableCell className="font-mono text-xs">{vuln.cveId || 'N/A'}</TableCell>
                       <TableCell>{vuln.status}</TableCell>
+                      <TableCell className="font-mono text-xs">{(vuln as VulnRow).version || 'N/A'}</TableCell>
+                      <TableCell>{(vuln as VulnRow).vendor || 'N/A'}</TableCell>
+                      <TableCell>{(vuln as VulnRow).category || 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {(vuln as VulnRow).installationDate ? new Date((vuln as VulnRow).installationDate as string).toLocaleDateString() : 'N/A'}
+                      </TableCell>
+                      <TableCell>{(vuln as VulnRow).licenseType || 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {(vuln as VulnRow).licenseExpiration ? new Date((vuln as VulnRow).licenseExpiration as string).toLocaleDateString() : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {(vuln as VulnRow).endOfLifeDate ? new Date((vuln as VulnRow).endOfLifeDate as string).toLocaleDateString() : 'N/A'}
+                      </TableCell>
                       <TableCell><TeamBadge teamId={(vuln as VulnRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -512,6 +545,27 @@ export default function Security() {
                 </Field>
                 <Field label="Affected Component">
                   <Input placeholder="auth/login.ts" value={form.affectedComponent} onChange={set("affectedComponent")} className="h-9" />
+                </Field>
+                <Field label="Version">
+                  <Input placeholder="18.2.0" value={form.version} onChange={set("version")} className="h-9" />
+                </Field>
+                <Field label="Vendor">
+                  <Input placeholder="Meta, Microsoft..." value={form.vendor} onChange={set("vendor")} className="h-9" />
+                </Field>
+                <Field label="Category">
+                  <SelectField value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))} placeholder="Select category" options={CATEGORY_OPTIONS} />
+                </Field>
+                <Field label="Installation Date">
+                  <Input type="date" value={form.installationDate} onChange={set("installationDate")} className="h-9" />
+                </Field>
+                <Field label="License Type">
+                  <Input placeholder="MIT, Apache 2.0..." value={form.licenseType} onChange={set("licenseType")} className="h-9" />
+                </Field>
+                <Field label="License Expiration">
+                  <Input type="date" value={form.licenseExpiration} onChange={set("licenseExpiration")} className="h-9" />
+                </Field>
+                <Field label="End of Life Date">
+                  <Input type="date" value={form.endOfLifeDate} onChange={set("endOfLifeDate")} className="h-9" />
                 </Field>
                 <Field label="Discovered At">
                   <Input type="date" value={form.discoveredAt} onChange={set("discoveredAt")} className="h-9" />

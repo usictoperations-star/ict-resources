@@ -22,7 +22,6 @@ import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
 
 const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os", "language", "other"];
-const CATEGORY_OPTIONS = ["productivity", "security", "development", "database", "infrastructure", "communication", "analytics", "other"];
 
 const softwareFormSchema = CreateSoftwareBody.extend({
   type: CreateSoftwareBody.shape.type.min(1, "Type is required"),
@@ -47,9 +46,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", category: "", installedVersion: "", latestVersion: "", vendor: "", license: "", installationDate: "", licenseExpiration: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", teamId: "" };
+const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", teamId: "" };
 
-type SoftwareRow = { id: number; name: string; type: string; category?: string | null; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; installationDate?: string | null; licenseExpiration?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; teamId?: number | null };
+type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; teamId?: number | null };
 
 export default function Software() {
   const { data: software, isLoading } = useListSoftware();
@@ -83,11 +82,9 @@ export default function Software() {
   const openEdit = (s: SoftwareRow) => {
     setEditTarget(s);
     setForm({
-      name: s.name ?? "", type: s.type ?? "", category: s.category ?? "",
+      name: s.name ?? "", type: s.type ?? "",
       installedVersion: s.installedVersion ?? "", latestVersion: s.latestVersion ?? "",
       vendor: s.vendor ?? "", license: s.license ?? "",
-      installationDate: s.installationDate ? s.installationDate.substring(0, 10) : "",
-      licenseExpiration: s.licenseExpiration ? s.licenseExpiration.substring(0, 10) : "",
       supported: s.supported ?? true, endOfLife: s.endOfLife ?? false,
       endOfLifeDate: s.endOfLifeDate ? s.endOfLifeDate.substring(0, 10) : "",
       upgradeAvailable: s.upgradeAvailable ?? false,
@@ -109,9 +106,6 @@ export default function Software() {
     const parsed = result.data;
     const payload = {
       ...parsed,
-      category: form.category || undefined,
-      installationDate: form.installationDate || undefined,
-      licenseExpiration: form.licenseExpiration || undefined,
       teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
@@ -148,14 +142,11 @@ export default function Software() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Installed Ver</TableHead>
                     <TableHead>Latest Ver</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Installed On</TableHead>
                     <TableHead>License</TableHead>
-                    <TableHead>License Expires</TableHead>
                     <TableHead>EOL</TableHead>
                     <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
@@ -166,7 +157,6 @@ export default function Software() {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.type}</TableCell>
-                      <TableCell>{(item as SoftwareRow).category || 'N/A'}</TableCell>
                       <TableCell>{item.vendor || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-xs">{item.installedVersion || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-xs">{item.latestVersion || 'N/A'}</TableCell>
@@ -177,13 +167,7 @@ export default function Software() {
                           <Badge variant="outline">Up to date</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {(item as SoftwareRow).installationDate ? new Date((item as SoftwareRow).installationDate as string).toLocaleDateString() : 'N/A'}
-                      </TableCell>
                       <TableCell>{item.license || 'N/A'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {(item as SoftwareRow).licenseExpiration ? new Date((item as SoftwareRow).licenseExpiration as string).toLocaleDateString() : 'N/A'}
-                      </TableCell>
                       <TableCell>
                         {item.endOfLife ? (
                           <Badge variant="destructive">EOL Reached</Badge>
@@ -235,9 +219,6 @@ export default function Software() {
                   <SelectField value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))} placeholder="Select type" options={TYPE_OPTIONS} />
                   {errors.type && <p className="text-xs text-destructive mt-1">{errors.type}</p>}
                 </Field>
-                <Field label="Category">
-                  <SelectField value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))} placeholder="Select category" options={CATEGORY_OPTIONS} />
-                </Field>
                 <Field label="Installed Version">
                   <Input placeholder="18.2.0" value={form.installedVersion} onChange={set("installedVersion")} className="h-9" />
                 </Field>
@@ -247,14 +228,8 @@ export default function Software() {
                 <Field label="Vendor">
                   <Input placeholder="Meta, Microsoft..." value={form.vendor} onChange={set("vendor")} className="h-9" />
                 </Field>
-                <Field label="License Type">
+                <Field label="License">
                   <Input placeholder="MIT, Apache 2.0..." value={form.license} onChange={set("license")} className="h-9" />
-                </Field>
-                <Field label="Installation Date">
-                  <Input type="date" value={form.installationDate} onChange={set("installationDate")} className="h-9" />
-                </Field>
-                <Field label="License Expiration">
-                  <Input type="date" value={form.licenseExpiration} onChange={set("licenseExpiration")} className="h-9" />
                 </Field>
                 <Field label="EOL Date">
                   <Input type="date" value={form.endOfLifeDate} onChange={set("endOfLifeDate")} className="h-9" />

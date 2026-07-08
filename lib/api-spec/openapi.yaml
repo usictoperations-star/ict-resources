@@ -2223,6 +2223,20 @@ components:
           type: ["string", "null"]
         affectedComponent:
           type: ["string", "null"]
+        version:
+          type: ["string", "null"]
+        vendor:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        installationDate:
+          type: ["string", "null"]
+        licenseType:
+          type: ["string", "null"]
+        licenseExpiration:
+          type: ["string", "null"]
+        endOfLifeDate:
+          type: ["string", "null"]
         discoveredAt:
           type: ["string", "null"]
         resolvedAt:
@@ -2257,6 +2271,20 @@ components:
           type: string
         affectedComponent:
           type: string
+        version:
+          type: string
+        vendor:
+          type: string
+        category:
+          type: string
+        installationDate:
+          type: string
+        licenseType:
+          type: string
+        licenseExpiration:
+          type: string
+        endOfLifeDate:
+          type: string
         discoveredAt:
           type: string
         resolvedAt:
@@ -2285,6 +2313,20 @@ components:
         cveId:
           type: string
         affectedComponent:
+          type: string
+        version:
+          type: string
+        vendor:
+          type: string
+        category:
+          type: string
+        installationDate:
+          type: string
+        licenseType:
+          type: string
+        licenseExpiration:
+          type: string
+        endOfLifeDate:
           type: string
         discoveredAt:
           type: string
@@ -2512,8 +2554,6 @@ components:
           type: string
         type:
           type: string
-        category:
-          type: ["string", "null"]
         installedVersion:
           type: ["string", "null"]
         latestVersion:
@@ -2521,10 +2561,6 @@ components:
         vendor:
           type: ["string", "null"]
         license:
-          type: ["string", "null"]
-        installationDate:
-          type: ["string", "null"]
-        licenseExpiration:
           type: ["string", "null"]
         supported:
           type: boolean
@@ -2554,8 +2590,6 @@ components:
           minLength: 1
         type:
           type: string
-        category:
-          type: string
         installedVersion:
           type: string
         latestVersion:
@@ -2563,10 +2597,6 @@ components:
         vendor:
           type: string
         license:
-          type: string
-        installationDate:
-          type: string
-        licenseExpiration:
           type: string
         supported:
           type: boolean
@@ -2591,8 +2621,6 @@ components:
           type: string
         type:
           type: string
-        category:
-          type: string
         installedVersion:
           type: string
         latestVersion:
@@ -2600,10 +2628,6 @@ components:
         vendor:
           type: string
         license:
-          type: string
-        installationDate:
-          type: string
-        licenseExpiration:
           type: string
         supported:
           type: boolean

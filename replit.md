@@ -41,6 +41,7 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 - `cloudflarEnabled` typo in DB schema — matches the OpenAPI spec, do not rename without running codegen again
 - **Teams & ownership**: a `teams` table (4 fixed teams — Infrastructure & Cloud Operations, Application Engineering, Cybersecurity & Governance, Digital Operations & PMO) with full CRUD via `/api/teams` and an Admin > Teams tab. Every asset table that needs ownership (applications, infrastructure, databases, domains, repositories, software, vulnerabilities) has a nullable `teamId` FK. The `users` table intentionally has NO `teamId`. UI pattern: `<TeamBadge teamId={row.teamId} />` for display, `<TeamSelectField>` for the picker in create/edit forms; form state keeps `teamId` as a string, converted with `Number(form.teamId)` on submit and `?.toString() ?? ""` when loading a row for edit.
 - **Security Dashboard**: `GET /api/security/dashboard` computes all 10 KPIs listed above in real-time (no caching) and returns a `generatedAt` timestamp shown as "Last computed" on the page.
+- **Vulnerability software metadata**: each vulnerability record (not the Software Inventory item) carries `version`, `vendor`, `category`, `installationDate`, `licenseType`, `licenseExpiration`, `endOfLifeDate` as nullable text columns — chosen over a separate assets table per explicit user decision. Software Inventory intentionally does NOT have category/installationDate/licenseExpiration.
 
 ## Product
 
@@ -53,7 +54,7 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 6. **Repositories** — GitHub repo tracking with PR/issue counts
 7. **Releases** — deployment history with approval workflow
 8. **Security Center** — Security Dashboard answering 10 cybersecurity KPIs (systems in production, servers missing patches, apps with critical vulns, SSL certs expiring <30d, domains expiring soon, failed backups, admin users, repos with exposed secrets, outdated dependencies, apps not recently scanned) plus vulnerability tracking with severity scoring
-9. **Software Inventory** — frameworks/libraries with version, vendor, category, installation date, license type/expiration, and EOL status
+9. **Software Inventory** — frameworks/libraries with version, vendor, license, and EOL status
 10. **Documentation** — central repo for PRD, TRD, SOP, ERD, etc.
 11. **Reports & Analytics** — inventory and security reports
 12. **Administration** — user management and audit logs

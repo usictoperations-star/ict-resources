@@ -540,6 +540,20 @@ export interface Vulnerability {
   /** @nullable */
   affectedComponent?: string | null;
   /** @nullable */
+  version?: string | null;
+  /** @nullable */
+  vendor?: string | null;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  installationDate?: string | null;
+  /** @nullable */
+  licenseType?: string | null;
+  /** @nullable */
+  licenseExpiration?: string | null;
+  /** @nullable */
+  endOfLifeDate?: string | null;
+  /** @nullable */
   discoveredAt?: string | null;
   /** @nullable */
   resolvedAt?: string | null;
@@ -562,6 +576,13 @@ export interface VulnerabilityInput {
   applicationId?: number;
   cveId?: string;
   affectedComponent?: string;
+  version?: string;
+  vendor?: string;
+  category?: string;
+  installationDate?: string;
+  licenseType?: string;
+  licenseExpiration?: string;
+  endOfLifeDate?: string;
   discoveredAt?: string;
   resolvedAt?: string;
   assignedTo?: string;
@@ -577,6 +598,13 @@ export interface VulnerabilityUpdate {
   applicationId?: number;
   cveId?: string;
   affectedComponent?: string;
+  version?: string;
+  vendor?: string;
+  category?: string;
+  installationDate?: string;
+  licenseType?: string;
+  licenseExpiration?: string;
+  endOfLifeDate?: string;
   discoveredAt?: string;
   resolvedAt?: string;
   assignedTo?: string;
@@ -715,8 +743,6 @@ export interface SoftwareItem {
   name: string;
   type: string;
   /** @nullable */
-  category?: string | null;
-  /** @nullable */
   installedVersion?: string | null;
   /** @nullable */
   latestVersion?: string | null;
@@ -724,10 +750,6 @@ export interface SoftwareItem {
   vendor?: string | null;
   /** @nullable */
   license?: string | null;
-  /** @nullable */
-  installationDate?: string | null;
-  /** @nullable */
-  licenseExpiration?: string | null;
   supported: boolean;
   endOfLife: boolean;
   /** @nullable */
@@ -747,13 +769,10 @@ export interface SoftwareInput {
   /** @minLength 1 */
   name: string;
   type: string;
-  category?: string;
   installedVersion?: string;
   latestVersion?: string;
   vendor?: string;
   license?: string;
-  installationDate?: string;
-  licenseExpiration?: string;
   supported?: boolean;
   endOfLife?: boolean;
   endOfLifeDate?: string;
@@ -766,13 +785,10 @@ export interface SoftwareInput {
 export interface SoftwareUpdate {
   name?: string;
   type?: string;
-  category?: string;
   installedVersion?: string;
   latestVersion?: string;
   vendor?: string;
   license?: string;
-  installationDate?: string;
-  licenseExpiration?: string;
   supported?: boolean;
   endOfLife?: boolean;
   endOfLifeDate?: string;
