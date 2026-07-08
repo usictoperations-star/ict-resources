@@ -6,22 +6,19 @@ import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Shield, ShieldAlert, CheckCircle, Clock, Plus, Loader2, Pencil, Trash2,
   ServerCog, KeyRound, LockKeyholeOpen, Globe2, DatabaseBackup, UserCog,
-  PackageX, ScanEye, Layers,
+  PackageX, ScanEye, Layers, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
@@ -38,11 +35,12 @@ const vulnFormSchema = CreateVulnerabilityBody.extend({
   teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
 });
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm font-medium">{label}{required && <span className="text-destructive ml-0.5">*</span>}</Label>
       {children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
 }
@@ -89,6 +87,40 @@ function daysRemainingBadge(days?: number | null) {
   return <Badge variant={days < 0 ? "destructive" : days <= 7 ? "destructive" : "secondary"}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left`}</Badge>;
 }
 
+function Section({
+  id, title, badge, badgeVariant = "outline", defaultOpen = false, children,
+}: {
+  id: string; title: string; badge?: React.ReactNode;
+  badgeVariant?: "destructive" | "secondary" | "outline";
+  defaultOpen?: boolean; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div id={id} className="border rounded-lg bg-card shadow-sm scroll-mt-4">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          {open
+            ? <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            : <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+          <span className="font-semibold text-sm">{title}</span>
+        </div>
+        {badge !== undefined && (
+          <Badge variant={badgeVariant} className="shrink-0 text-[11px] h-5 px-2">{badge}</Badge>
+        )}
+      </button>
+      {open && (
+        <div className="px-5 pb-5 border-t pt-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Security() {
   const { data: vulnerabilities, isLoading: vulnsLoading } = useListVulnerabilities();
   const { data: summary, isLoading: summaryLoading } = useGetSecuritySummary();
@@ -98,15 +130,23 @@ export default function Security() {
   const { mutateAsync: deleteVulnerability, isPending: isDeleting } = useDeleteVulnerability();
   const queryClient = useQueryClient();
 
-  const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<VulnRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VulnRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [logSectionOpen, setLogSectionOpen] = useState(false);
 
   const isPending = isCreating || isUpdating;
   const { page, setPage, totalPages, pageItems: pagedVulnerabilities, startIndex, endIndex, total } = usePagination(vulnerabilities, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const resetCreate = () => {
+    setEditTarget(null);
+    setForm({ ...EMPTY_FORM });
+    setErrors({});
+    setLogSectionOpen(true);
+    setTimeout(() => document.getElementById("log-vulnerability")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -116,12 +156,8 @@ export default function Security() {
       await queryClient.invalidateQueries({ queryKey: ["/api/security/summary"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/security/dashboard"] });
       setDeleteTarget(null);
-    } catch {
-      // keep dialog open on failure; user can retry or cancel
-    }
+    } catch { }
   };
-
-  const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
   const openEdit = (v: VulnRow) => {
     setEditTarget(v);
@@ -140,15 +176,13 @@ export default function Security() {
       teamId: v.teamId?.toString() ?? "",
     });
     setErrors({});
-    setOpen(true);
+    setLogSectionOpen(true);
+    setTimeout(() => document.getElementById("log-vulnerability")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
   const handleSubmit = async () => {
     const result = getFieldErrors(vulnFormSchema, form);
-    if ("errors" in result) {
-      setErrors(result.errors);
-      return;
-    }
+    if ("errors" in result) { setErrors(result.errors); return; }
     setErrors({});
     const parsed = result.data;
     const payload = {
@@ -177,18 +211,17 @@ export default function Security() {
       await queryClient.invalidateQueries({ queryKey: ["/api/security/vulnerabilities"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/security/summary"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/security/dashboard"] });
-      setOpen(false);
+      setEditTarget(null);
       setForm({ ...EMPTY_FORM });
       setErrors({});
+      setLogSectionOpen(false);
     } catch {
       setErrors({ submit: `Failed to ${editTarget ? "update" : "create"} vulnerability.` });
     }
   };
 
   const severityVariant = (s: string) => s === "critical" || s === "high" ? "destructive" : s === "medium" ? "secondary" : "outline";
-
   const appLabel = (vuln: VulnRow) => vuln.applicationName ?? (vuln.applicationId != null ? `App #${vuln.applicationId}` : 'N/A');
-
   const metaLine = (vuln: VulnRow) => {
     const parts = [vuln.cveId, vuln.version, vuln.vendor].filter(Boolean);
     return parts.length > 0 ? parts.join(" · ") : null;
@@ -322,21 +355,45 @@ export default function Security() {
     return flagged?.key ?? attentionCategories[0]?.key ?? "patches";
   }, [attentionCategories]);
 
+  const totalFlagged = useMemo(() =>
+    attentionCategories.filter(c => c.items.length > 0 && c.tone !== "ok" && c.tone !== "default")
+      .reduce((n, c) => n + c.items.length, 0),
+    [attentionCategories]);
+
+  const criticalHigh = summary ? summary.critical + summary.high : 0;
+  const vulnCount = vulnerabilities?.length ?? 0;
+
+  const riskIssueCount = dashboard
+    ? dashboard.serversMissingPatches.length
+    + dashboard.applicationsWithCriticalVulnerabilities.length
+    + dashboard.failedBackups.length
+    + dashboard.reposWithExposedSecrets.length
+    : 0;
+  const riskHasDanger = dashboard
+    ? dashboard.applicationsWithCriticalVulnerabilities.length > 0 || dashboard.failedBackups.length > 0 || dashboard.reposWithExposedSecrets.length > 0
+    : false;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-1">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Security</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">A quick read on risk posture, plus the full vulnerability log.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Risk posture and vulnerability log.</p>
         </div>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log Vulnerability</Button>
       </div>
 
-      {summaryLoading ? (
-        <Skeleton className="h-32 w-full" />
-      ) : summary ? (
-        <Card>
-          <CardContent className="flex flex-col sm:flex-row items-center gap-6 pt-6">
+      {/* 1 — Vulnerability Health */}
+      <Section
+        id="vulnerability-health"
+        title="Vulnerability Health"
+        defaultOpen={true}
+        badge={criticalHigh > 0 ? `${criticalHigh} Critical / High` : "All clear"}
+        badgeVariant={criticalHigh > 0 ? "destructive" : "outline"}
+      >
+        {summaryLoading ? (
+          <Skeleton className="h-28 w-full" />
+        ) : summary ? (
+          <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="flex flex-col items-center justify-center shrink-0 px-4">
               <Shield className="h-5 w-5 text-primary mb-1" />
               <div className="text-4xl font-bold leading-none">{summary.securityScore}</div>
@@ -347,208 +404,225 @@ export default function Security() {
               <StatItem icon={Clock} label="In Progress" value={summary.inProgress} tone={summary.inProgress > 0 ? "warning" : "ok"} />
               <StatItem icon={CheckCircle} label="Resolved" value={summary.resolved} tone="ok" />
             </div>
-          </CardContent>
-        </Card>
-      ) : null}
+          </div>
+        ) : null}
+      </Section>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Risk Indicators</CardTitle>
-          <CardDescription>Live counts across infrastructure, domains, backups, and dependencies.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {dashboardLoading ? (
-            <div className="grid gap-2 grid-cols-2 sm:grid-cols-5 p-4">
-              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-            </div>
-          ) : dashboard ? (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 border-t">
-                <StatItem icon={Layers} label="Systems in Production" value={dashboard.systemsInProduction} />
-                <StatItem icon={ServerCog} label="Servers Missing Patches" value={dashboard.serversMissingPatches.length} tone={toneOf(dashboard.serversMissingPatches.length)} />
-                <StatItem icon={ShieldAlert} label="Apps w/ Critical Vulns" value={dashboard.applicationsWithCriticalVulnerabilities.length} tone={toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger")} />
-                <StatItem icon={KeyRound} label="SSL Expiring <30d" value={dashboard.sslCertificatesExpiringSoon.length} tone={toneOf(dashboard.sslCertificatesExpiringSoon.length)} />
-                <StatItem icon={Globe2} label="Domains Expiring Soon" value={dashboard.domainsExpiringSoon.length} tone={toneOf(dashboard.domainsExpiringSoon.length)} />
-                <StatItem icon={DatabaseBackup} label="Failed Backups" value={dashboard.failedBackups.length} tone={toneOf(dashboard.failedBackups.length, "danger")} />
-                <StatItem icon={UserCog} label="Admin Users" value={dashboard.adminUsers.length} />
-                <StatItem icon={LockKeyholeOpen} label="Repos w/ Exposed Secrets" value={dashboard.reposWithExposedSecrets.length} tone={toneOf(dashboard.reposWithExposedSecrets.length, "danger")} />
-                <StatItem icon={PackageX} label="Outdated Dependencies" value={dashboard.outdatedDependencies.length} tone={toneOf(dashboard.outdatedDependencies.length)} />
-                <StatItem icon={ScanEye} label="Apps Not Recently Scanned" value={dashboard.applicationsNotRecentlyScanned.length} tone={toneOf(dashboard.applicationsNotRecentlyScanned.length)} />
-              </div>
-              <p className="text-xs text-muted-foreground px-4 py-3 border-t">Last computed {new Date(dashboard.generatedAt).toLocaleString()}</p>
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {dashboard && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Needs Attention</CardTitle>
-            <CardDescription>Drill into each area to see the underlying records.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue={defaultTab}>
-              <div className="overflow-x-auto -mx-2 px-2 pb-1">
-                <TabsList className="h-auto flex-nowrap">
-                  {attentionCategories.map(cat => (
-                    <TabsTrigger key={cat.key} value={cat.key} className="gap-1.5 shrink-0">
-                      <cat.icon className="h-3.5 w-3.5" />
-                      <span>{cat.short}</span>
-                      <Badge variant={cat.items.length > 0 ? TONE_BADGE[cat.tone] : "outline"} className="ml-0.5 h-5 min-w-5 px-1 text-[10px] justify-center">
-                        {cat.items.length}
-                      </Badge>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-              {attentionCategories.map(cat => (
-                <TabsContent key={cat.key} value={cat.key} className="mt-3">
-                  <p className="text-sm font-medium mb-1">{cat.label}</p>
-                  <DrillDownList items={cat.items} emptyLabel={cat.emptyLabel} render={cat.render} />
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Vulnerabilities ({vulnerabilities?.length ?? 0})</CardTitle>
-          <CardDescription>Every tracked finding, most recent first. Open a row to edit full details.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {vulnsLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
-          ) : vulnerabilities && vulnerabilities.length > 0 ? (
-            <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[640px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Finding</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Application</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead className="w-16"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pagedVulnerabilities.map((vuln) => (
-                    <TableRow key={vuln.id}>
-                      <TableCell className="font-medium">
-                        <div>{vuln.title}</div>
-                        {metaLine(vuln as VulnRow) && (
-                          <div className="text-xs text-muted-foreground font-normal font-mono mt-0.5">{metaLine(vuln as VulnRow)}</div>
-                        )}
-                      </TableCell>
-                      <TableCell><Badge variant={severityVariant(vuln.severity)}>{vuln.severity}</Badge></TableCell>
-                      <TableCell>{appLabel(vuln as VulnRow)}</TableCell>
-                      <TableCell><Badge variant="outline" className="capitalize">{vuln.status.replace(/_/g, " ")}</Badge></TableCell>
-                      <TableCell><TeamBadge teamId={(vuln as VulnRow).teamId} /></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(vuln as VulnRow)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(vuln as VulnRow)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No vulnerabilities recorded.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log First Vulnerability</Button>
+      {/* 2 — Log Vulnerability (inline expandable form) */}
+      <LogSection
+        id="log-vulnerability"
+        editTarget={editTarget}
+        isOpen={logSectionOpen}
+        onToggle={(v) => { setLogSectionOpen(v); if (!v) { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); } }}
+      >
+        <div className="space-y-4">
+          {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
+          {editTarget && (
+            <div className="flex items-center justify-between bg-muted/50 rounded-md px-4 py-2.5">
+              <p className="text-sm font-medium">Editing: <span className="text-primary">{editTarget.title}</span></p>
+              <Button variant="ghost" size="sm" onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); }}>New entry instead</Button>
             </div>
           )}
-          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
-        </CardContent>
-      </Card>
-
-      <Dialog open={open} onOpenChange={(v) => { if (!isPending) { setOpen(v); if (!v) { setForm({ ...EMPTY_FORM }); setErrors({}); } } }}>
-        <DialogContent className="max-w-xl p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle>{editTarget ? "Edit Vulnerability" : "Log Vulnerability"}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
-            <div className="px-6 py-5 space-y-4">
-              {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
-              <Field label="Title" required>
-                <Input placeholder="SQL Injection in login endpoint" value={form.title} onChange={set("title")} className="h-9" />
-                {errors.title && <p className="text-xs text-destructive mt-1">{errors.title}</p>}
-              </Field>
-              <Field label="Description">
-                <Textarea placeholder="Describe the vulnerability..." value={form.description} onChange={set("description")} rows={2} className="resize-none" />
-              </Field>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Severity" required>
-                  <SelectField value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))} placeholder="Select severity" options={SEVERITY_OPTIONS} />
-                  {errors.severity && <p className="text-xs text-destructive mt-1">{errors.severity}</p>}
-                </Field>
-                <Field label="Status">
-                  <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
-                </Field>
-                <Field label="Application ID">
-                  <Input type="number" placeholder="1" value={form.applicationId} onChange={set("applicationId")} className="h-9" />
-                  {errors.applicationId && <p className="text-xs text-destructive mt-1">{errors.applicationId}</p>}
-                </Field>
-                <Field label="CVE ID">
-                  <Input placeholder="CVE-2024-12345" value={form.cveId} onChange={set("cveId")} className="h-9" />
-                </Field>
-                <Field label="Affected Component">
-                  <Input placeholder="auth/login.ts" value={form.affectedComponent} onChange={set("affectedComponent")} className="h-9" />
-                </Field>
-                <Field label="Version">
-                  <Input placeholder="18.2.0" value={form.version} onChange={set("version")} className="h-9" />
-                </Field>
-                <Field label="Vendor">
-                  <Input placeholder="Meta, Microsoft..." value={form.vendor} onChange={set("vendor")} className="h-9" />
-                </Field>
-                <Field label="Category">
-                  <SelectField value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))} placeholder="Select category" options={CATEGORY_OPTIONS} />
-                </Field>
-                <Field label="Installation Date">
-                  <Input type="date" value={form.installationDate} onChange={set("installationDate")} className="h-9" />
-                </Field>
-                <Field label="License Type">
-                  <Input placeholder="MIT, Apache 2.0..." value={form.licenseType} onChange={set("licenseType")} className="h-9" />
-                </Field>
-                <Field label="License Expiration">
-                  <Input type="date" value={form.licenseExpiration} onChange={set("licenseExpiration")} className="h-9" />
-                </Field>
-                <Field label="End of Life Date">
-                  <Input type="date" value={form.endOfLifeDate} onChange={set("endOfLifeDate")} className="h-9" />
-                </Field>
-                <Field label="Discovered At">
-                  <Input type="date" value={form.discoveredAt} onChange={set("discoveredAt")} className="h-9" />
-                </Field>
-                <Field label="Assigned To">
-                  <Input placeholder="Engineer name" value={form.assignedTo} onChange={set("assignedTo")} className="h-9" />
-                </Field>
-                <Field label="Team">
-                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
-                </Field>
-              </div>
-              <Field label="Notes">
-                <Textarea placeholder="Remediation steps, context..." value={form.notes} onChange={set("notes")} rows={2} className="resize-none" />
-              </Field>
-            </div>
-          </ScrollArea>
-          <DialogFooter className="px-6 py-4 border-t gap-2">
-            <Button variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
+          <Field label="Title" required error={errors.title}>
+            <Input placeholder="SQL Injection in login endpoint" value={form.title} onChange={set("title")} className="h-9" />
+          </Field>
+          <Field label="Description">
+            <Textarea placeholder="Describe the vulnerability..." value={form.description} onChange={set("description")} rows={2} className="resize-none" />
+          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Severity" required error={errors.severity}>
+              <SelectField value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))} placeholder="Select severity" options={SEVERITY_OPTIONS} />
+            </Field>
+            <Field label="Status">
+              <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+            </Field>
+            <Field label="Application ID" error={errors.applicationId}>
+              <Input type="number" placeholder="1" value={form.applicationId} onChange={set("applicationId")} className="h-9" />
+            </Field>
+            <Field label="CVE ID">
+              <Input placeholder="CVE-2024-12345" value={form.cveId} onChange={set("cveId")} className="h-9" />
+            </Field>
+            <Field label="Affected Component">
+              <Input placeholder="auth/login.ts" value={form.affectedComponent} onChange={set("affectedComponent")} className="h-9" />
+            </Field>
+            <Field label="Version">
+              <Input placeholder="18.2.0" value={form.version} onChange={set("version")} className="h-9" />
+            </Field>
+            <Field label="Vendor">
+              <Input placeholder="Meta, Microsoft..." value={form.vendor} onChange={set("vendor")} className="h-9" />
+            </Field>
+            <Field label="Category">
+              <SelectField value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))} placeholder="Select category" options={CATEGORY_OPTIONS} />
+            </Field>
+            <Field label="Installation Date">
+              <Input type="date" value={form.installationDate} onChange={set("installationDate")} className="h-9" />
+            </Field>
+            <Field label="License Type">
+              <Input placeholder="MIT, Apache 2.0..." value={form.licenseType} onChange={set("licenseType")} className="h-9" />
+            </Field>
+            <Field label="License Expiration">
+              <Input type="date" value={form.licenseExpiration} onChange={set("licenseExpiration")} className="h-9" />
+            </Field>
+            <Field label="End of Life Date">
+              <Input type="date" value={form.endOfLifeDate} onChange={set("endOfLifeDate")} className="h-9" />
+            </Field>
+            <Field label="Discovered At">
+              <Input type="date" value={form.discoveredAt} onChange={set("discoveredAt")} className="h-9" />
+            </Field>
+            <Field label="Assigned To">
+              <Input placeholder="Engineer name" value={form.assignedTo} onChange={set("assignedTo")} className="h-9" />
+            </Field>
+            <Field label="Team">
+              <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+            </Field>
+          </div>
+          <Field label="Notes">
+            <Textarea placeholder="Remediation steps, context..." value={form.notes} onChange={set("notes")} rows={2} className="resize-none" />
+          </Field>
+          <div className="flex items-center gap-2 pt-1">
             <Button onClick={handleSubmit} disabled={isPending}>
-              {isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Logging..."}</> : editTarget ? "Save Changes" : "Log Vulnerability"}
+              {isPending
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Logging..."}</>
+                : editTarget ? "Save Changes" : "Log Vulnerability"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" disabled={isPending}
+              onClick={() => { setLogSectionOpen(false); setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </LogSection>
+
+      {/* 3 — Risk Indicators */}
+      <Section
+        id="risk-indicators"
+        title="Risk Indicators"
+        defaultOpen={false}
+        badge={dashboard ? (riskIssueCount > 0 ? `${riskIssueCount} issues` : "All clear") : undefined}
+        badgeVariant={riskHasDanger ? "destructive" : riskIssueCount > 0 ? "secondary" : "outline"}
+      >
+        {dashboardLoading ? (
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+          </div>
+        ) : dashboard ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 border rounded-lg overflow-hidden">
+              <StatItem icon={Layers} label="Systems in Production" value={dashboard.systemsInProduction} />
+              <StatItem icon={ServerCog} label="Servers Missing Patches" value={dashboard.serversMissingPatches.length} tone={toneOf(dashboard.serversMissingPatches.length)} />
+              <StatItem icon={ShieldAlert} label="Apps w/ Critical Vulns" value={dashboard.applicationsWithCriticalVulnerabilities.length} tone={toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger")} />
+              <StatItem icon={KeyRound} label="SSL Expiring <30d" value={dashboard.sslCertificatesExpiringSoon.length} tone={toneOf(dashboard.sslCertificatesExpiringSoon.length)} />
+              <StatItem icon={Globe2} label="Domains Expiring Soon" value={dashboard.domainsExpiringSoon.length} tone={toneOf(dashboard.domainsExpiringSoon.length)} />
+              <StatItem icon={DatabaseBackup} label="Failed Backups" value={dashboard.failedBackups.length} tone={toneOf(dashboard.failedBackups.length, "danger")} />
+              <StatItem icon={UserCog} label="Admin Users" value={dashboard.adminUsers.length} />
+              <StatItem icon={LockKeyholeOpen} label="Repos w/ Exposed Secrets" value={dashboard.reposWithExposedSecrets.length} tone={toneOf(dashboard.reposWithExposedSecrets.length, "danger")} />
+              <StatItem icon={PackageX} label="Outdated Dependencies" value={dashboard.outdatedDependencies.length} tone={toneOf(dashboard.outdatedDependencies.length)} />
+              <StatItem icon={ScanEye} label="Apps Not Recently Scanned" value={dashboard.applicationsNotRecentlyScanned.length} tone={toneOf(dashboard.applicationsNotRecentlyScanned.length)} />
+            </div>
+            <p className="text-xs text-muted-foreground pt-2">Last computed {new Date(dashboard.generatedAt).toLocaleString()}</p>
+          </>
+        ) : null}
+      </Section>
+
+      {/* 4 — Needs Attention */}
+      <Section
+        id="needs-attention"
+        title="Needs Attention"
+        defaultOpen={false}
+        badge={dashboard ? (totalFlagged > 0 ? `${totalFlagged} flagged` : "All clear") : undefined}
+        badgeVariant={totalFlagged > 0 ? "destructive" : "outline"}
+      >
+        {dashboardLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : dashboard ? (
+          <Tabs defaultValue={defaultTab}>
+            <div className="overflow-x-auto -mx-1 px-1 pb-1">
+              <TabsList className="h-auto flex-nowrap">
+                {attentionCategories.map(cat => (
+                  <TabsTrigger key={cat.key} value={cat.key} className="gap-1.5 shrink-0">
+                    <cat.icon className="h-3.5 w-3.5" />
+                    <span>{cat.short}</span>
+                    <Badge variant={cat.items.length > 0 ? TONE_BADGE[cat.tone] : "outline"} className="ml-0.5 h-5 min-w-5 px-1 text-[10px] justify-center">
+                      {cat.items.length}
+                    </Badge>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            {attentionCategories.map(cat => (
+              <TabsContent key={cat.key} value={cat.key} className="mt-3">
+                <p className="text-sm font-medium mb-1">{cat.label}</p>
+                <DrillDownList items={cat.items} emptyLabel={cat.emptyLabel} render={cat.render} />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : null}
+      </Section>
+
+      {/* 5 — Vulnerabilities table */}
+      <Section
+        id="vulnerabilities"
+        title="Vulnerabilities"
+        defaultOpen={true}
+        badge={vulnCount > 0 ? `${vulnCount} total` : "None logged"}
+        badgeVariant="outline"
+      >
+        <div className="flex justify-end mb-3">
+          <Button size="sm" onClick={resetCreate}>
+            <Plus className="h-4 w-4 mr-2" />Log Vulnerability
+          </Button>
+        </div>
+        {vulnsLoading ? (
+          <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        ) : vulnerabilities && vulnerabilities.length > 0 ? (
+          <div className="overflow-x-auto -mx-5">
+            <Table className="min-w-[640px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Finding</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead>Application</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Team</TableHead>
+                  <TableHead className="w-16"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pagedVulnerabilities.map((vuln) => (
+                  <TableRow key={vuln.id}>
+                    <TableCell className="font-medium">
+                      <div>{vuln.title}</div>
+                      {metaLine(vuln as VulnRow) && (
+                        <div className="text-xs text-muted-foreground font-normal font-mono mt-0.5">{metaLine(vuln as VulnRow)}</div>
+                      )}
+                    </TableCell>
+                    <TableCell><Badge variant={severityVariant(vuln.severity)}>{vuln.severity}</Badge></TableCell>
+                    <TableCell>{appLabel(vuln as VulnRow)}</TableCell>
+                    <TableCell><Badge variant="outline" className="capitalize">{vuln.status.replace(/_/g, " ")}</Badge></TableCell>
+                    <TableCell><TeamBadge teamId={(vuln as VulnRow).teamId} /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(vuln as VulnRow)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(vuln as VulnRow)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-sm text-muted-foreground mb-4">No vulnerabilities recorded.</p>
+            <Button variant="outline" onClick={resetCreate}><Plus className="h-4 w-4 mr-2" />Log First Vulnerability</Button>
+          </div>
+        )}
+        <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
+      </Section>
 
       <DeleteConfirmDialog
         open={!!deleteTarget}
@@ -558,6 +632,34 @@ export default function Security() {
         isPending={isDeleting}
         onConfirm={handleDelete}
       />
+    </div>
+  );
+}
+
+function LogSection({
+  id, editTarget, isOpen, onToggle, children,
+}: {
+  id: string; editTarget: VulnRow | null; isOpen: boolean;
+  onToggle: (open: boolean) => void; children: React.ReactNode;
+}) {
+  const title = editTarget ? "Edit Vulnerability" : "Log Vulnerability";
+  const badge = editTarget ? "Editing" : undefined;
+  return (
+    <div id={id} className="border rounded-lg bg-card shadow-sm scroll-mt-4">
+      <button
+        type="button"
+        onClick={() => onToggle(!isOpen)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          {isOpen
+            ? <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            : <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+          <span className="font-semibold text-sm">{title}</span>
+        </div>
+        {badge && <Badge variant="secondary" className="shrink-0 text-[11px] h-5 px-2">{badge}</Badge>}
+      </button>
+      {isOpen && <div className="px-5 pb-5 border-t pt-4">{children}</div>}
     </div>
   );
 }

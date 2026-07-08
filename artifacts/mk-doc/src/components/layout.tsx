@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
-  BarChart, Settings, Menu
+  BarChart, Settings, Menu, Activity, PenLine, AlertTriangle, Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -24,6 +24,19 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Administration", icon: Settings },
 ];
 
+const SECURITY_SUB_ITEMS = [
+  { id: "vulnerability-health", label: "Vulnerability Health", icon: Activity },
+  { id: "log-vulnerability",    label: "Log Vulnerability",    icon: PenLine },
+  { id: "risk-indicators",      label: "Risk Indicators",      icon: AlertTriangle },
+  { id: "needs-attention",      label: "Needs Attention",      icon: Shield },
+  { id: "vulnerabilities",      label: "Vulnerabilities",      icon: Table2 },
+];
+
+function scrollToSection(id: string) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () => void }) {
   return (
     <nav className="space-y-0.5 px-2">
@@ -31,21 +44,45 @@ function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () 
         const isActive =
           location === item.href ||
           (item.href !== "/" && location.startsWith(item.href));
+        const isSecurityActive = item.href === "/security" && isActive;
         const Icon = item.icon;
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors min-h-[44px] ${
-              isActive
-                ? "bg-[#2D72C8] text-white"
-                : "text-blue-100 hover:bg-[#1B56A5] hover:text-white"
-            }`}
-          >
-            <Icon className="h-4 w-4 flex-shrink-0" />
-            {item.label}
-          </Link>
+          <React.Fragment key={item.href}>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors min-h-[44px] ${
+                isActive
+                  ? "bg-[#2D72C8] text-white"
+                  : "text-blue-100 hover:bg-[#1B56A5] hover:text-white"
+              }`}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {item.label}
+            </Link>
+
+            {isSecurityActive && (
+              <div className="ml-3 pl-3 border-l border-white/20 space-y-0.5 py-0.5">
+                {SECURITY_SUB_ITEMS.map((sub) => {
+                  const SubIcon = sub.icon;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => {
+                        onNavigate?.();
+                        scrollToSection(sub.id);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs text-blue-200 hover:bg-[#1B56A5] hover:text-white transition-colors text-left"
+                    >
+                      <SubIcon className="h-3.5 w-3.5 flex-shrink-0 opacity-75" />
+                      {sub.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </React.Fragment>
         );
       })}
     </nav>
