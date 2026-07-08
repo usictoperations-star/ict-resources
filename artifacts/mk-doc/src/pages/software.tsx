@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
+import { CreateSoftwareBody } from "@workspace/api-zod";
+import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { useListSoftware, useCreateSoftware, useUpdateSoftware, useDeleteSoftware } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +24,9 @@ import { TeamSelectField } from "@/components/team-select-field";
 const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os", "language", "other"];
 const CATEGORY_OPTIONS = ["productivity", "security", "development", "database", "infrastructure", "communication", "analytics", "other"];
 
-const softwareSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.string().min(1, "Type is required"),
-  applicationId: z.union([z.string().regex(/^\d+$/, "Must be a valid ID"), z.literal("")]).optional(),
+const softwareFormSchema = CreateSoftwareBody.extend({
+  type: CreateSoftwareBody.shape.type.min(1, "Type is required"),
+  applicationId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid ID" }).int("Must be a valid ID").positive("Must be a valid ID")),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -98,38 +99,19 @@ export default function Software() {
     setOpen(true);
   };
 
-  const validate = (): boolean => {
-    const result = softwareSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach(issue => {
-        const field = issue.path[0] as string;
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+  const handleSubmit = async () => {
+    const result = getFieldErrors(softwareFormSchema, form);
+    if ("errors" in result) {
+      setErrors(result.errors);
+      return;
     }
     setErrors({});
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
+    const parsed = result.data;
     const payload = {
-      name: form.name, type: form.type,
+      ...parsed,
       category: form.category || undefined,
-      installedVersion: form.installedVersion || undefined,
-      latestVersion: form.latestVersion || undefined,
-      vendor: form.vendor || undefined,
-      license: form.license || undefined,
       installationDate: form.installationDate || undefined,
       licenseExpiration: form.licenseExpiration || undefined,
-      supported: form.supported,
-      endOfLife: form.endOfLife,
-      endOfLifeDate: form.endOfLifeDate || undefined,
-      upgradeAvailable: form.upgradeAvailable,
-      applicationId: form.applicationId ? Number(form.applicationId) : undefined,
-      notes: form.notes || undefined,
       teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {

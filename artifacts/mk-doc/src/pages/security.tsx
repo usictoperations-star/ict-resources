@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { z } from "zod";
 import { useListVulnerabilities, useGetSecuritySummary, useGetSecurityDashboard, useCreateVulnerability, useUpdateVulnerability, useDeleteVulnerability } from "@workspace/api-client-react";
+import { CreateVulnerabilityBody } from "@workspace/api-zod";
+import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
@@ -25,11 +27,10 @@ import { useQueryClient } from "@tanstack/react-query";
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "info"];
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "accepted", "false_positive"];
 
-const vulnSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  severity: z.string().min(1, "Severity is required"),
-  status: z.string().min(1, "Status is required"),
-  applicationId: z.union([z.string().regex(/^\d+$/, "Must be a valid ID"), z.literal("")]).optional(),
+const vulnFormSchema = CreateVulnerabilityBody.extend({
+  severity: CreateVulnerabilityBody.shape.severity.min(1, "Severity is required"),
+  status: CreateVulnerabilityBody.shape.status.min(1, "Status is required"),
+  applicationId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid ID" }).int("Must be a valid ID").positive("Must be a valid ID")),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -128,34 +129,22 @@ export default function Security() {
     setOpen(true);
   };
 
-  const validate = (): boolean => {
-    const result = vulnSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach(issue => {
-        const field = issue.path[0] as string;
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+  const handleSubmit = async () => {
+    const result = getFieldErrors(vulnFormSchema, form);
+    if ("errors" in result) {
+      setErrors(result.errors);
+      return;
     }
     setErrors({});
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
+    const parsed = result.data;
     const payload = {
-      title: form.title,
-      description: form.description || undefined,
-      severity: form.severity,
-      status: form.status,
-      applicationId: form.applicationId ? Number(form.applicationId) : undefined,
-      cveId: form.cveId || undefined,
-      affectedComponent: form.affectedComponent || undefined,
-      discoveredAt: form.discoveredAt || undefined,
-      assignedTo: form.assignedTo || undefined,
-      notes: form.notes || undefined,
+      ...parsed,
+      description: parsed.description || undefined,
+      cveId: parsed.cveId || undefined,
+      affectedComponent: parsed.affectedComponent || undefined,
+      discoveredAt: parsed.discoveredAt || undefined,
+      assignedTo: parsed.assignedTo || undefined,
+      notes: parsed.notes || undefined,
       teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {

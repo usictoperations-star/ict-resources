@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
+import { CreateInfrastructureBody } from "@workspace/api-zod";
+import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { useListInfrastructure, useCreateInfrastructure, useUpdateInfrastructure, useDeleteInfrastructure } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,13 +23,12 @@ import { TeamSelectField } from "@/components/team-select-field";
 const TYPE_OPTIONS = ["VPS", "Bare Metal", "Docker", "VM", "Container", "Load Balancer", "Database Server", "CDN", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "decommissioned"];
 
-const infraSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.string().min(1, "Type is required"),
-  status: z.string().min(1, "Status is required"),
-  cpuCores: z.union([z.string().regex(/^\d*$/, "Must be a whole number"), z.literal("")]).optional(),
-  ramGb: z.union([z.string().regex(/^\d*$/, "Must be a whole number"), z.literal("")]).optional(),
-  diskGb: z.union([z.string().regex(/^\d*$/, "Must be a whole number"), z.literal("")]).optional(),
+const infraFormSchema = CreateInfrastructureBody.extend({
+  type: CreateInfrastructureBody.shape.type.min(1, "Type is required"),
+  status: CreateInfrastructureBody.shape.status.min(1, "Status is required"),
+  cpuCores: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
+  ramGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
+  diskGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -97,35 +98,26 @@ export default function Infrastructure() {
     setOpen(true);
   };
 
-  const validate = (): boolean => {
-    const result = infraSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach(issue => {
-        const field = issue.path[0] as string;
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+  const handleSubmit = async () => {
+    const result = getFieldErrors(infraFormSchema, form);
+    if ("errors" in result) {
+      setErrors(result.errors);
+      return;
     }
     setErrors({});
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
+    const parsed = result.data;
     const payload = {
-      name: form.name,
-      type: form.type,
-      provider: form.provider || undefined,
-      status: form.status,
-      ipAddress: form.ipAddress || undefined,
-      location: form.location || undefined,
-      cpuCores: form.cpuCores ? Number(form.cpuCores) : undefined,
-      ramGb: form.ramGb ? Number(form.ramGb) : undefined,
-      diskGb: form.diskGb ? Number(form.diskGb) : undefined,
-      os: form.os || undefined,
-      notes: form.notes || undefined,
+      name: parsed.name,
+      type: parsed.type,
+      provider: parsed.provider || undefined,
+      status: parsed.status,
+      ipAddress: parsed.ipAddress || undefined,
+      location: parsed.location || undefined,
+      cpuCores: parsed.cpuCores,
+      ramGb: parsed.ramGb,
+      diskGb: parsed.diskGb,
+      os: parsed.os || undefined,
+      notes: parsed.notes || undefined,
       teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {

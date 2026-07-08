@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
+import { CreateDatabaseBody } from "@workspace/api-zod";
+import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord, useDeleteDatabaseRecord } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +24,10 @@ import { TeamSelectField } from "@/components/team-select-field";
 const TYPE_OPTIONS = ["PostgreSQL", "MySQL", "MariaDB", "MSSQL", "Oracle", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "deprecated"];
 
-const dbSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.string().min(1, "Type is required"),
-  status: z.string().min(1, "Status is required"),
-  sizeGb: z.union([z.string().regex(/^\d*\.?\d*$/, "Must be a valid number"), z.literal("")]).optional(),
+const dbFormSchema = CreateDatabaseBody.extend({
+  type: CreateDatabaseBody.shape.type.min(1, "Type is required"),
+  status: CreateDatabaseBody.shape.status.min(1, "Status is required"),
+  sizeGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid number" }).nonnegative("Must be a valid number")),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -94,33 +95,24 @@ export default function Databases() {
     setOpen(true);
   };
 
-  const validate = (): boolean => {
-    const result = dbSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach(issue => {
-        const field = issue.path[0] as string;
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+  const handleSubmit = async () => {
+    const result = getFieldErrors(dbFormSchema, form);
+    if ("errors" in result) {
+      setErrors(result.errors);
+      return;
     }
     setErrors({});
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
+    const parsed = result.data;
     const payload = {
-      name: form.name, type: form.type,
-      version: form.version || undefined,
-      server: form.server || undefined,
-      sizeGb: form.sizeGb ? Number(form.sizeGb) : undefined,
-      owner: form.owner || undefined,
-      backupEnabled: form.backupEnabled,
-      encryptionEnabled: form.encryptionEnabled,
-      status: form.status,
-      notes: form.notes || undefined,
+      name: parsed.name, type: parsed.type,
+      version: parsed.version || undefined,
+      server: parsed.server || undefined,
+      sizeGb: parsed.sizeGb,
+      owner: parsed.owner || undefined,
+      backupEnabled: parsed.backupEnabled,
+      encryptionEnabled: parsed.encryptionEnabled,
+      status: parsed.status,
+      notes: parsed.notes || undefined,
       teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
