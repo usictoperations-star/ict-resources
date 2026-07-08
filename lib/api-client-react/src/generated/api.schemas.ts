@@ -49,6 +49,18 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface ActivityChartPoint {
+  /** Day label (e.g. "Mon", "Tue") */
+  date: string;
+  /** ISO date string for the day (YYYY-MM-DD) */
+  isoDate: string;
+  /** Total audit log entries for the day */
+  total: number;
+  creates: number;
+  updates: number;
+  deletes: number;
+}
+
 export interface Application {
   id: number;
   name: string;

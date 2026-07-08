@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityChartPoint,
   ActivityItem,
   Alert,
   Application,
@@ -394,6 +395,83 @@ export function useGetDashboardActivity<TData = Awaited<ReturnType<typeof getDas
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetDashboardActivityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDashboardActivityChartUrl = () => {
+
+
+
+
+  return `/api/dashboard/activity-chart`
+}
+
+/**
+ * @summary Get daily activity counts for the last 7 days
+ */
+export const getDashboardActivityChart = async ( options?: RequestInit): Promise<ActivityChartPoint[]> => {
+
+  return customFetch<ActivityChartPoint[]>(getGetDashboardActivityChartUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardActivityChartQueryKey = () => {
+    return [
+    `/api/dashboard/activity-chart`
+    ] as const;
+    }
+
+
+export const getGetDashboardActivityChartQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardActivityChart>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardActivityChart>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardActivityChartQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardActivityChart>>> = ({ signal }) => getDashboardActivityChart({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardActivityChart>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDashboardActivityChartQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardActivityChart>>>
+export type GetDashboardActivityChartQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get daily activity counts for the last 7 days
+ */
+
+export function useGetDashboardActivityChart<TData = Awaited<ReturnType<typeof getDashboardActivityChart>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardActivityChart>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDashboardActivityChartQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

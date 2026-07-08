@@ -147,4 +147,50 @@ router.get("/activity", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/activity-chart", async (req: Request, res: Response) => {
+  try {
+    const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const logs = await db
+      .select()
+      .from(auditLogsTable)
+      .where(gt(auditLogsTable.createdAt, sevenDaysAgo));
+
+    // Build a map of isoDate -> counts
+    const countMap = new Map<string, { total: number; creates: number; updates: number; deletes: number }>();
+
+    for (const log of logs) {
+      const d = log.createdAt;
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const entry = countMap.get(iso) ?? { total: 0, creates: 0, updates: 0, deletes: 0 };
+      entry.total++;
+      const action = (log.action ?? "").toUpperCase();
+      if (action.includes("CREATE") || action.includes("INSERT")) entry.creates++;
+      else if (action.includes("UPDATE")) entry.updates++;
+      else if (action.includes("DELETE")) entry.deletes++;
+      countMap.set(iso, entry);
+    }
+
+    // Build 7-day series (oldest first)
+    const points = [];
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+      const counts = countMap.get(iso) ?? { total: 0, creates: 0, updates: 0, deletes: 0 };
+      points.push({
+        date: DAY_LABELS[day.getDay()],
+        isoDate: iso,
+        ...counts,
+      });
+    }
+
+    return res.json(points);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching activity chart");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

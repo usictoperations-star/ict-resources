@@ -93,6 +93,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /dashboard/activity-chart:
+    get:
+      operationId: getDashboardActivityChart
+      tags: [dashboard]
+      summary: Get daily activity counts for the last 7 days
+      responses:
+        "200":
+          description: Activity chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityChartPoint"
+
   # ─── Application Registry ─────────────────────────────────────────────────
   /applications:
     get:
@@ -1209,6 +1224,26 @@ components:
         createdAt:
           type: string
       required: [id, action, entityType, entityName, user, createdAt]
+
+    ActivityChartPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Day label (e.g. "Mon", "Tue")
+        isoDate:
+          type: string
+          description: ISO date string for the day (YYYY-MM-DD)
+        total:
+          type: integer
+          description: Total audit log entries for the day
+        creates:
+          type: integer
+        updates:
+          type: integer
+        deletes:
+          type: integer
+      required: [date, isoDate, total, creates, updates, deletes]
 
     # ── Applications ──────────────────────────────────────────────────────
     Application:

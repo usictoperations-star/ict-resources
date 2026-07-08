@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetDashboardStats, useGetDashboardAlerts } from "@workspace/api-client-react";
+import { useGetDashboardStats, useGetDashboardAlerts, useGetDashboardActivityChart } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,8 @@ import {
 import { Link } from "wouter";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
-  RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell, PieChart, Pie, Legend
+  RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell, PieChart, Pie, Legend,
+  AreaChart, Area, CartesianGrid,
 } from "recharts";
 
 const BRAND_BLUE = "#1B56A5";
@@ -58,6 +59,7 @@ const CUSTOM_TOOLTIP_STYLE = {
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: alerts, isLoading: alertsLoading } = useGetDashboardAlerts();
+  const { data: activityChart, isLoading: chartLoading } = useGetDashboardActivityChart();
 
   const moduleHealthData = stats ? [
     { module: "Apps", value: Math.min(100, ((stats.productionSystems ?? 0) / Math.max(stats.totalApplications ?? 1, 1)) * 100) },
@@ -211,28 +213,49 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* System Health Radar */}
+        {/* System Health — real audit activity chart */}
         <Card className="lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle>Module Health</CardTitle>
+            <CardTitle>System Health</CardTitle>
+            <p className="text-xs text-muted-foreground">Audit activity — last 7 days</p>
           </CardHeader>
           <CardContent>
-            {statsLoading ? (
+            {chartLoading ? (
               <Skeleton className="h-52 w-full" />
-            ) : (
+            ) : activityChart && activityChart.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
-                <RadarChart data={moduleHealthData} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
-                  <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="module" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                  <Radar
-                    dataKey="value"
-                    stroke={BRAND_BLUE}
-                    fill={BRAND_BLUE}
-                    fillOpacity={0.2}
-                    strokeWidth={2}
+                <AreaChart data={activityChart} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={BRAND_BLUE} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={BRAND_BLUE} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="createsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="deletesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={CUSTOM_TOOLTIP_STYLE}
+                    formatter={(value: number, name: string) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
                   />
-                </RadarChart>
+                  <Area type="monotone" dataKey="total" stroke={BRAND_BLUE} strokeWidth={2} fill="url(#totalGradient)" dot={false} activeDot={{ r: 4 }} />
+                  <Area type="monotone" dataKey="creates" stroke="#22c55e" strokeWidth={1.5} fill="url(#createsGradient)" dot={false} activeDot={{ r: 3 }} />
+                  <Area type="monotone" dataKey="deletes" stroke="#ef4444" strokeWidth={1.5} fill="url(#deletesGradient)" dot={false} activeDot={{ r: 3 }} />
+                </AreaChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-52 gap-2 text-center">
+                <p className="text-sm text-muted-foreground">No activity recorded yet</p>
+                <p className="text-xs text-muted-foreground">Activity will appear as changes are made across modules</p>
+              </div>
             )}
           </CardContent>
         </Card>

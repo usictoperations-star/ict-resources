@@ -70,6 +70,20 @@ export const GetDashboardActivityResponse = zod.array(GetDashboardActivityRespon
 
 
 /**
+ * @summary Get daily activity counts for the last 7 days
+ */
+export const GetDashboardActivityChartResponseItem = zod.object({
+  "date": zod.string().describe('Day label (e.g. \"Mon\", \"Tue\")'),
+  "isoDate": zod.string().describe('ISO date string for the day (YYYY-MM-DD)'),
+  "total": zod.number().describe('Total audit log entries for the day'),
+  "creates": zod.number(),
+  "updates": zod.number(),
+  "deletes": zod.number()
+})
+export const GetDashboardActivityChartResponse = zod.array(GetDashboardActivityChartResponseItem)
+
+
+/**
  * @summary List all applications
  */
 export const ListApplicationsQueryParams = zod.object({
