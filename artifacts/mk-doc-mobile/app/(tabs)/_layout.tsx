@@ -21,6 +21,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
         <Label>Apps</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="domains">
+        <Icon sf={{ default: "lock.shield", selected: "lock.shield.fill" }} />
+        <Label>Domains</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="security">
         <Icon sf={{ default: "shield", selected: "shield.fill" }} />
         <Label>Security</Label>
@@ -90,6 +94,18 @@ function ClassicTabLayout() {
               <SymbolView name="square.grid.2x2.fill" tintColor={color} size={22} />
             ) : (
               <Feather name="grid" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="domains"
+        options={{
+          title: "Domains",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="lock.shield.fill" tintColor={color} size={22} />
+            ) : (
+              <Feather name="globe" size={22} color={color} />
             ),
         }}
       />
