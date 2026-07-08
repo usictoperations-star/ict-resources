@@ -3,11 +3,11 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
-  BarChart, Settings, Search, Menu
+  BarChart, Settings, Menu
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SearchBar } from "@/components/search-bar";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -154,14 +154,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Search bar */}
-          <div className="flex flex-1 justify-end relative min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-200 pointer-events-none" />
-            <Input
-              type="search"
-              placeholder="Search assets, IP, domains..."
-              className="w-full pl-9 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus-visible:ring-white/30 focus-visible:bg-white/20 max-w-md"
-            />
-          </div>
+          <SearchBar />
         </header>
 
         {/* Page Content */}

@@ -1,0 +1,1 @@
+- [Orval query hook `enabled` option needs explicit queryKey](orval-query-options-typing.md) — TS error unless you pass `queryKey` alongside `enabled` in generated hooks' `{ query: {...} }` options.
