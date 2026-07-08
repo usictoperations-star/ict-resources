@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListDocuments, useCreateDocument, useUpdateDocument } from "@workspace/api-client-react";
+import { useListDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, ExternalLink, Plus, Loader2, Pencil } from "lucide-react";
+import { FileText, ExternalLink, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const TYPE_OPTIONS = ["PRD", "TRD", "SOP", "ERD", "API", "Architecture", "Runbook", "Guide", "Policy", "Other"];
@@ -49,15 +50,28 @@ export default function Documentation() {
   const { data: documents, isLoading } = useListDocuments();
   const { mutateAsync: createDocument, isPending: isCreating } = useCreateDocument();
   const { mutateAsync: updateDocument, isPending: isUpdating } = useUpdateDocument();
+  const { mutateAsync: deleteDocument, isPending: isDeleting } = useDeleteDocument();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DocRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDocument({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
@@ -156,9 +170,14 @@ export default function Documentation() {
                       <TableCell>{doc.version || 'v1.0'}</TableCell>
                       <TableCell>{new Date(doc.updatedAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(doc as DocRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(doc as DocRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(doc as DocRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -221,6 +240,15 @@ export default function Documentation() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="document"
+        itemLabel={deleteTarget?.title ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListSoftware, useCreateSoftware, useUpdateSoftware } from "@workspace/api-client-react";
+import { useListSoftware, useCreateSoftware, useUpdateSoftware, useDeleteSoftware } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Pencil } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os", "language", "other"];
@@ -50,15 +51,28 @@ export default function Software() {
   const { data: software, isLoading } = useListSoftware();
   const { mutateAsync: createSoftware, isPending: isCreating } = useCreateSoftware();
   const { mutateAsync: updateSoftware, isPending: isUpdating } = useUpdateSoftware();
+  const { mutateAsync: deleteSoftware, isPending: isDeleting } = useDeleteSoftware();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<SoftwareRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SoftwareRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteSoftware({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/software"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
@@ -173,9 +187,14 @@ export default function Software() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as SoftwareRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as SoftwareRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(item as SoftwareRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -255,6 +274,15 @@ export default function Software() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="software record"
+        itemLabel={deleteTarget?.name ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

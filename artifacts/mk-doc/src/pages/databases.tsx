@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord } from "@workspace/api-client-react";
+import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord, useDeleteDatabaseRecord } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Pencil } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const TYPE_OPTIONS = ["PostgreSQL", "MySQL", "MariaDB", "MSSQL", "Oracle", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Other"];
@@ -52,15 +53,28 @@ export default function Databases() {
   const { data: databases, isLoading } = useListDatabases();
   const { mutateAsync: createDatabase, isPending: isCreating } = useCreateDatabase();
   const { mutateAsync: updateDatabase, isPending: isUpdating } = useUpdateDatabaseRecord();
+  const { mutateAsync: deleteDatabase, isPending: isDeleting } = useDeleteDatabaseRecord();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DbRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DbRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDatabase({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/databases"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
@@ -154,9 +168,14 @@ export default function Databases() {
                       <TableCell>{db.server || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(db.status)}>{db.status}</Badge></TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(db as DbRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(db as DbRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(db as DbRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -229,6 +248,15 @@ export default function Databases() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="database"
+        itemLabel={deleteTarget?.name ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

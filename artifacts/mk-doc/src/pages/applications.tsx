@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListApplications, useCreateApplication, useUpdateApplication } from "@workspace/api-client-react";
+import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Loader2, Pencil } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -73,14 +74,27 @@ export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
   const { mutateAsync: createApplication, isPending: isCreating } = useCreateApplication();
   const { mutateAsync: updateApplication, isPending: isUpdating } = useUpdateApplication();
+  const { mutateAsync: deleteApplication, isPending: isDeleting } = useDeleteApplication();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AppRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AppRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteApplication({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [field]: e.target.value }));
@@ -233,9 +247,14 @@ export default function Applications() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(app as AppRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(app as AppRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(app as AppRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -382,6 +401,15 @@ export default function Applications() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="application"
+        itemLabel={deleteTarget?.name ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

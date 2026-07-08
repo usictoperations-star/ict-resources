@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListVulnerabilities, useGetSecuritySummary, useCreateVulnerability, useUpdateVulnerability } from "@workspace/api-client-react";
+import { useListVulnerabilities, useGetSecuritySummary, useCreateVulnerability, useUpdateVulnerability, useDeleteVulnerability } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shield, ShieldAlert, CheckCircle, Clock, Plus, Loader2, Pencil } from "lucide-react";
+import { Shield, ShieldAlert, CheckCircle, Clock, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "info"];
@@ -52,15 +53,29 @@ export default function Security() {
   const { data: summary, isLoading: summaryLoading } = useGetSecuritySummary();
   const { mutateAsync: createVulnerability, isPending: isCreating } = useCreateVulnerability();
   const { mutateAsync: updateVulnerability, isPending: isUpdating } = useUpdateVulnerability();
+  const { mutateAsync: deleteVulnerability, isPending: isDeleting } = useDeleteVulnerability();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<VulnRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VulnRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteVulnerability({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/security/vulnerabilities"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/security/summary"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
@@ -198,9 +213,14 @@ export default function Security() {
                       <TableCell className="font-mono text-xs">{vuln.cveId || 'N/A'}</TableCell>
                       <TableCell>{vuln.status}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(vuln as VulnRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(vuln as VulnRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(vuln as VulnRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -269,6 +289,15 @@ export default function Security() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="vulnerability"
+        itemLabel={deleteTarget?.title ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

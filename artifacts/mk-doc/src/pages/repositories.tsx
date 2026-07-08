@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListRepositories, useCreateRepository, useUpdateRepository } from "@workspace/api-client-react";
+import { useListRepositories, useCreateRepository, useUpdateRepository, useDeleteRepository } from "@workspace/api-client-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GitPullRequest, CircleDot, Plus, Loader2, Pencil } from "lucide-react";
+import { GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const VISIBILITY_OPTIONS = ["public", "private", "internal"];
@@ -52,15 +53,28 @@ export default function Repositories() {
   const { data: repositories, isLoading } = useListRepositories();
   const { mutateAsync: createRepository, isPending: isCreating } = useCreateRepository();
   const { mutateAsync: updateRepository, isPending: isUpdating } = useUpdateRepository();
+  const { mutateAsync: deleteRepository, isPending: isDeleting } = useDeleteRepository();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<RepoRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RepoRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteRepository({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/repositories"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
@@ -164,9 +178,14 @@ export default function Repositories() {
                       </TableCell>
                       <TableCell><Badge variant={repo.status === 'active' ? 'default' : 'secondary'}>{repo.status}</Badge></TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(repo as RepoRow)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(repo as RepoRow)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(repo as RepoRow)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -233,6 +252,15 @@ export default function Repositories() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        entityName="repository"
+        itemLabel={deleteTarget?.name ?? ""}
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
