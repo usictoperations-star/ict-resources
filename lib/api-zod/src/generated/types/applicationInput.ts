@@ -28,6 +28,7 @@ export interface ApplicationInput {
   framework?: string;
   language?: string;
   database?: string;
+  serverName?: string;
   hostingProvider?: string;
   domain?: string;
   currentVersion?: string;

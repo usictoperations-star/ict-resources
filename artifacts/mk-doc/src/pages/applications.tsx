@@ -69,10 +69,10 @@ const EMPTY_FORM = {
   environment: "", status: "Active", priority: "Medium", criticality: "Medium",
   ministry: "", department: "", businessOwner: "", technicalOwner: "",
   frontend: "", backend: "", framework: "", language: "", database: "",
-  hostingProvider: "", domain: "", currentVersion: "", tags: "", teamId: ""
+  serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", teamId: ""
 };
 
-type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; teamId?: number | null };
+type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; teamId?: number | null };
 
 export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
@@ -132,6 +132,7 @@ export default function Applications() {
       framework: app.framework ?? "",
       language: app.language ?? "",
       database: app.database ?? "",
+      serverName: app.serverName ?? "",
       hostingProvider: app.hostingProvider ?? "",
       domain: app.domain ?? "",
       currentVersion: app.currentVersion ?? "",
@@ -178,6 +179,7 @@ export default function Applications() {
       framework: form.framework || undefined,
       language: form.language || undefined,
       database: form.database || undefined,
+      serverName: form.serverName || undefined,
       hostingProvider: form.hostingProvider || undefined,
       domain: form.domain || undefined,
       currentVersion: form.currentVersion || undefined,
@@ -380,6 +382,9 @@ export default function Applications() {
                   </Field>
                   <Field label="Database">
                     <Input placeholder="PostgreSQL, MySQL, Redis..." value={form.database} onChange={set("database")} className="h-9" />
+                  </Field>
+                  <Field label="Server Name">
+                    <Input placeholder="prod-web-01" value={form.serverName} onChange={set("serverName")} className="h-9" />
                   </Field>
                   <Field label="Hosting Provider">
                     <Input placeholder="IONOS, AWS, On-Premise..." value={form.hostingProvider} onChange={set("hostingProvider")} className="h-9" />

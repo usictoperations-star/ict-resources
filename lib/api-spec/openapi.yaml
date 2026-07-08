@@ -1520,6 +1520,8 @@ components:
           type: ["string", "null"]
         database:
           type: ["string", "null"]
+        serverName:
+          type: ["string", "null"]
         hostingProvider:
           type: ["string", "null"]
         domain:
@@ -1594,6 +1596,8 @@ components:
           type: string
         database:
           type: string
+        serverName:
+          type: string
         hostingProvider:
           type: string
         domain:
@@ -1652,6 +1656,8 @@ components:
         language:
           type: string
         database:
+          type: string
+        serverName:
           type: string
         hostingProvider:
           type: string

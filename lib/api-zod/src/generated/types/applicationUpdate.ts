@@ -27,6 +27,7 @@ export interface ApplicationUpdate {
   framework?: string;
   language?: string;
   database?: string;
+  serverName?: string;
   hostingProvider?: string;
   domain?: string;
   currentVersion?: string;

@@ -127,6 +127,8 @@ export interface Application {
   /** @nullable */
   database?: string | null;
   /** @nullable */
+  serverName?: string | null;
+  /** @nullable */
   hostingProvider?: string | null;
   /** @nullable */
   domain?: string | null;
@@ -166,6 +168,7 @@ export interface ApplicationInput {
   framework?: string;
   language?: string;
   database?: string;
+  serverName?: string;
   hostingProvider?: string;
   domain?: string;
   currentVersion?: string;
@@ -196,6 +199,7 @@ export interface ApplicationUpdate {
   framework?: string;
   language?: string;
   database?: string;
+  serverName?: string;
   hostingProvider?: string;
   domain?: string;
   currentVersion?: string;

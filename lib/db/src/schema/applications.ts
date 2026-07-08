@@ -24,6 +24,7 @@ export const applicationsTable = pgTable("applications", {
   framework: text("framework"),
   language: text("language"),
   database: text("database"),
+  serverName: text("server_name"),
   hostingProvider: text("hosting_provider"),
   domain: text("domain"),
   currentVersion: text("current_version"),

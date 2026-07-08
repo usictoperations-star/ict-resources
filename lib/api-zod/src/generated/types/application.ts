@@ -42,6 +42,8 @@ export interface Application {
   /** @nullable */
   database?: string | null;
   /** @nullable */
+  serverName?: string | null;
+  /** @nullable */
   hostingProvider?: string | null;
   /** @nullable */
   domain?: string | null;
