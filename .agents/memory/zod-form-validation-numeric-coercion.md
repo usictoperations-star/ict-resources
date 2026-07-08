@@ -27,3 +27,11 @@ so an e2e test that types "abc" into a number field will find the field silently
 this looks like a missed validation error but isn't. Test numeric validation with values the
 browser *does* accept but the schema should reject (decimals in int-only fields, negative
 numbers), not letters.
+
+**Silent-block gotcha:** when extending a generated `Create*Body` schema, audit *every*
+`zod.number().optional()` field in that schema (e.g. shared `teamId` FK), not just the ones you
+intentionally added validation for. If the form keeps it as a string (e.g. `""` for
+"Unassigned") and it isn't wrapped in `numericStringField`, `safeParse` fails on that field even
+though the UI never shows an error for it (no `errors.teamId` rendered) — the submit button just
+does nothing with no visible feedback. This bit Infrastructure/Databases/Security forms
+simultaneously because all three extended the same generated shape and all forgot `teamId`.

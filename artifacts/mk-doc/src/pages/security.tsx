@@ -34,6 +34,7 @@ const vulnFormSchema = CreateVulnerabilityBody.extend({
   severity: CreateVulnerabilityBody.shape.severity.min(1, "Severity is required"),
   status: CreateVulnerabilityBody.shape.status.min(1, "Status is required"),
   applicationId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid ID" }).int("Must be a valid ID").positive("Must be a valid ID")),
+  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {

@@ -30,6 +30,7 @@ const dbFormSchema = CreateDatabaseBody.extend({
   type: CreateDatabaseBody.shape.type.min(1, "Type is required"),
   status: CreateDatabaseBody.shape.status.min(1, "Status is required"),
   sizeGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid number" }).nonnegative("Must be a valid number")),
+  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {

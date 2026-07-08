@@ -31,6 +31,7 @@ const infraFormSchema = CreateInfrastructureBody.extend({
   cpuCores: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
   ramGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
   diskGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
+  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {

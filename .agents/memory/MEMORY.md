@@ -1,3 +1,4 @@
 - [Orval query hook `enabled` option needs explicit queryKey](orval-query-options-typing.md) — TS error unless you pass `queryKey` alongside `enabled` in generated hooks' `{ query: {...} }` options.
 - [Form validation against generated Zod schemas](zod-form-validation-numeric-coercion.md) — extend generated Create*Body schemas for form validation; test numeric fields with decimals/negatives, not letters (type="number" blocks those).
 - [drizzle-kit push in non-interactive shell](drizzle-push-noninteractive.md) — use `--force` flag when a push has data-loss confirmation prompts; agent shells have no TTY to answer them.
+- [Playwright e2e setup in this pnpm monorepo](playwright-e2e-setup.md) — workspace-scoped install, Nix system deps needed for chromium to launch, and a Dialog/button text strict-mode selector gotcha.

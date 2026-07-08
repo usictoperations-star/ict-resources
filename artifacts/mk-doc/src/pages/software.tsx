@@ -28,6 +28,7 @@ const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os
 const softwareFormSchema = CreateSoftwareBody.extend({
   type: CreateSoftwareBody.shape.type.min(1, "Type is required"),
   applicationId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid ID" }).int("Must be a valid ID").positive("Must be a valid ID")),
+  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
