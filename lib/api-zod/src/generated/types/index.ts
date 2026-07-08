@@ -23,6 +23,7 @@ export * from './dashboardStats';
 export * from './databaseInput';
 export * from './databaseRecord';
 export * from './databaseUpdate';
+export * from './deletedRecordsResponse';
 export * from './document';
 export * from './documentInput';
 export * from './documentUpdate';

@@ -144,6 +144,8 @@ export interface Application {
   lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface ApplicationInput {
@@ -274,6 +276,8 @@ export interface InfrastructureItem {
   lastPatchedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface InfrastructureInput {
@@ -335,6 +339,8 @@ export interface DatabaseRecord {
   teamId?: number | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface DatabaseInput {
@@ -951,6 +957,12 @@ export interface AuditLog {
   /** @nullable */
   changes?: string | null;
   createdAt: string;
+}
+
+export interface DeletedRecordsResponse {
+  applications: Application[];
+  infrastructure: InfrastructureItem[];
+  databases: DatabaseRecord[];
 }
 
 export interface SearchResults {

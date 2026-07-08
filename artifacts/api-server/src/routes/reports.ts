@@ -5,15 +5,16 @@ import {
   applicationsTable, infrastructureTable, databasesTable, domainsTable,
   repositoriesTable, softwareTable, vulnerabilitiesTable
 } from "@workspace/db";
+import { isNull } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/inventory", async (req: Request, res: Response) => {
   try {
     const [apps, infra, dbs, domains, repos, sw] = await Promise.all([
-      db.select().from(applicationsTable),
-      db.select().from(infrastructureTable),
-      db.select().from(databasesTable),
+      db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt)),
+      db.select().from(infrastructureTable).where(isNull(infrastructureTable.deletedAt)),
+      db.select().from(databasesTable).where(isNull(databasesTable.deletedAt)),
       db.select().from(domainsTable),
       db.select().from(repositoriesTable),
       db.select().from(softwareTable),
@@ -54,7 +55,7 @@ router.get("/security", async (req: Request, res: Response) => {
   try {
     const [vulns, apps] = await Promise.all([
       db.select().from(vulnerabilitiesTable),
-      db.select().from(applicationsTable),
+      db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt)),
     ]);
     const appMap = new Map(apps.map(a => [a.id, a.name]));
 

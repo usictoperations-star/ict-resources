@@ -30,4 +30,6 @@ export interface DatabaseRecord {
   teamId?: number | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

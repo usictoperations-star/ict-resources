@@ -124,7 +124,8 @@ export const ListApplicationsResponseItem = zod.object({
   "teamId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListApplicationsResponse = zod.array(ListApplicationsResponseItem)
 
@@ -197,7 +198,8 @@ export const CreateApplicationResponse = zod.object({
   "teamId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -239,7 +241,8 @@ export const GetApplicationResponse = zod.object({
   "teamId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -312,7 +315,8 @@ export const UpdateApplicationResponse = zod.object({
   "teamId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -324,6 +328,49 @@ export const DeleteApplicationParams = zod.object({
 })
 
 export const DeleteApplicationResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted application
+ */
+export const RestoreApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreApplicationResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "shortName": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "classification": zod.string(),
+  "environment": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "criticality": zod.string(),
+  "ministry": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "businessOwner": zod.string().nullish(),
+  "technicalOwner": zod.string().nullish(),
+  "productOwner": zod.string().nullish(),
+  "supportContact": zod.string().nullish(),
+  "frontend": zod.string().nullish(),
+  "backend": zod.string().nullish(),
+  "framework": zod.string().nullish(),
+  "language": zod.string().nullish(),
+  "database": zod.string().nullish(),
+  "serverName": zod.string().nullish(),
+  "hostingProvider": zod.string().nullish(),
+  "domain": zod.string().nullish(),
+  "currentVersion": zod.string().nullish(),
+  "launchDate": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -392,7 +439,8 @@ export const ListInfrastructureResponseItem = zod.object({
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListInfrastructureResponse = zod.array(ListInfrastructureResponseItem)
 
@@ -437,7 +485,8 @@ export const CreateInfrastructureResponse = zod.object({
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -465,7 +514,8 @@ export const GetInfrastructureResponse = zod.object({
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -510,7 +560,8 @@ export const UpdateInfrastructureResponse = zod.object({
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -522,6 +573,35 @@ export const DeleteInfrastructureParams = zod.object({
 })
 
 export const DeleteInfrastructureResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted infrastructure item
+ */
+export const RestoreInfrastructureParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreInfrastructureResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "provider": zod.string().nullish(),
+  "status": zod.string(),
+  "ipAddress": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "cpuCores": zod.number().nullish(),
+  "ramGb": zod.number().nullish(),
+  "diskGb": zod.number().nullish(),
+  "os": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -543,7 +623,8 @@ export const ListDatabasesResponseItem = zod.object({
   "notes": zod.string().nullish(),
   "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListDatabasesResponse = zod.array(ListDatabasesResponseItem)
 
@@ -586,7 +667,8 @@ export const CreateDatabaseResponse = zod.object({
   "notes": zod.string().nullish(),
   "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -613,7 +695,8 @@ export const GetDatabaseRecordResponse = zod.object({
   "notes": zod.string().nullish(),
   "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -656,7 +739,8 @@ export const UpdateDatabaseRecordResponse = zod.object({
   "notes": zod.string().nullish(),
   "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -668,6 +752,34 @@ export const DeleteDatabaseRecordParams = zod.object({
 })
 
 export const DeleteDatabaseRecordResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted database record
+ */
+export const RestoreDatabaseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreDatabaseResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "version": zod.string().nullish(),
+  "server": zod.string().nullish(),
+  "sizeGb": zod.number().nullish(),
+  "owner": zod.string().nullish(),
+  "backupEnabled": zod.boolean(),
+  "encryptionEnabled": zod.boolean(),
+  "status": zod.string(),
+  "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
+  "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -1729,6 +1841,86 @@ export const GetRenewalReportResponse = zod.array(GetRenewalReportResponseItem)
 
 
 /**
+ * @summary List recently soft-deleted records (applications, databases, infrastructure) within the last 30 days
+ */
+export const ListDeletedRecordsResponse = zod.object({
+  "applications": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "shortName": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "classification": zod.string(),
+  "environment": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "criticality": zod.string(),
+  "ministry": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "businessOwner": zod.string().nullish(),
+  "technicalOwner": zod.string().nullish(),
+  "productOwner": zod.string().nullish(),
+  "supportContact": zod.string().nullish(),
+  "frontend": zod.string().nullish(),
+  "backend": zod.string().nullish(),
+  "framework": zod.string().nullish(),
+  "language": zod.string().nullish(),
+  "database": zod.string().nullish(),
+  "serverName": zod.string().nullish(),
+  "hostingProvider": zod.string().nullish(),
+  "domain": zod.string().nullish(),
+  "currentVersion": zod.string().nullish(),
+  "launchDate": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})),
+  "infrastructure": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "provider": zod.string().nullish(),
+  "status": zod.string(),
+  "ipAddress": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "cpuCores": zod.number().nullish(),
+  "ramGb": zod.number().nullish(),
+  "diskGb": zod.number().nullish(),
+  "os": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})),
+  "databases": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "version": zod.string().nullish(),
+  "server": zod.string().nullish(),
+  "sizeGb": zod.number().nullish(),
+  "owner": zod.string().nullish(),
+  "backupEnabled": zod.boolean(),
+  "encryptionEnabled": zod.boolean(),
+  "status": zod.string(),
+  "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
+  "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+}))
+})
+
+
+/**
  * @summary List users
  */
 export const ListUsersResponseItem = zod.object({
@@ -1868,7 +2060,8 @@ export const GlobalSearchResponse = zod.object({
   "teamId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })),
   "infrastructure": zod.array(zod.object({
   "id": zod.number(),
@@ -1887,7 +2080,8 @@ export const GlobalSearchResponse = zod.object({
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })),
   "databases": zod.array(zod.object({
   "id": zod.number(),
@@ -1905,7 +2099,8 @@ export const GlobalSearchResponse = zod.object({
   "notes": zod.string().nullish(),
   "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })),
   "domains": zod.array(zod.object({
   "id": zod.number(),

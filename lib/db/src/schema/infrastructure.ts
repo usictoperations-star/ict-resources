@@ -20,6 +20,7 @@ export const infrastructureTable = pgTable("infrastructure", {
   lastPatchedAt: text("last_patched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertInfrastructureSchema = createInsertSchema(infrastructureTable).omit({ id: true, createdAt: true, updatedAt: true });

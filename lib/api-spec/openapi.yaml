@@ -219,6 +219,27 @@ paths:
         "204":
           description: Deleted
 
+  /applications/{id}/restore:
+    post:
+      operationId: restoreApplication
+      tags: [applications]
+      summary: Restore a soft-deleted application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "404":
+          description: Not found
+
   /applications/{id}/dependents:
     get:
       operationId: getApplicationDependents
@@ -350,6 +371,27 @@ paths:
         "204":
           description: Deleted
 
+  /infrastructure/{id}/restore:
+    post:
+      operationId: restoreInfrastructure
+      tags: [infrastructure]
+      summary: Restore a soft-deleted infrastructure item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored infrastructure item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureItem"
+        "404":
+          description: Not found
+
   # ─── Databases ────────────────────────────────────────────────────────────
   /databases:
     get:
@@ -437,6 +479,27 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /databases/{id}/restore:
+    post:
+      operationId: restoreDatabase
+      tags: [databases]
+      summary: Restore a soft-deleted database record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored database record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRecord"
+        "404":
+          description: Not found
 
   # ─── Domains ──────────────────────────────────────────────────────────────
   /domains:
@@ -1123,6 +1186,19 @@ paths:
                   $ref: "#/components/schemas/RenewalItem"
 
   # ─── Admin ────────────────────────────────────────────────────────────────
+  /admin/deleted-records:
+    get:
+      operationId: listDeletedRecords
+      tags: [admin]
+      summary: List recently soft-deleted records (applications, databases, infrastructure) within the last 30 days
+      responses:
+        "200":
+          description: Deleted records grouped by entity type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedRecordsResponse"
+
   /admin/users:
     get:
       operationId: listUsers
@@ -1561,6 +1637,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required:
         - id
         - name
@@ -1797,6 +1875,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, name, type, status, patchStatus, createdAt, updatedAt]
 
     InfrastructureInput:
@@ -1901,6 +1981,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, name, type, backupEnabled, encryptionEnabled, status, lastBackupStatus, createdAt, updatedAt]
 
     DatabaseInput:
@@ -2943,6 +3025,24 @@ components:
         createdAt:
           type: string
       required: [id, action, entityType, createdAt]
+
+    # ── Soft Delete / Restore ──────────────────────────────────────────────
+    DeletedRecordsResponse:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        infrastructure:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfrastructureItem"
+        databases:
+          type: array
+          items:
+            $ref: "#/components/schemas/DatabaseRecord"
+      required: [applications, infrastructure, databases]
 
     # ── Search ────────────────────────────────────────────────────────────
     SearchResults:

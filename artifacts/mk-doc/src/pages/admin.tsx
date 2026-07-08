@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam } from "@workspace/api-client-react";
+import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
@@ -59,6 +59,14 @@ const EMPTY_TEAM_FORM = { name: "", slug: "", description: "" };
 
 type TeamRow = { id: number; name: string; slug: string; description?: string | null };
 
+type DeletedEntity = { id: number; name: string; deletedAt?: string | null };
+
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  applications: "Application",
+  infrastructure: "Infrastructure",
+  databases: "Database",
+};
+
 export default function Admin() {
   const { data: users, isLoading: usersLoading } = useListUsers();
   const { data: auditLogs, isLoading: logsLoading } = useListAuditLogs({ limit: 50 });
@@ -92,6 +100,38 @@ export default function Admin() {
   const { page: teamsPage, setPage: setTeamsPage, totalPages: teamsTotalPages, pageItems: pagedTeams, startIndex: teamsStartIndex, endIndex: teamsEndIndex, total: teamsTotal } = usePagination(teams, 10);
   const { page: auditPage, setPage: setAuditPage, totalPages: auditTotalPages, pageItems: pagedAuditLogs, startIndex: auditStartIndex, endIndex: auditEndIndex, total: auditTotal } = usePagination(auditLogs, 10);
   const setTeam = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTeamForm(f => ({ ...f, [field]: e.target.value }));
+
+  const { data: deletedRecords, isLoading: deletedLoading } = useListDeletedRecords();
+  const { mutateAsync: restoreApplication, isPending: isRestoringApp } = useRestoreApplication();
+  const { mutateAsync: restoreInfrastructure, isPending: isRestoringInfra } = useRestoreInfrastructure();
+  const { mutateAsync: restoreDatabase, isPending: isRestoringDb } = useRestoreDatabase();
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  const totalDeleted = (deletedRecords?.applications?.length ?? 0) +
+    (deletedRecords?.infrastructure?.length ?? 0) +
+    (deletedRecords?.databases?.length ?? 0);
+
+  const handleRestore = async (entityType: "applications" | "infrastructure" | "databases", id: number) => {
+    const key = `${entityType}:${id}`;
+    setRestoringId(key);
+    try {
+      if (entityType === "applications") {
+        await restoreApplication({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      } else if (entityType === "infrastructure") {
+        await restoreInfrastructure({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/infrastructure"] });
+      } else {
+        await restoreDatabase({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/databases"] });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/deleted-records"] });
+    } catch {
+      // restore failed silently — user can retry
+    } finally {
+      setRestoringId(null);
+    }
+  };
 
   const handleTeamDelete = async () => {
     if (!teamDeleteTarget) return;
@@ -199,6 +239,65 @@ export default function Admin() {
     }
   };
 
+  const renderDeletedSection = (
+    entityType: "applications" | "infrastructure" | "databases",
+    items: DeletedEntity[],
+  ) => {
+    if (items.length === 0) return null;
+    const isRestoring = (id: number) => restoringId === `${entityType}:${id}`;
+    return (
+      <div key={entityType}>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-4">{ENTITY_TYPE_LABELS[entityType]}</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Deleted</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead className="w-24"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map(item => {
+              const deletedDate = item.deletedAt ? new Date(item.deletedAt) : null;
+              const expiresDate = deletedDate ? new Date(deletedDate.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+              const daysLeft = expiresDate ? Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+              return (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{deletedDate ? deletedDate.toLocaleDateString() : "—"}</TableCell>
+                  <TableCell>
+                    {daysLeft !== null && (
+                      <Badge variant={daysLeft <= 5 ? "destructive" : daysLeft <= 10 ? "secondary" : "outline"} className="text-xs">
+                        {daysLeft}d remaining
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={isRestoring(item.id)}
+                      onClick={() => handleRestore(entityType, item.id)}
+                    >
+                      {isRestoring(item.id) ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                      )}
+                      Restore
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -209,6 +308,12 @@ export default function Admin() {
         <TabsList>
           <TabsTrigger value="users">Users & Roles</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="deleted">
+            Recently Deleted
+            {totalDeleted > 0 && (
+              <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{totalDeleted}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
 
@@ -324,6 +429,32 @@ export default function Admin() {
                 </div>
               )}
               <TablePagination page={teamsPage} totalPages={teamsTotalPages} onPageChange={setTeamsPage} startIndex={teamsStartIndex} endIndex={teamsEndIndex} total={teamsTotal} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="deleted" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recently Deleted</CardTitle>
+              <CardDescription>
+                Applications, infrastructure, and databases deleted in the last 30 days. Records are permanently removed after 30 days.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {deletedLoading ? (
+                <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              ) : totalDeleted === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-sm text-muted-foreground">No recently deleted records. Items appear here within 30 days of deletion.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {renderDeletedSection("applications", (deletedRecords?.applications ?? []) as DeletedEntity[])}
+                  {renderDeletedSection("infrastructure", (deletedRecords?.infrastructure ?? []) as DeletedEntity[])}
+                  {renderDeletedSection("databases", (deletedRecords?.databases ?? []) as DeletedEntity[])}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

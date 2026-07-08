@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "@workspace/db";
 import { applicationsTable, infrastructureTable, databasesTable, domainsTable, repositoriesTable, vulnerabilitiesTable, releasesTable, auditLogsTable } from "@workspace/db";
-import { sql, count, and, lt, gt } from "drizzle-orm";
+import { sql, count, and, lt, gt, isNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -17,9 +17,9 @@ router.get("/stats", async (req: Request, res: Response) => {
       vulnRows,
       releaseRows,
     ] = await Promise.all([
-      db.select().from(applicationsTable),
-      db.select().from(infrastructureTable),
-      db.select().from(databasesTable),
+      db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt)),
+      db.select().from(infrastructureTable).where(isNull(infrastructureTable.deletedAt)),
+      db.select().from(databasesTable).where(isNull(databasesTable.deletedAt)),
       db.select().from(domainsTable),
       db.select().from(repositoriesTable),
       db.select().from(vulnerabilitiesTable),

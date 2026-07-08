@@ -34,4 +34,6 @@ export interface InfrastructureItem {
   lastPatchedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

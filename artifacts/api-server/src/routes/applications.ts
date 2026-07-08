@@ -3,14 +3,14 @@ import type { Request, Response } from "express";
 import { db } from "@workspace/db";
 import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable } from "@workspace/db";
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
-import { eq, ilike, and, count } from "drizzle-orm";
+import { eq, ilike, and, count, isNull, isNotNull, gte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/summary", async (req: Request, res: Response) => {
   try {
-    const apps = await db.select().from(applicationsTable);
+    const apps = await db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt));
 
     const countBy = (key: keyof typeof apps[0]) => {
       const map: Record<string, number> = {};
@@ -56,21 +56,19 @@ router.get("/summary", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { status, category, environment, search } = req.query as Record<string, string>;
-    let query = db.select().from(applicationsTable);
-    const conditions = [];
+    const conditions = [isNull(applicationsTable.deletedAt)];
     if (status) conditions.push(eq(applicationsTable.status, status));
     if (category) conditions.push(eq(applicationsTable.category, category));
     if (environment) conditions.push(eq(applicationsTable.environment, environment));
     if (search) conditions.push(ilike(applicationsTable.name, `%${search}%`));
 
-    const results = conditions.length
-      ? await db.select().from(applicationsTable).where(and(...conditions))
-      : await db.select().from(applicationsTable);
+    const results = await db.select().from(applicationsTable).where(and(...conditions));
 
     return res.json(results.map(a => ({
       ...a,
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
+      deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
     })));
   } catch (err) {
     req.log.error({ err }, "Error listing applications");
@@ -83,10 +81,27 @@ router.post("/", async (req: Request, res: Response) => {
     const body = CreateApplicationBody.parse(req.body);
     const [app] = await db.insert(applicationsTable).values(body).returning();
     await logAudit(req, "CREATE", "Application", app.id, app.name);
-    return res.status(201).json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString() });
+    return res.status(201).json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating application");
     return res.status(400).json({ error: "Invalid request" });
+  }
+});
+
+router.post("/:id/restore", async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [app] = await db.update(applicationsTable)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(and(eq(applicationsTable.id, id), isNotNull(applicationsTable.deletedAt), gte(applicationsTable.deletedAt, cutoff)))
+      .returning();
+    if (!app) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
+    await logAudit(req, "RESTORE", "Application", app.id, app.name);
+    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
+  } catch (err) {
+    req.log.error({ err }, "Error restoring application");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -130,9 +145,9 @@ router.get("/:id/dependents", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, id));
+    const [app] = await db.select().from(applicationsTable).where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
     if (!app) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString() });
+    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: app.deletedAt ? app.deletedAt.toISOString() : null });
   } catch (err) {
     req.log.error({ err }, "Error fetching application");
     return res.status(500).json({ error: "Internal server error" });
@@ -145,11 +160,11 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const body = UpdateApplicationBody.parse(req.body);
     const [app] = await db.update(applicationsTable)
       .set({ ...body, updatedAt: new Date() })
-      .where(eq(applicationsTable.id, id))
+      .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))
       .returning();
     if (!app) return res.status(404).json({ error: "Not found" });
     await logAudit(req, "UPDATE", "Application", app.id, app.name);
-    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString() });
+    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error updating application");
     return res.status(400).json({ error: "Invalid request" });
@@ -159,7 +174,10 @@ router.patch("/:id", async (req: Request, res: Response) => {
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const [app] = await db.delete(applicationsTable).where(eq(applicationsTable.id, id)).returning();
+    const [app] = await db.update(applicationsTable)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))
+      .returning();
     if (!app) return res.status(404).json({ error: "Not found" });
     await logAudit(req, "DELETE", "Application", app.id, app.name);
     return res.status(204).send();

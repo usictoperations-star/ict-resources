@@ -59,4 +59,6 @@ export interface Application {
   lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

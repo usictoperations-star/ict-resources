@@ -33,6 +33,7 @@ import type {
   DatabaseInput,
   DatabaseRecord,
   DatabaseUpdate,
+  DeletedRecordsResponse,
   Document,
   DocumentInput,
   DocumentUpdate,
@@ -864,6 +865,76 @@ export const useDeleteApplication = <TError = ErrorType<unknown>,
       return useMutation(getDeleteApplicationMutationOptions(options));
     }
 
+export const getRestoreApplicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/applications/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted application
+ */
+export const restoreApplication = async (id: number, options?: RequestInit): Promise<Application> => {
+
+  return customFetch<Application>(getRestoreApplicationUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreApplicationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreApplication>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreApplication>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreApplication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreApplication>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreApplication(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof restoreApplication>>>
+
+    export type RestoreApplicationMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted application
+ */
+export const useRestoreApplication = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreApplication>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreApplication>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreApplicationMutationOptions(options));
+    }
+
 export const getGetApplicationDependentsUrl = (id: number,) => {
 
 
@@ -1390,6 +1461,76 @@ export const useDeleteInfrastructure = <TError = ErrorType<unknown>,
       return useMutation(getDeleteInfrastructureMutationOptions(options));
     }
 
+export const getRestoreInfrastructureUrl = (id: number,) => {
+
+
+
+
+  return `/api/infrastructure/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted infrastructure item
+ */
+export const restoreInfrastructure = async (id: number, options?: RequestInit): Promise<InfrastructureItem> => {
+
+  return customFetch<InfrastructureItem>(getRestoreInfrastructureUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreInfrastructureMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreInfrastructure>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreInfrastructure>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreInfrastructure'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreInfrastructure>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreInfrastructure(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreInfrastructureMutationResult = NonNullable<Awaited<ReturnType<typeof restoreInfrastructure>>>
+
+    export type RestoreInfrastructureMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted infrastructure item
+ */
+export const useRestoreInfrastructure = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreInfrastructure>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreInfrastructure>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreInfrastructureMutationOptions(options));
+    }
+
 export const getListDatabasesUrl = () => {
 
 
@@ -1753,6 +1894,76 @@ export const useDeleteDatabaseRecord = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteDatabaseRecordMutationOptions(options));
+    }
+
+export const getRestoreDatabaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/databases/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted database record
+ */
+export const restoreDatabase = async (id: number, options?: RequestInit): Promise<DatabaseRecord> => {
+
+  return customFetch<DatabaseRecord>(getRestoreDatabaseUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreDatabaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreDatabase>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreDatabase>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreDatabase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreDatabase>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreDatabase(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreDatabaseMutationResult = NonNullable<Awaited<ReturnType<typeof restoreDatabase>>>
+
+    export type RestoreDatabaseMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted database record
+ */
+export const useRestoreDatabase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreDatabase>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreDatabase>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreDatabaseMutationOptions(options));
     }
 
 export const getListDomainsUrl = () => {
@@ -4557,6 +4768,83 @@ export function useGetRenewalReport<TData = Awaited<ReturnType<typeof getRenewal
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetRenewalReportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListDeletedRecordsUrl = () => {
+
+
+
+
+  return `/api/admin/deleted-records`
+}
+
+/**
+ * @summary List recently soft-deleted records (applications, databases, infrastructure) within the last 30 days
+ */
+export const listDeletedRecords = async ( options?: RequestInit): Promise<DeletedRecordsResponse> => {
+
+  return customFetch<DeletedRecordsResponse>(getListDeletedRecordsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDeletedRecordsQueryKey = () => {
+    return [
+    `/api/admin/deleted-records`
+    ] as const;
+    }
+
+
+export const getListDeletedRecordsQueryOptions = <TData = Awaited<ReturnType<typeof listDeletedRecords>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDeletedRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDeletedRecordsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDeletedRecords>>> = ({ signal }) => listDeletedRecords({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDeletedRecords>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDeletedRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listDeletedRecords>>>
+export type ListDeletedRecordsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List recently soft-deleted records (applications, databases, infrastructure) within the last 30 days
+ */
+
+export function useListDeletedRecords<TData = Awaited<ReturnType<typeof listDeletedRecords>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDeletedRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDeletedRecordsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

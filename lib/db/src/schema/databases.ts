@@ -19,6 +19,7 @@ export const databasesTable = pgTable("databases", {
   teamId: integer("team_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertDatabaseSchema = createInsertSchema(databasesTable).omit({ id: true, createdAt: true, updatedAt: true });
