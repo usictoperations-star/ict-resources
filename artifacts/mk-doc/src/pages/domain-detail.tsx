@@ -1,0 +1,160 @@
+import React from "react";
+import { useGetDomain, getGetDomainQueryKey } from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useParams, Link } from "wouter";
+import { ArrowLeft, Globe, Shield, Server, Settings } from "lucide-react";
+import { TeamBadge } from "@/components/team-badge";
+
+function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
+  if (value === null || value === undefined || value === "") return null;
+  const display = typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{display}</dd>
+    </div>
+  );
+}
+
+function Section({
+  title, icon: Icon, children
+}: {
+  title: string; icon: React.ElementType; children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+          {children}
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  active: "bg-green-100 text-green-800 border-green-200",
+  inactive: "bg-gray-100 text-gray-700 border-gray-200",
+  expired: "bg-red-100 text-red-700 border-red-200",
+  pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+};
+
+const SSL_COLORS: Record<string, string> = {
+  valid: "bg-green-100 text-green-800 border-green-200",
+  expiring: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  expired: "bg-red-100 text-red-800 border-red-200",
+  none: "bg-gray-100 text-gray-700 border-gray-200",
+};
+
+export default function DomainDetail() {
+  const params = useParams<{ id: string }>();
+  const id = parseInt(params.id || "0", 10);
+  const { data: domain, isLoading } = useGetDomain(id, {
+    query: { enabled: !!id, queryKey: getGetDomainQueryKey(id) },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  if (!domain) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <Globe className="h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">Domain not found</p>
+        <Link href="/domains">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Domains
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const statusKey = (domain.status ?? "").toLowerCase();
+  const sslKey = (domain.sslStatus ?? "").toLowerCase();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <Link href="/domains">
+          <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Domains & SSL
+          </button>
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{domain.name}</h1>
+            {domain.registrar && (
+              <p className="text-sm text-muted-foreground mt-0.5">{domain.registrar}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${SSL_COLORS[sslKey] ?? "bg-muted text-muted-foreground"}`}>
+              SSL: {domain.sslStatus}
+            </span>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${STATUS_COLORS[statusKey] ?? "bg-muted text-muted-foreground"}`}>
+              {domain.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <Section title="Registration" icon={Globe}>
+        <Field label="Registrar" value={domain.registrar} />
+        <Field label="Registration Expiry" value={domain.registrationExpiry} />
+        <Field label="Status" value={domain.status} />
+      </Section>
+
+      <Section title="SSL Certificate" icon={Shield}>
+        <Field label="SSL Provider" value={domain.sslProvider} />
+        <Field label="SSL Expiry" value={domain.sslExpiry} />
+        <Field label="SSL Status" value={domain.sslStatus} />
+      </Section>
+
+      <Section title="DNS & Infrastructure" icon={Server}>
+        <Field label="DNS Provider" value={domain.dnsProvider} />
+        <Field label="Cloudflare Enabled" value={domain.cloudflarEnabled} />
+      </Section>
+
+      <Section title="Metadata" icon={Settings}>
+        <Field label="Created" value={domain.createdAt} />
+        <Field label="Updated" value={domain.updatedAt} />
+        <div>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
+          <dd><TeamBadge teamId={domain.teamId} /></dd>
+        </div>
+      </Section>
+
+      {domain.notes && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{domain.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

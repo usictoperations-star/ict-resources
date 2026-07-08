@@ -93,11 +93,21 @@ export function SearchBar() {
 
   const hasResults = groups.length > 0;
 
+  const DETAIL_ROUTES: Record<string, string> = {
+    applications: "/applications",
+    infrastructure: "/infrastructure",
+    databases: "/databases",
+    domains: "/domains",
+    repositories: "/repositories",
+    documents: "/documentation",
+  };
+
   function handleSelect(group: ResultGroup, itemId: number) {
     setOpen(false);
     setQuery("");
-    if (group.key === "applications") {
-      navigate(`/applications/${itemId}`);
+    const base = DETAIL_ROUTES[group.key];
+    if (base) {
+      navigate(`${base}/${itemId}`);
     } else {
       navigate(group.href);
     }
