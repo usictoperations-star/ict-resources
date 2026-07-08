@@ -120,6 +120,8 @@ export const ListApplicationsResponseItem = zod.object({
   "currentVersion": zod.string().nullish(),
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -157,7 +159,9 @@ export const CreateApplicationBody = zod.object({
   "domain": zod.string().optional(),
   "currentVersion": zod.string().optional(),
   "launchDate": zod.string().optional(),
-  "tags": zod.string().optional()
+  "tags": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "lastSecurityScanAt": zod.string().optional()
 })
 
 export const CreateApplicationResponse = zod.object({
@@ -187,6 +191,8 @@ export const CreateApplicationResponse = zod.object({
   "currentVersion": zod.string().nullish(),
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -226,6 +232,8 @@ export const GetApplicationResponse = zod.object({
   "currentVersion": zod.string().nullish(),
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -263,7 +271,9 @@ export const UpdateApplicationBody = zod.object({
   "domain": zod.string().optional(),
   "currentVersion": zod.string().optional(),
   "launchDate": zod.string().optional(),
-  "tags": zod.string().optional()
+  "tags": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "lastSecurityScanAt": zod.string().optional()
 })
 
 export const UpdateApplicationResponse = zod.object({
@@ -293,6 +303,8 @@ export const UpdateApplicationResponse = zod.object({
   "currentVersion": zod.string().nullish(),
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -352,6 +364,9 @@ export const ListInfrastructureResponseItem = zod.object({
   "diskGb": zod.number().nullish(),
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -375,7 +390,10 @@ export const CreateInfrastructureBody = zod.object({
   "ramGb": zod.number().optional(),
   "diskGb": zod.number().optional(),
   "os": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "patchStatus": zod.string().optional(),
+  "lastPatchedAt": zod.string().optional()
 })
 
 export const CreateInfrastructureResponse = zod.object({
@@ -391,6 +409,9 @@ export const CreateInfrastructureResponse = zod.object({
   "diskGb": zod.number().nullish(),
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -416,6 +437,9 @@ export const GetInfrastructureResponse = zod.object({
   "diskGb": zod.number().nullish(),
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -439,7 +463,10 @@ export const UpdateInfrastructureBody = zod.object({
   "ramGb": zod.number().optional(),
   "diskGb": zod.number().optional(),
   "os": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "patchStatus": zod.string().optional(),
+  "lastPatchedAt": zod.string().optional()
 })
 
 export const UpdateInfrastructureResponse = zod.object({
@@ -455,6 +482,9 @@ export const UpdateInfrastructureResponse = zod.object({
   "diskGb": zod.number().nullish(),
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -485,7 +515,9 @@ export const ListDatabasesResponseItem = zod.object({
   "encryptionEnabled": zod.boolean(),
   "status": zod.string(),
   "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -509,7 +541,9 @@ export const CreateDatabaseBody = zod.object({
   "encryptionEnabled": zod.boolean().optional(),
   "status": zod.string(),
   "lastBackupAt": zod.string().optional(),
-  "notes": zod.string().optional()
+  "lastBackupStatus": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const CreateDatabaseResponse = zod.object({
@@ -524,7 +558,9 @@ export const CreateDatabaseResponse = zod.object({
   "encryptionEnabled": zod.boolean(),
   "status": zod.string(),
   "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -549,7 +585,9 @@ export const GetDatabaseRecordResponse = zod.object({
   "encryptionEnabled": zod.boolean(),
   "status": zod.string(),
   "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -573,7 +611,9 @@ export const UpdateDatabaseRecordBody = zod.object({
   "encryptionEnabled": zod.boolean().optional(),
   "status": zod.string().optional(),
   "lastBackupAt": zod.string().optional(),
-  "notes": zod.string().optional()
+  "lastBackupStatus": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const UpdateDatabaseRecordResponse = zod.object({
@@ -588,7 +628,9 @@ export const UpdateDatabaseRecordResponse = zod.object({
   "encryptionEnabled": zod.boolean(),
   "status": zod.string(),
   "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -619,6 +661,7 @@ export const ListDomainsResponseItem = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -643,6 +686,7 @@ export const CreateDomainBody = zod.object({
   "cloudflarEnabled": zod.boolean().optional(),
   "status": zod.string(),
   "applicationId": zod.number().optional(),
+  "teamId": zod.number().optional(),
   "notes": zod.string().optional()
 })
 
@@ -658,6 +702,7 @@ export const CreateDomainResponse = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -683,6 +728,7 @@ export const GetDomainResponse = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -707,6 +753,7 @@ export const UpdateDomainBody = zod.object({
   "cloudflarEnabled": zod.boolean().optional(),
   "status": zod.string().optional(),
   "applicationId": zod.number().optional(),
+  "teamId": zod.number().optional(),
   "notes": zod.string().optional()
 })
 
@@ -722,6 +769,7 @@ export const UpdateDomainResponse = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -753,6 +801,7 @@ export const GetExpiringDomainsResponseItem = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -776,6 +825,9 @@ export const ListRepositoriesResponseItem = zod.object({
   "applicationId": zod.number().nullish(),
   "status": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "secretsExposed": zod.boolean(),
+  "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -799,7 +851,10 @@ export const CreateRepositoryBody = zod.object({
   "lastCommitAt": zod.string().optional(),
   "applicationId": zod.number().optional(),
   "status": zod.string(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "secretsExposed": zod.boolean().optional(),
+  "lastScannedAt": zod.string().optional()
 })
 
 export const CreateRepositoryResponse = zod.object({
@@ -815,6 +870,9 @@ export const CreateRepositoryResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "status": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "secretsExposed": zod.boolean(),
+  "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -840,6 +898,9 @@ export const GetRepositoryResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "status": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "secretsExposed": zod.boolean(),
+  "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -863,7 +924,10 @@ export const UpdateRepositoryBody = zod.object({
   "lastCommitAt": zod.string().optional(),
   "applicationId": zod.number().optional(),
   "status": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional(),
+  "secretsExposed": zod.boolean().optional(),
+  "lastScannedAt": zod.string().optional()
 })
 
 export const UpdateRepositoryResponse = zod.object({
@@ -879,6 +943,9 @@ export const UpdateRepositoryResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "status": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "secretsExposed": zod.boolean(),
+  "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1052,6 +1119,7 @@ export const ListVulnerabilitiesResponseItem = zod.object({
   "resolvedAt": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1075,7 +1143,8 @@ export const CreateVulnerabilityBody = zod.object({
   "discoveredAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
   "assignedTo": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const CreateVulnerabilityResponse = zod.object({
@@ -1092,6 +1161,7 @@ export const CreateVulnerabilityResponse = zod.object({
   "resolvedAt": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1115,7 +1185,8 @@ export const UpdateVulnerabilityBody = zod.object({
   "discoveredAt": zod.string().optional(),
   "resolvedAt": zod.string().optional(),
   "assignedTo": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const UpdateVulnerabilityResponse = zod.object({
@@ -1132,6 +1203,7 @@ export const UpdateVulnerabilityResponse = zod.object({
   "resolvedAt": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1163,6 +1235,137 @@ export const GetSecuritySummaryResponse = zod.object({
 
 
 /**
+ * @summary Get aggregated cybersecurity operations KPIs
+ */
+export const GetSecurityDashboardResponse = zod.object({
+  "systemsInProduction": zod.number(),
+  "serversMissingPatches": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish()
+})),
+  "applicationsWithCriticalVulnerabilities": zod.array(zod.object({
+  "applicationId": zod.number().nullish(),
+  "applicationName": zod.string().nullish(),
+  "criticalCount": zod.number()
+})),
+  "sslCertificatesExpiringSoon": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "sslExpiry": zod.string().nullish(),
+  "daysRemaining": zod.number().nullish()
+})),
+  "domainsExpiringSoon": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "registrationExpiry": zod.string().nullish(),
+  "daysRemaining": zod.number().nullish()
+})),
+  "failedBackups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "lastBackupStatus": zod.string(),
+  "lastBackupAt": zod.string().nullish()
+})),
+  "adminUsers": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string().nullish()
+})),
+  "reposWithExposedSecrets": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "lastScannedAt": zod.string().nullish()
+})),
+  "outdatedDependencies": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "installedVersion": zod.string().nullish(),
+  "latestVersion": zod.string().nullish(),
+  "endOfLife": zod.boolean()
+})),
+  "applicationsNotRecentlyScanned": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "lastSecurityScanAt": zod.string().nullish()
+})),
+  "generatedAt": zod.string()
+}).describe('Aggregated KPIs answering the core cybersecurity operations questions.')
+
+
+/**
+ * @summary List teams
+ */
+export const ListTeamsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListTeamsResponse = zod.array(ListTeamsResponseItem)
+
+
+/**
+ * @summary Create team
+ */
+
+
+
+
+export const CreateTeamBody = zod.object({
+  "name": zod.string().min(1),
+  "slug": zod.string().min(1),
+  "description": zod.string().optional()
+})
+
+export const CreateTeamResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update team
+ */
+export const UpdateTeamParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateTeamBody = zod.object({
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "description": zod.string().optional()
+})
+
+export const UpdateTeamResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete team
+ */
+export const DeleteTeamParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTeamResponse = zod.void()
+
+
+/**
  * @summary List software inventory
  */
 export const ListSoftwareQueryParams = zod.object({
@@ -1184,6 +1387,7 @@ export const ListSoftwareResponseItem = zod.object({
   "upgradeAvailable": zod.boolean(),
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1208,7 +1412,8 @@ export const CreateSoftwareBody = zod.object({
   "endOfLifeDate": zod.string().optional(),
   "upgradeAvailable": zod.boolean().optional(),
   "applicationId": zod.number().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const CreateSoftwareResponse = zod.object({
@@ -1225,6 +1430,7 @@ export const CreateSoftwareResponse = zod.object({
   "upgradeAvailable": zod.boolean(),
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1249,7 +1455,8 @@ export const UpdateSoftwareBody = zod.object({
   "endOfLifeDate": zod.string().optional(),
   "upgradeAvailable": zod.boolean().optional(),
   "applicationId": zod.number().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "teamId": zod.number().optional()
 })
 
 export const UpdateSoftwareResponse = zod.object({
@@ -1266,6 +1473,7 @@ export const UpdateSoftwareResponse = zod.object({
   "upgradeAvailable": zod.boolean(),
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1597,6 +1805,8 @@ export const GlobalSearchResponse = zod.object({
   "currentVersion": zod.string().nullish(),
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -1613,6 +1823,9 @@ export const GlobalSearchResponse = zod.object({
   "diskGb": zod.number().nullish(),
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "patchStatus": zod.string(),
+  "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -1628,7 +1841,9 @@ export const GlobalSearchResponse = zod.object({
   "encryptionEnabled": zod.boolean(),
   "status": zod.string(),
   "lastBackupAt": zod.string().nullish(),
+  "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -1644,6 +1859,7 @@ export const GlobalSearchResponse = zod.object({
   "cloudflarEnabled": zod.boolean(),
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
+  "teamId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -1661,6 +1877,9 @@ export const GlobalSearchResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "status": zod.string(),
   "notes": zod.string().nullish(),
+  "teamId": zod.number().nullish(),
+  "secretsExposed": zod.boolean(),
+  "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),

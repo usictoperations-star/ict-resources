@@ -18,5 +18,7 @@ export interface DatabaseInput {
   encryptionEnabled?: boolean;
   status: string;
   lastBackupAt?: string;
+  lastBackupStatus?: string;
   notes?: string;
+  teamId?: number;
 }

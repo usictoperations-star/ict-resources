@@ -23,8 +23,11 @@ export interface DatabaseRecord {
   status: string;
   /** @nullable */
   lastBackupAt?: string | null;
+  lastBackupStatus: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   createdAt: string;
   updatedAt: string;
 }

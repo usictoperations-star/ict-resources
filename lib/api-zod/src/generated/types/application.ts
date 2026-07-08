@@ -51,6 +51,10 @@ export interface Application {
   launchDate?: string | null;
   /** @nullable */
   tags?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  /** @nullable */
+  lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

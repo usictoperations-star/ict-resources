@@ -39,6 +39,8 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 - Audit logging: all CREATE/UPDATE/DELETE mutations write to `audit_logs` table automatically
 - Dashboard stats are computed in real-time from DB queries (no materialized views for MVP)
 - `cloudflarEnabled` typo in DB schema — matches the OpenAPI spec, do not rename without running codegen again
+- **Teams & ownership**: a `teams` table (4 fixed teams — Infrastructure & Cloud Operations, Application Engineering, Cybersecurity & Governance, Digital Operations & PMO) with full CRUD via `/api/teams` and an Admin > Teams tab. Every asset table that needs ownership (applications, infrastructure, databases, domains, repositories, software, vulnerabilities) has a nullable `teamId` FK. The `users` table intentionally has NO `teamId`. UI pattern: `<TeamBadge teamId={row.teamId} />` for display, `<TeamSelectField>` for the picker in create/edit forms; form state keeps `teamId` as a string, converted with `Number(form.teamId)` on submit and `?.toString() ?? ""` when loading a row for edit.
+- **Security Dashboard**: `GET /api/security/dashboard` computes all 10 KPIs listed above in real-time (no caching) and returns a `generatedAt` timestamp shown as "Last computed" on the page.
 
 ## Product
 
@@ -50,7 +52,7 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 5. **Domains & SSL** — expiry monitoring with countdown alerts
 6. **Repositories** — GitHub repo tracking with PR/issue counts
 7. **Releases** — deployment history with approval workflow
-8. **Security Center** — vulnerability tracking with severity scoring
+8. **Security Center** — Security Dashboard answering 10 cybersecurity KPIs (systems in production, servers missing patches, apps with critical vulns, SSL certs expiring <30d, domains expiring soon, failed backups, admin users, repos with exposed secrets, outdated dependencies, apps not recently scanned) plus vulnerability tracking with severity scoring
 9. **Software Inventory** — frameworks/libraries with EOL status
 10. **Documentation** — central repo for PRD, TRD, SOP, ERD, etc.
 11. **Reports & Analytics** — inventory and security reports
@@ -68,6 +70,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - `domains/expiring` route similarly must precede `/:id`
 - DB dates stored as `text` for flexibility in the schema; format as ISO strings in API responses
 - `queryClient.invalidateQueries({ queryKey: [...] })` calls must exactly match the generated hook's query key (e.g. `getList<X>QueryKey` in `lib/api-client-react/src/generated/api.ts`, usually the literal API path like `/api/documentation`, not a guessed resource name) — a mismatch silently breaks list refresh after create/update/delete
+- Known pre-existing issue (not caused by any single feature, spans nearly every route file): `pnpm --filter @workspace/api-server run typecheck` fails with `TS2345: string | string[] is not assignable to string` on `req.params.id` under Express 5's stricter types. Runtime is unaffected (Express always gives a string for non-wildcard params). Fix requires a repo-wide pass (e.g. a shared `parseIdParam` helper) — out of scope for single-feature work.
 
 ## Pointers
 

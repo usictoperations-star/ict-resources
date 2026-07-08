@@ -18,4 +18,7 @@ export interface InfrastructureUpdate {
   diskGb?: number;
   os?: string;
   notes?: string;
+  teamId?: number;
+  patchStatus?: string;
+  lastPatchedAt?: string;
 }

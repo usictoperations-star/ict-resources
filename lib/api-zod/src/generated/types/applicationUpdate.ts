@@ -32,4 +32,6 @@ export interface ApplicationUpdate {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
+  teamId?: number;
+  lastSecurityScanAt?: string;
 }

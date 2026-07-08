@@ -33,4 +33,6 @@ export interface ApplicationInput {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
+  teamId?: number;
+  lastSecurityScanAt?: string;
 }

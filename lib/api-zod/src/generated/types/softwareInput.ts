@@ -20,4 +20,5 @@ export interface SoftwareInput {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
+  teamId?: number;
 }

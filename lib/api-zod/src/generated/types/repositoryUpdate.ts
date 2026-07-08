@@ -18,4 +18,7 @@ export interface RepositoryUpdate {
   applicationId?: number;
   status?: string;
   notes?: string;
+  teamId?: number;
+  secretsExposed?: boolean;
+  lastScannedAt?: string;
 }

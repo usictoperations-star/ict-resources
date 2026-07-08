@@ -25,6 +25,8 @@ export interface Domain {
   /** @nullable */
   applicationId?: number | null;
   /** @nullable */
+  teamId?: number | null;
+  /** @nullable */
   notes?: string | null;
   createdAt: string;
   updatedAt: string;

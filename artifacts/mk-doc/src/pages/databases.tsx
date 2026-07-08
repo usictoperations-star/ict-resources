@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const TYPE_OPTIONS = ["PostgreSQL", "MySQL", "MariaDB", "MSSQL", "Oracle", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "deprecated"];
@@ -45,9 +47,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "" };
+const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", teamId: "" };
 
-type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null };
+type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; teamId?: number | null };
 
 export default function Databases() {
   const { data: databases, isLoading } = useListDatabases();
@@ -86,6 +88,7 @@ export default function Databases() {
       owner: db.owner ?? "", backupEnabled: db.backupEnabled ?? true,
       encryptionEnabled: db.encryptionEnabled ?? false, status: db.status ?? "active",
       notes: db.notes ?? "",
+      teamId: db.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -118,6 +121,7 @@ export default function Databases() {
       encryptionEnabled: form.encryptionEnabled,
       status: form.status,
       notes: form.notes || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -157,6 +161,7 @@ export default function Databases() {
                     <TableHead>Type</TableHead>
                     <TableHead>Server</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -167,6 +172,7 @@ export default function Databases() {
                       <TableCell>{db.type}</TableCell>
                       <TableCell>{db.server || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(db.status)}>{db.status}</Badge></TableCell>
+                      <TableCell><TeamBadge teamId={(db as DbRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(db as DbRow)}>
@@ -223,6 +229,9 @@ export default function Databases() {
                 </Field>
                 <Field label="Status">
                   <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <div className="flex gap-6">

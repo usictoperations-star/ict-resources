@@ -18,5 +18,6 @@ export interface DomainInput {
   cloudflarEnabled?: boolean;
   status: string;
   applicationId?: number;
+  teamId?: number;
   notes?: string;
 }

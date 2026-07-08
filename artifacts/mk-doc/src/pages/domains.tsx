@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const STATUS_OPTIONS = ["active", "inactive", "expired", "pending"];
 const SSL_STATUS_OPTIONS = ["valid", "expiring", "expired", "none"];
@@ -43,9 +45,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "" };
+const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", teamId: "" };
 
-type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null };
+type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; teamId?: number | null };
 
 export default function Domains() {
   const { data: domains, isLoading: domainsLoading } = useListDomains();
@@ -88,6 +90,7 @@ export default function Domains() {
       sslStatus: d.sslStatus ?? "valid", dnsProvider: d.dnsProvider ?? "",
       cloudflarEnabled: d.cloudflarEnabled ?? false, status: d.status ?? "active",
       notes: d.notes ?? "",
+      teamId: d.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -121,6 +124,7 @@ export default function Domains() {
       cloudflarEnabled: form.cloudflarEnabled,
       status: form.status,
       notes: form.notes || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -187,6 +191,7 @@ export default function Domains() {
                       <TableHead>Reg. Expiry</TableHead>
                       <TableHead>SSL Status</TableHead>
                       <TableHead>Cloudflare</TableHead>
+                      <TableHead>Team</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -200,6 +205,7 @@ export default function Domains() {
                           <Badge variant={domain.sslStatus === 'valid' ? 'default' : 'destructive'}>{domain.sslStatus}</Badge>
                         </TableCell>
                         <TableCell>{domain.cloudflarEnabled ? 'Yes' : 'No'}</TableCell>
+                        <TableCell><TeamBadge teamId={(domain as DomainRow).teamId} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(domain as DomainRow)}>
@@ -258,6 +264,9 @@ export default function Domains() {
                 </Field>
                 <Field label="Status">
                   <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

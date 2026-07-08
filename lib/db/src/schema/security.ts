@@ -15,6 +15,7 @@ export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   resolvedAt: text("resolved_at"),
   assignedTo: text("assigned_to"),
   notes: text("notes"),
+  teamId: integer("team_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

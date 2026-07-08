@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, real, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -14,7 +14,9 @@ export const databasesTable = pgTable("databases", {
   encryptionEnabled: boolean("encryption_enabled").notNull().default(false),
   status: text("status").notNull().default("Active"),
   lastBackupAt: text("last_backup_at"),
+  lastBackupStatus: text("last_backup_status").notNull().default("Unknown"),
   notes: text("notes"),
+  teamId: integer("team_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -1,11 +1,129 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "@workspace/db";
-import { vulnerabilitiesTable, applicationsTable, auditLogsTable } from "@workspace/db";
+import {
+  vulnerabilitiesTable,
+  applicationsTable,
+  auditLogsTable,
+  infrastructureTable,
+  domainsTable,
+  databasesTable,
+  repositoriesTable,
+  softwareTable,
+  usersTable,
+} from "@workspace/db";
 import { CreateVulnerabilityBody, UpdateVulnerabilityBody } from "@workspace/api-zod";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
+
+const SCAN_STALE_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+
+function daysRemaining(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return null;
+  return Math.ceil((date.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+}
+
+router.get("/dashboard", async (req: Request, res: Response) => {
+  try {
+    const [apps, infra, domains, databases, repos, software, users, vulns] = await Promise.all([
+      db.select().from(applicationsTable),
+      db.select().from(infrastructureTable),
+      db.select().from(domainsTable),
+      db.select().from(databasesTable),
+      db.select().from(repositoriesTable),
+      db.select().from(softwareTable),
+      db.select().from(usersTable),
+      db.select().from(vulnerabilitiesTable),
+    ]);
+
+    const now = Date.now();
+
+    const systemsInProduction = apps.filter(
+      a => a.environment === "Production" && a.status === "Active"
+    ).length;
+
+    const serversMissingPatches = infra
+      .filter(i => i.patchStatus !== "Up to Date")
+      .map(i => ({ id: i.id, name: i.name, patchStatus: i.patchStatus, lastPatchedAt: i.lastPatchedAt }));
+
+    const criticalByApp = new Map<number | null, { applicationId: number | null; applicationName: string | null; criticalCount: number }>();
+    const appMap = new Map(apps.map(a => [a.id, a.name]));
+    vulns
+      .filter(v => v.severity === "Critical")
+      .forEach(v => {
+        const key = v.applicationId ?? null;
+        const existing = criticalByApp.get(key);
+        if (existing) {
+          existing.criticalCount++;
+        } else {
+          criticalByApp.set(key, {
+            applicationId: key,
+            applicationName: key ? appMap.get(key) ?? null : null,
+            criticalCount: 1,
+          });
+        }
+      });
+
+    const sslCertificatesExpiringSoon = domains
+      .filter(d => {
+        const remaining = daysRemaining(d.sslExpiry);
+        return remaining !== null && remaining <= 30 && remaining >= 0;
+      })
+      .map(d => ({ id: d.id, name: d.name, sslExpiry: d.sslExpiry, daysRemaining: daysRemaining(d.sslExpiry) }));
+
+    const domainsExpiringSoon = domains
+      .filter(d => {
+        const remaining = daysRemaining(d.registrationExpiry);
+        return remaining !== null && remaining <= 30 && remaining >= 0;
+      })
+      .map(d => ({ id: d.id, name: d.name, registrationExpiry: d.registrationExpiry, daysRemaining: daysRemaining(d.registrationExpiry) }));
+
+    const failedBackups = databases
+      .filter(d => d.lastBackupStatus === "Failed")
+      .map(d => ({ id: d.id, name: d.name, lastBackupStatus: d.lastBackupStatus, lastBackupAt: d.lastBackupAt }));
+
+    const adminUsers = users
+      .filter(u => u.role === "admin")
+      .map(u => ({ id: u.id, name: u.name, email: u.email, department: u.department }));
+
+    const reposWithExposedSecrets = repos
+      .filter(r => r.secretsExposed)
+      .map(r => ({ id: r.id, name: r.name, lastScannedAt: r.lastScannedAt }));
+
+    const outdatedDependencies = software
+      .filter(s => !s.supported || s.endOfLife)
+      .map(s => ({ id: s.id, name: s.name, installedVersion: s.installedVersion, latestVersion: s.latestVersion, endOfLife: s.endOfLife }));
+
+    const applicationsNotRecentlyScanned = apps
+      .filter(a => {
+        if (!a.lastSecurityScanAt) return true;
+        const scanned = new Date(a.lastSecurityScanAt).getTime();
+        if (Number.isNaN(scanned)) return true;
+        return now - scanned > SCAN_STALE_DAYS_MS;
+      })
+      .map(a => ({ id: a.id, name: a.name, lastSecurityScanAt: a.lastSecurityScanAt }));
+
+    return res.json({
+      systemsInProduction,
+      serversMissingPatches,
+      applicationsWithCriticalVulnerabilities: Array.from(criticalByApp.values()),
+      sslCertificatesExpiringSoon,
+      domainsExpiringSoon,
+      failedBackups,
+      adminUsers,
+      reposWithExposedSecrets,
+      outdatedDependencies,
+      applicationsNotRecentlyScanned,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching security dashboard");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 router.get("/summary", async (req: Request, res: Response) => {
   try {

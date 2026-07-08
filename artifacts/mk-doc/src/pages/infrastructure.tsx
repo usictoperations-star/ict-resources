@@ -15,6 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const TYPE_OPTIONS = ["VPS", "Bare Metal", "Docker", "VM", "Container", "Load Balancer", "Database Server", "CDN", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "decommissioned"];
@@ -48,9 +50,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "" };
+const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", teamId: "" };
 
-type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null };
+type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; teamId?: number | null };
 
 export default function Infrastructure() {
   const { data: infra, isLoading } = useListInfrastructure();
@@ -89,6 +91,7 @@ export default function Infrastructure() {
       location: item.location ?? "", cpuCores: item.cpuCores?.toString() ?? "",
       ramGb: item.ramGb?.toString() ?? "", diskGb: item.diskGb?.toString() ?? "",
       os: item.os ?? "", notes: item.notes ?? "",
+      teamId: item.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -123,6 +126,7 @@ export default function Infrastructure() {
       diskGb: form.diskGb ? Number(form.diskGb) : undefined,
       os: form.os || undefined,
       notes: form.notes || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -162,6 +166,7 @@ export default function Infrastructure() {
                     <TableHead>Type</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -172,6 +177,7 @@ export default function Infrastructure() {
                       <TableCell>{item.type}</TableCell>
                       <TableCell className="font-mono text-sm">{item.ipAddress || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(item.status)}>{item.status}</Badge></TableCell>
+                      <TableCell><TeamBadge teamId={(item as InfraRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as InfraRow)}>
@@ -239,6 +245,9 @@ export default function Infrastructure() {
                 </Field>
                 <Field label="OS">
                   <Input placeholder="Ubuntu 22.04 LTS" value={form.os} onChange={set("os")} className="h-9" />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <Field label="Notes">

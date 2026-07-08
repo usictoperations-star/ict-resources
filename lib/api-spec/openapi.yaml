@@ -26,6 +26,8 @@ tags:
     description: Release management
   - name: security
     description: Security center
+  - name: teams
+    description: Team ownership and management
   - name: software
     description: Software inventory
   - name: documentation
@@ -796,6 +798,90 @@ paths:
               schema:
                 $ref: "#/components/schemas/SecuritySummary"
 
+  /security/dashboard:
+    get:
+      operationId: getSecurityDashboard
+      tags: [security]
+      summary: Get aggregated cybersecurity operations KPIs
+      responses:
+        "200":
+          description: Security dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityDashboard"
+
+  # ─── Teams ────────────────────────────────────────────────────────────────
+  /teams:
+    get:
+      operationId: listTeams
+      tags: [teams]
+      summary: List teams
+      responses:
+        "200":
+          description: Teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Team"
+    post:
+      operationId: createTeam
+      tags: [teams]
+      summary: Create team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /teams/{id}:
+    patch:
+      operationId: updateTeam
+      tags: [teams]
+      summary: Update team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    delete:
+      operationId: deleteTeam
+      tags: [teams]
+      summary: Delete team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   # ─── Software Inventory ───────────────────────────────────────────────────
   /software:
     get:
@@ -1444,6 +1530,10 @@ components:
           type: ["string", "null"]
         tags:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
+        lastSecurityScanAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -1514,6 +1604,10 @@ components:
           type: string
         tags:
           type: string
+        teamId:
+          type: integer
+        lastSecurityScanAt:
+          type: string
       required: [name, category, classification, environment, status, priority, criticality]
 
     ApplicationUpdate:
@@ -1568,6 +1662,10 @@ components:
         launchDate:
           type: string
         tags:
+          type: string
+        teamId:
+          type: integer
+        lastSecurityScanAt:
           type: string
 
     ApplicationSummary:
@@ -1643,11 +1741,17 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
+        patchStatus:
+          type: string
+        lastPatchedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
           type: string
-      required: [id, name, type, status, createdAt, updatedAt]
+      required: [id, name, type, status, patchStatus, createdAt, updatedAt]
 
     InfrastructureInput:
       type: object
@@ -1674,6 +1778,12 @@ components:
         os:
           type: string
         notes:
+          type: string
+        teamId:
+          type: integer
+        patchStatus:
+          type: string
+        lastPatchedAt:
           type: string
       required: [name, type, status]
 
@@ -1702,6 +1812,12 @@ components:
           type: string
         notes:
           type: string
+        teamId:
+          type: integer
+        patchStatus:
+          type: string
+        lastPatchedAt:
+          type: string
 
     # ── Databases ─────────────────────────────────────────────────────────
     DatabaseRecord:
@@ -1729,13 +1845,17 @@ components:
           type: string
         lastBackupAt:
           type: ["string", "null"]
+        lastBackupStatus:
+          type: string
         notes:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
           type: string
-      required: [id, name, type, backupEnabled, encryptionEnabled, status, createdAt, updatedAt]
+      required: [id, name, type, backupEnabled, encryptionEnabled, status, lastBackupStatus, createdAt, updatedAt]
 
     DatabaseInput:
       type: object
@@ -1761,8 +1881,12 @@ components:
           type: string
         lastBackupAt:
           type: string
+        lastBackupStatus:
+          type: string
         notes:
           type: string
+        teamId:
+          type: integer
       required: [name, type, status]
 
     DatabaseUpdate:
@@ -1788,8 +1912,12 @@ components:
           type: string
         lastBackupAt:
           type: string
+        lastBackupStatus:
+          type: string
         notes:
           type: string
+        teamId:
+          type: integer
 
     # ── Domains ───────────────────────────────────────────────────────────
     Domain:
@@ -1816,6 +1944,8 @@ components:
         status:
           type: string
         applicationId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
         notes:
           type: ["string", "null"]
@@ -1849,6 +1979,8 @@ components:
           type: string
         applicationId:
           type: integer
+        teamId:
+          type: integer
         notes:
           type: string
       required: [name, status]
@@ -1875,6 +2007,8 @@ components:
         status:
           type: string
         applicationId:
+          type: integer
+        teamId:
           type: integer
         notes:
           type: string
@@ -1907,11 +2041,17 @@ components:
           type: string
         notes:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
+        secretsExposed:
+          type: boolean
+        lastScannedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
           type: string
-      required: [id, name, visibility, openPullRequests, openIssues, status, createdAt, updatedAt]
+      required: [id, name, visibility, openPullRequests, openIssues, status, secretsExposed, createdAt, updatedAt]
 
     RepositoryInput:
       type: object
@@ -1939,6 +2079,12 @@ components:
           type: string
         notes:
           type: string
+        teamId:
+          type: integer
+        secretsExposed:
+          type: boolean
+        lastScannedAt:
+          type: string
       required: [name, visibility, status]
 
     RepositoryUpdate:
@@ -1965,6 +2111,12 @@ components:
         status:
           type: string
         notes:
+          type: string
+        teamId:
+          type: integer
+        secretsExposed:
+          type: boolean
+        lastScannedAt:
           type: string
 
     # ── Releases ──────────────────────────────────────────────────────────
@@ -2079,6 +2231,8 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2111,6 +2265,8 @@ components:
           type: string
         notes:
           type: string
+        teamId:
+          type: integer
       required: [title, severity, status]
 
     VulnerabilityUpdate:
@@ -2138,6 +2294,8 @@ components:
           type: string
         notes:
           type: string
+        teamId:
+          type: integer
 
     SecuritySummary:
       type: object
@@ -2159,6 +2317,190 @@ components:
         resolved:
           type: integer
       required: [securityScore, critical, high, medium, low, open, inProgress, resolved]
+
+    SecurityDashboard:
+      type: object
+      description: Aggregated KPIs answering the core cybersecurity operations questions.
+      properties:
+        systemsInProduction:
+          type: integer
+        serversMissingPatches:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              patchStatus:
+                type: string
+              lastPatchedAt:
+                type: ["string", "null"]
+            required: [id, name, patchStatus]
+        applicationsWithCriticalVulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              applicationId:
+                type: ["integer", "null"]
+              applicationName:
+                type: ["string", "null"]
+              criticalCount:
+                type: integer
+            required: [criticalCount]
+        sslCertificatesExpiringSoon:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              sslExpiry:
+                type: ["string", "null"]
+              daysRemaining:
+                type: ["integer", "null"]
+            required: [id, name]
+        domainsExpiringSoon:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              registrationExpiry:
+                type: ["string", "null"]
+              daysRemaining:
+                type: ["integer", "null"]
+            required: [id, name]
+        failedBackups:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              lastBackupStatus:
+                type: string
+              lastBackupAt:
+                type: ["string", "null"]
+            required: [id, name, lastBackupStatus]
+        adminUsers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              email:
+                type: string
+              department:
+                type: ["string", "null"]
+            required: [id, name, email]
+        reposWithExposedSecrets:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              lastScannedAt:
+                type: ["string", "null"]
+            required: [id, name]
+        outdatedDependencies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              installedVersion:
+                type: ["string", "null"]
+              latestVersion:
+                type: ["string", "null"]
+              endOfLife:
+                type: boolean
+            required: [id, name, endOfLife]
+        applicationsNotRecentlyScanned:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              lastSecurityScanAt:
+                type: ["string", "null"]
+            required: [id, name]
+        generatedAt:
+          type: string
+      required:
+        - systemsInProduction
+        - serversMissingPatches
+        - applicationsWithCriticalVulnerabilities
+        - sslCertificatesExpiringSoon
+        - domainsExpiringSoon
+        - failedBackups
+        - adminUsers
+        - reposWithExposedSecrets
+        - outdatedDependencies
+        - applicationsNotRecentlyScanned
+        - generatedAt
+
+    # ── Teams ─────────────────────────────────────────────────────────────
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, slug, createdAt, updatedAt]
+
+    TeamInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+        description:
+          type: string
+      required: [name, slug]
+
+    TeamUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
 
     # ── Software ──────────────────────────────────────────────────────────
     SoftwareItem:
@@ -2190,6 +2532,8 @@ components:
           type: ["integer", "null"]
         notes:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2224,6 +2568,8 @@ components:
           type: integer
         notes:
           type: string
+        teamId:
+          type: integer
       required: [name, type]
 
     SoftwareUpdate:
@@ -2253,6 +2599,8 @@ components:
           type: integer
         notes:
           type: string
+        teamId:
+          type: integer
 
     # ── Documentation ─────────────────────────────────────────────────────
     Document:

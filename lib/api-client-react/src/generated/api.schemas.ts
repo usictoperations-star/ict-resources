@@ -136,6 +136,10 @@ export interface Application {
   launchDate?: string | null;
   /** @nullable */
   tags?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  /** @nullable */
+  lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -167,6 +171,8 @@ export interface ApplicationInput {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
+  teamId?: number;
+  lastSecurityScanAt?: string;
 }
 
 export interface ApplicationUpdate {
@@ -195,6 +201,8 @@ export interface ApplicationUpdate {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
+  teamId?: number;
+  lastSecurityScanAt?: string;
 }
 
 export type ApplicationSummaryByCategoryItem = {
@@ -245,6 +253,11 @@ export interface InfrastructureItem {
   os?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  patchStatus: string;
+  /** @nullable */
+  lastPatchedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -262,6 +275,9 @@ export interface InfrastructureInput {
   diskGb?: number;
   os?: string;
   notes?: string;
+  teamId?: number;
+  patchStatus?: string;
+  lastPatchedAt?: string;
 }
 
 export interface InfrastructureUpdate {
@@ -276,6 +292,9 @@ export interface InfrastructureUpdate {
   diskGb?: number;
   os?: string;
   notes?: string;
+  teamId?: number;
+  patchStatus?: string;
+  lastPatchedAt?: string;
 }
 
 export interface DatabaseRecord {
@@ -295,8 +314,11 @@ export interface DatabaseRecord {
   status: string;
   /** @nullable */
   lastBackupAt?: string | null;
+  lastBackupStatus: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -313,7 +335,9 @@ export interface DatabaseInput {
   encryptionEnabled?: boolean;
   status: string;
   lastBackupAt?: string;
+  lastBackupStatus?: string;
   notes?: string;
+  teamId?: number;
 }
 
 export interface DatabaseUpdate {
@@ -327,7 +351,9 @@ export interface DatabaseUpdate {
   encryptionEnabled?: boolean;
   status?: string;
   lastBackupAt?: string;
+  lastBackupStatus?: string;
   notes?: string;
+  teamId?: number;
 }
 
 export interface Domain {
@@ -349,6 +375,8 @@ export interface Domain {
   /** @nullable */
   applicationId?: number | null;
   /** @nullable */
+  teamId?: number | null;
+  /** @nullable */
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -366,6 +394,7 @@ export interface DomainInput {
   cloudflarEnabled?: boolean;
   status: string;
   applicationId?: number;
+  teamId?: number;
   notes?: string;
 }
 
@@ -380,6 +409,7 @@ export interface DomainUpdate {
   cloudflarEnabled?: boolean;
   status?: string;
   applicationId?: number;
+  teamId?: number;
   notes?: string;
 }
 
@@ -402,6 +432,11 @@ export interface Repository {
   status: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  secretsExposed: boolean;
+  /** @nullable */
+  lastScannedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -419,6 +454,9 @@ export interface RepositoryInput {
   applicationId?: number;
   status: string;
   notes?: string;
+  teamId?: number;
+  secretsExposed?: boolean;
+  lastScannedAt?: string;
 }
 
 export interface RepositoryUpdate {
@@ -433,6 +471,9 @@ export interface RepositoryUpdate {
   applicationId?: number;
   status?: string;
   notes?: string;
+  teamId?: number;
+  secretsExposed?: boolean;
+  lastScannedAt?: string;
 }
 
 export interface Release {
@@ -506,6 +547,8 @@ export interface Vulnerability {
   assignedTo?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -523,6 +566,7 @@ export interface VulnerabilityInput {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
+  teamId?: number;
 }
 
 export interface VulnerabilityUpdate {
@@ -537,6 +581,7 @@ export interface VulnerabilityUpdate {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
+  teamId?: number;
 }
 
 export interface SecuritySummary {
@@ -548,6 +593,121 @@ export interface SecuritySummary {
   open: number;
   inProgress: number;
   resolved: number;
+}
+
+export type SecurityDashboardServersMissingPatchesItem = {
+  id: number;
+  name: string;
+  patchStatus: string;
+  /** @nullable */
+  lastPatchedAt?: string | null;
+};
+
+export type SecurityDashboardApplicationsWithCriticalVulnerabilitiesItem = {
+  /** @nullable */
+  applicationId?: number | null;
+  /** @nullable */
+  applicationName?: string | null;
+  criticalCount: number;
+};
+
+export type SecurityDashboardSslCertificatesExpiringSoonItem = {
+  id: number;
+  name: string;
+  /** @nullable */
+  sslExpiry?: string | null;
+  /** @nullable */
+  daysRemaining?: number | null;
+};
+
+export type SecurityDashboardDomainsExpiringSoonItem = {
+  id: number;
+  name: string;
+  /** @nullable */
+  registrationExpiry?: string | null;
+  /** @nullable */
+  daysRemaining?: number | null;
+};
+
+export type SecurityDashboardFailedBackupsItem = {
+  id: number;
+  name: string;
+  lastBackupStatus: string;
+  /** @nullable */
+  lastBackupAt?: string | null;
+};
+
+export type SecurityDashboardAdminUsersItem = {
+  id: number;
+  name: string;
+  email: string;
+  /** @nullable */
+  department?: string | null;
+};
+
+export type SecurityDashboardReposWithExposedSecretsItem = {
+  id: number;
+  name: string;
+  /** @nullable */
+  lastScannedAt?: string | null;
+};
+
+export type SecurityDashboardOutdatedDependenciesItem = {
+  id: number;
+  name: string;
+  /** @nullable */
+  installedVersion?: string | null;
+  /** @nullable */
+  latestVersion?: string | null;
+  endOfLife: boolean;
+};
+
+export type SecurityDashboardApplicationsNotRecentlyScannedItem = {
+  id: number;
+  name: string;
+  /** @nullable */
+  lastSecurityScanAt?: string | null;
+};
+
+/**
+ * Aggregated KPIs answering the core cybersecurity operations questions.
+ */
+export interface SecurityDashboard {
+  systemsInProduction: number;
+  serversMissingPatches: SecurityDashboardServersMissingPatchesItem[];
+  applicationsWithCriticalVulnerabilities: SecurityDashboardApplicationsWithCriticalVulnerabilitiesItem[];
+  sslCertificatesExpiringSoon: SecurityDashboardSslCertificatesExpiringSoonItem[];
+  domainsExpiringSoon: SecurityDashboardDomainsExpiringSoonItem[];
+  failedBackups: SecurityDashboardFailedBackupsItem[];
+  adminUsers: SecurityDashboardAdminUsersItem[];
+  reposWithExposedSecrets: SecurityDashboardReposWithExposedSecretsItem[];
+  outdatedDependencies: SecurityDashboardOutdatedDependenciesItem[];
+  applicationsNotRecentlyScanned: SecurityDashboardApplicationsNotRecentlyScannedItem[];
+  generatedAt: string;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  slug: string;
+  description?: string;
+}
+
+export interface TeamUpdate {
+  name?: string;
+  slug?: string;
+  description?: string;
 }
 
 export interface SoftwareItem {
@@ -571,6 +731,8 @@ export interface SoftwareItem {
   applicationId?: number | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -589,6 +751,7 @@ export interface SoftwareInput {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
+  teamId?: number;
 }
 
 export interface SoftwareUpdate {
@@ -604,6 +767,7 @@ export interface SoftwareUpdate {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
+  teamId?: number;
 }
 
 export interface Document {

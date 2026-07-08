@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os", "language", "other"];
 
@@ -43,9 +45,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "" };
+const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", teamId: "" };
 
-type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null };
+type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; teamId?: number | null };
 
 export default function Software() {
   const { data: software, isLoading } = useListSoftware();
@@ -87,6 +89,7 @@ export default function Software() {
       upgradeAvailable: s.upgradeAvailable ?? false,
       applicationId: s.applicationId?.toString() ?? "",
       notes: s.notes ?? "",
+      teamId: s.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -121,6 +124,7 @@ export default function Software() {
       upgradeAvailable: form.upgradeAvailable,
       applicationId: form.applicationId ? Number(form.applicationId) : undefined,
       notes: form.notes || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -160,6 +164,7 @@ export default function Software() {
                     <TableHead>Latest Ver</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>EOL</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -186,6 +191,7 @@ export default function Software() {
                           <span className="text-sm text-muted-foreground">Supported</span>
                         )}
                       </TableCell>
+                      <TableCell><TeamBadge teamId={(item as SoftwareRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as SoftwareRow)}>
@@ -245,6 +251,9 @@ export default function Software() {
                 <Field label="Application ID">
                   <Input type="number" placeholder="1" value={form.applicationId} onChange={set("applicationId")} className="h-9" />
                   {errors.applicationId && <p className="text-xs text-destructive mt-1">{errors.applicationId}</p>}
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <div className="flex gap-6">

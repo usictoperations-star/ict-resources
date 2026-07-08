@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -15,6 +15,9 @@ export const repositoriesTable = pgTable("repositories", {
   applicationId: integer("application_id"),
   status: text("status").notNull().default("Active"),
   notes: text("notes"),
+  teamId: integer("team_id"),
+  secretsExposed: boolean("secrets_exposed").notNull().default(false),
+  lastScannedAt: text("last_scanned_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

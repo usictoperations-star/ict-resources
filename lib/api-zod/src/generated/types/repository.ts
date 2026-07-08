@@ -25,6 +25,11 @@ export interface Repository {
   status: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  secretsExposed: boolean;
+  /** @nullable */
+  lastScannedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

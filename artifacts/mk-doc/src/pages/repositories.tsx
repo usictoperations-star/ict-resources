@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const VISIBILITY_OPTIONS = ["public", "private", "internal"];
 const STATUS_OPTIONS = ["active", "archived", "inactive"];
@@ -45,9 +47,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "" };
+const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "", teamId: "" };
 
-type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null };
+type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; teamId?: number | null };
 
 export default function Repositories() {
   const { data: repositories, isLoading } = useListRepositories();
@@ -86,6 +88,7 @@ export default function Repositories() {
       openPullRequests: repo.openPullRequests?.toString() ?? "0",
       openIssues: repo.openIssues?.toString() ?? "0",
       status: repo.status ?? "active", notes: repo.notes ?? "",
+      teamId: repo.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -118,6 +121,7 @@ export default function Repositories() {
       openIssues: form.openIssues ? Number(form.openIssues) : undefined,
       status: form.status,
       notes: form.notes || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -157,6 +161,7 @@ export default function Repositories() {
                     <TableHead>PRs</TableHead>
                     <TableHead>Issues</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -177,6 +182,7 @@ export default function Repositories() {
                         <div className="flex items-center text-muted-foreground"><CircleDot className="w-4 h-4 mr-1" />{repo.openIssues}</div>
                       </TableCell>
                       <TableCell><Badge variant={repo.status === 'active' ? 'default' : 'secondary'}>{repo.status}</Badge></TableCell>
+                      <TableCell><TeamBadge teamId={(repo as RepoRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(repo as RepoRow)}>
@@ -237,6 +243,9 @@ export default function Repositories() {
                 <Field label="Open Issues">
                   <Input type="number" placeholder="0" value={form.openIssues} onChange={set("openIssues")} className="h-9" />
                   {errors.openIssues && <p className="text-xs text-destructive mt-1">{errors.openIssues}</p>}
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <Field label="Notes">

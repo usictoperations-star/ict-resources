@@ -27,6 +27,11 @@ export interface InfrastructureItem {
   os?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  teamId?: number | null;
+  patchStatus: string;
+  /** @nullable */
+  lastPatchedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

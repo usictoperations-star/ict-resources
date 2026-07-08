@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { TeamBadge } from "@/components/team-badge";
+import { TeamSelectField } from "@/components/team-select-field";
 
 const appSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -65,10 +67,10 @@ const EMPTY_FORM = {
   environment: "", status: "Active", priority: "Medium", criticality: "Medium",
   ministry: "", department: "", businessOwner: "", technicalOwner: "",
   frontend: "", backend: "", framework: "", language: "", database: "",
-  hostingProvider: "", domain: "", currentVersion: "", tags: ""
+  hostingProvider: "", domain: "", currentVersion: "", tags: "", teamId: ""
 };
 
-type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null };
+type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; teamId?: number | null };
 
 export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
@@ -131,6 +133,7 @@ export default function Applications() {
       domain: app.domain ?? "",
       currentVersion: app.currentVersion ?? "",
       tags: app.tags ?? "",
+      teamId: app.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -176,6 +179,7 @@ export default function Applications() {
       domain: form.domain || undefined,
       currentVersion: form.currentVersion || undefined,
       tags: form.tags || undefined,
+      teamId: form.teamId ? Number(form.teamId) : undefined,
     };
     try {
       if (editTarget) {
@@ -228,6 +232,7 @@ export default function Applications() {
                     <TableHead>Category</TableHead>
                     <TableHead>Environment</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -246,6 +251,7 @@ export default function Applications() {
                           {app.status}
                         </Badge>
                       </TableCell>
+                      <TableCell><TeamBadge teamId={(app as AppRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(app as AppRow)}>
@@ -346,6 +352,9 @@ export default function Applications() {
                   </Field>
                   <Field label="Technical Owner">
                     <Input placeholder="Name" value={form.technicalOwner} onChange={set("technicalOwner")} className="h-9" />
+                  </Field>
+                  <Field label="Team">
+                    <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                   </Field>
                 </div>
               </section>
