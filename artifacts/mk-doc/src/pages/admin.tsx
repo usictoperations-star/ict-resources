@@ -1,14 +1,107 @@
-import React from "react";
-import { useListUsers, useListAuditLogs } from "@workspace/api-client-react";
+import React, { useState } from "react";
+import { z } from "zod";
+import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Loader2, Pencil } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+
+const ROLE_OPTIONS = ["admin", "manager", "operator", "viewer", "auditor"];
+const STATUS_OPTIONS = ["active", "inactive", "suspended"];
+
+const userSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().min(1, "Email is required").email("Must be a valid email address"),
+  role: z.string().min(1, "Role is required"),
+  status: z.string().min(1, "Status is required"),
+});
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">{label}{required && <span className="text-destructive ml-0.5">*</span>}</Label>
+      {children}
+    </div>
+  );
+}
+
+function SelectField({ value, onValueChange, placeholder, options }: { value: string; onValueChange: (v: string) => void; placeholder: string; options: string[] }) {
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
+      <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+    </Select>
+  );
+}
+
+const EMPTY_FORM = { name: "", email: "", role: "viewer", department: "", status: "active" };
+
+type UserRow = { id: number; name: string; email: string; role: string; department?: string | null; status: string; lastLoginAt?: string | null };
 
 export default function Admin() {
   const { data: users, isLoading: usersLoading } = useListUsers();
   const { data: auditLogs, isLoading: logsLoading } = useListAuditLogs({ limit: 50 });
+  const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
+  const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
+  const queryClient = useQueryClient();
+
+  const [open, setOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<UserRow | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isPending = isCreating || isUpdating;
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
+
+  const openEdit = (user: UserRow) => {
+    setEditTarget(user);
+    setForm({ name: user.name ?? "", email: user.email ?? "", role: user.role ?? "viewer", department: user.department ?? "", status: user.status ?? "active" });
+    setErrors({});
+    setOpen(true);
+  };
+
+  const validate = (): boolean => {
+    const result = userSchema.safeParse(form);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach(issue => {
+        const field = issue.path[0] as string;
+        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return false;
+    }
+    setErrors({});
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    const payload = { name: form.name, email: form.email, role: form.role, department: form.department || undefined, status: form.status };
+    try {
+      if (editTarget) {
+        await updateUser({ id: editTarget.id, data: payload });
+      } else {
+        await createUser({ data: payload });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setOpen(false);
+      setForm({ ...EMPTY_FORM });
+      setErrors({});
+    } catch {
+      setErrors({ submit: `Failed to ${editTarget ? "update" : "create"} user.` });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -21,56 +114,62 @@ export default function Admin() {
           <TabsTrigger value="users">Users & Roles</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="users" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage user access and roles across MK DOC.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage user access and roles across MK DOC.</CardDescription>
+              </div>
+              <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-2" />New User</Button>
             </CardHeader>
             <CardContent>
               {usersLoading ? (
-                 <div className="space-y-4">
-                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-                 </div>
+                <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
               ) : users && users.length > 0 ? (
-                <div className="overflow-x-auto -mx-6"><Table className="min-w-[700px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last Login</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">{user.role}</Badge>
-                        </TableCell>
-                        <TableCell>{user.department || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>{user.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6">
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead className="w-16"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table></div>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell><Badge variant="outline" className="capitalize">{user.role}</Badge></TableCell>
+                          <TableCell>{user.department || 'N/A'}</TableCell>
+                          <TableCell><Badge variant={user.status === 'active' ? 'default' : 'secondary'}>{user.status}</Badge></TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(user as UserRow)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : (
-                 <p className="text-sm text-muted-foreground text-center py-8">No users found.</p>
+                <div className="text-center py-12">
+                  <p className="text-sm text-muted-foreground mb-4">No users found.</p>
+                  <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First User</Button>
+                </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="audit" className="mt-4">
           <Card>
             <CardHeader>
@@ -79,11 +178,10 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               {logsLoading ? (
-                 <div className="space-y-4">
-                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-                 </div>
+                <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
               ) : auditLogs && auditLogs.length > 0 ? (
-                <div className="overflow-x-auto -mx-6"><Table className="min-w-[600px]">
+                <div className="overflow-x-auto -mx-6">
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Timestamp</TableHead>
@@ -96,26 +194,60 @@ export default function Admin() {
                     <TableBody>
                       {auditLogs.map((log) => (
                         <TableRow key={log.id} className="text-sm">
-                          <TableCell className="text-muted-foreground whitespace-nowrap">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
                           <TableCell className="font-medium">{log.userName || `User #${log.userId}`}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="uppercase text-[10px]">{log.action}</Badge>
-                          </TableCell>
+                          <TableCell><Badge variant="outline" className="uppercase text-[10px]">{log.action}</Badge></TableCell>
                           <TableCell className="capitalize">{log.entityType}</TableCell>
                           <TableCell className="font-mono text-xs truncate max-w-[200px]">{log.entityName || `ID: ${log.entityId}`}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table></div>
+                  </Table>
+                </div>
               ) : (
-                 <p className="text-sm text-muted-foreground text-center py-8">No audit logs found.</p>
+                <p className="text-sm text-muted-foreground text-center py-8">No audit logs found.</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={open} onOpenChange={(v) => { if (!isPending) { setOpen(v); if (!v) { setForm({ ...EMPTY_FORM }); setErrors({}); } } }}>
+        <DialogContent className="max-w-md p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle>{editTarget ? "Edit User" : "Add User"}</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 py-5 space-y-4">
+            {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
+            <Field label="Full Name" required>
+              <Input placeholder="John Smith" value={form.name} onChange={set("name")} className="h-9" />
+              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+            </Field>
+            <Field label="Email" required>
+              <Input type="email" placeholder="john.smith@mk.gov" value={form.email} onChange={set("email")} className="h-9" />
+              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Role" required>
+                <SelectField value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))} placeholder="Select role" options={ROLE_OPTIONS} />
+                {errors.role && <p className="text-xs text-destructive mt-1">{errors.role}</p>}
+              </Field>
+              <Field label="Status">
+                <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+              </Field>
+            </div>
+            <Field label="Department">
+              <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
+            </Field>
+          </div>
+          <DialogFooter className="px-6 py-4 border-t gap-2">
+            <Button variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={isPending}>
+              {isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Adding..."}</> : editTarget ? "Save Changes" : "Add User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
