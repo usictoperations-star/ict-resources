@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { z } from "zod";
 import { useListVulnerabilities, useGetSecuritySummary, useGetSecurityDashboard, useCreateVulnerability, useUpdateVulnerability, useDeleteVulnerability } from "@workspace/api-client-react";
 import { CreateVulnerabilityBody } from "@workspace/api-zod";
@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Shield, ShieldAlert, CheckCircle, Clock, Plus, Loader2, Pencil, Trash2,
   ServerCog, KeyRound, LockKeyholeOpen, Globe2, DatabaseBackup, UserCog,
-  GitPullRequestArrow, PackageX, ScanEye, Layers,
+  PackageX, ScanEye, Layers,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
@@ -59,23 +60,26 @@ const EMPTY_FORM = { title: "", description: "", severity: "medium", status: "op
 
 type VulnRow = { id: number; title: string; description?: string | null; severity: string; status: string; applicationId?: number | null; applicationName?: string | null; cveId?: string | null; affectedComponent?: string | null; version?: string | null; vendor?: string | null; category?: string | null; installationDate?: string | null; licenseType?: string | null; licenseExpiration?: string | null; endOfLifeDate?: string | null; discoveredAt?: string | null; assignedTo?: string | null; notes?: string | null; teamId?: number | null };
 
-function KpiCard({ title, value, icon: Icon, tone = "default" }: { title: string; value: React.ReactNode; icon: React.ComponentType<{ className?: string }>; tone?: "default" | "danger" | "warning" | "ok" }) {
-  const iconColor = tone === "danger" ? "text-destructive" : tone === "warning" ? "text-yellow-500" : tone === "ok" ? "text-green-500" : "text-primary";
-  const valueColor = tone === "danger" ? "text-destructive" : tone === "warning" ? "text-yellow-600" : "";
+const TONE_TEXT: Record<string, string> = { danger: "text-destructive", warning: "text-yellow-600", ok: "text-green-600", default: "text-foreground" };
+const TONE_BADGE: Record<string, "destructive" | "secondary" | "outline"> = { danger: "destructive", warning: "secondary", ok: "outline", default: "outline" };
+
+function toneOf(count: number, dangerIfAny: "danger" | "warning" = "warning") {
+  return count > 0 ? dangerIfAny : "ok";
+}
+
+function StatItem({ icon: Icon, label, value, tone = "default" }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode; tone?: "default" | "danger" | "warning" | "ok" }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${iconColor}`} />
-      </CardHeader>
-      <CardContent><div className={`text-2xl font-bold ${valueColor}`}>{value}</div></CardContent>
-    </Card>
+    <div className="flex flex-col items-center justify-center gap-1 py-4 px-2 text-center">
+      <Icon className={`h-4 w-4 ${TONE_TEXT[tone]}`} />
+      <div className={`text-xl font-bold leading-none ${TONE_TEXT[tone]}`}>{value}</div>
+      <div className="text-[11px] text-muted-foreground leading-tight">{label}</div>
+    </div>
   );
 }
 
 function DrillDownList({ items, emptyLabel, render }: { items: unknown[]; emptyLabel: string; render: (item: any, i: number) => React.ReactNode }) {
   if (!items || items.length === 0) {
-    return <p className="text-sm text-muted-foreground py-6 text-center">{emptyLabel}</p>;
+    return <p className="text-sm text-muted-foreground py-8 text-center">{emptyLabel}</p>;
   }
   return <ul className="divide-y">{items.map((item, i) => <li key={i} className="py-2.5 first:pt-0 last:pb-0">{render(item, i)}</li>)}</ul>;
 }
@@ -185,288 +189,247 @@ export default function Security() {
 
   const appLabel = (vuln: VulnRow) => vuln.applicationName ?? (vuln.applicationId != null ? `App #${vuln.applicationId}` : 'N/A');
 
+  const metaLine = (vuln: VulnRow) => {
+    const parts = [vuln.cveId, vuln.version, vuln.vendor].filter(Boolean);
+    return parts.length > 0 ? parts.join(" · ") : null;
+  };
+
+  const attentionCategories = useMemo(() => {
+    if (!dashboard) return [];
+    return [
+      {
+        key: "patches", label: "Servers Missing Patches", short: "Patches", icon: ServerCog,
+        items: dashboard.serversMissingPatches, tone: toneOf(dashboard.serversMissingPatches.length),
+        emptyLabel: "All servers are patched.",
+        render: (s: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{s.name}</p>
+              <p className="text-xs text-muted-foreground">{s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}</p>
+            </div>
+            <Badge variant="outline" className="capitalize">{s.patchStatus}</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "criticalVulns", label: "Apps with Critical Vulnerabilities", short: "Critical Vulns", icon: ShieldAlert,
+        items: dashboard.applicationsWithCriticalVulnerabilities, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
+        emptyLabel: "No applications with open critical vulnerabilities.",
+        render: (a: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">{a.applicationName ?? `App #${a.applicationId}`}</p>
+            <Badge variant="destructive">{a.criticalCount} critical</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "ssl", label: "SSL Certificates Expiring Soon", short: "SSL", icon: KeyRound,
+        items: dashboard.sslCertificatesExpiringSoon, tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
+        emptyLabel: "No SSL certificates expiring soon.",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{d.name}</p>
+              <p className="text-xs text-muted-foreground">{d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : "N/A"}</p>
+            </div>
+            {daysRemainingBadge(d.daysRemaining)}
+          </div>
+        ),
+      },
+      {
+        key: "domains", label: "Domains Expiring Soon", short: "Domains", icon: Globe2,
+        items: dashboard.domainsExpiringSoon, tone: toneOf(dashboard.domainsExpiringSoon.length),
+        emptyLabel: "No domains expiring soon.",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{d.name}</p>
+              <p className="text-xs text-muted-foreground">{d.registrationExpiry ? new Date(d.registrationExpiry).toLocaleDateString() : "N/A"}</p>
+            </div>
+            {daysRemainingBadge(d.daysRemaining)}
+          </div>
+        ),
+      },
+      {
+        key: "backups", label: "Failed Backups", short: "Backups", icon: DatabaseBackup,
+        items: dashboard.failedBackups, tone: toneOf(dashboard.failedBackups.length, "danger"),
+        emptyLabel: "All backups completed successfully.",
+        render: (b: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{b.name}</p>
+              <p className="text-xs text-muted-foreground">{b.lastBackupAt ? new Date(b.lastBackupAt).toLocaleString() : "Never backed up"}</p>
+            </div>
+            <Badge variant="destructive" className="capitalize">{b.lastBackupStatus}</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "adminUsers", label: "Admin Users", short: "Admins", icon: UserCog,
+        items: dashboard.adminUsers, tone: "default" as const,
+        emptyLabel: "No admin users found.",
+        render: (u: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{u.name}</p>
+              <p className="text-xs text-muted-foreground">{u.email}</p>
+            </div>
+            {u.department && <Badge variant="outline">{u.department}</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: "secrets", label: "Repos with Exposed Secrets", short: "Secrets", icon: LockKeyholeOpen,
+        items: dashboard.reposWithExposedSecrets, tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),
+        emptyLabel: "No repositories with exposed secrets.",
+        render: (r: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">{r.name}</p>
+            <p className="text-xs text-muted-foreground">{r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}</p>
+          </div>
+        ),
+      },
+      {
+        key: "dependencies", label: "Outdated Dependencies", short: "Dependencies", icon: PackageX,
+        items: dashboard.outdatedDependencies, tone: toneOf(dashboard.outdatedDependencies.length),
+        emptyLabel: "All dependencies are current.",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">{d.name}</p>
+              <p className="text-xs text-muted-foreground">{d.installedVersion ?? "?"} → {d.latestVersion ?? "?"}</p>
+            </div>
+            {d.endOfLife && <Badge variant="destructive">EOL</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: "scans", label: "Applications Not Recently Scanned", short: "Scans", icon: ScanEye,
+        items: dashboard.applicationsNotRecentlyScanned, tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
+        emptyLabel: "All applications have been scanned recently.",
+        render: (a: any) => (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">{a.name}</p>
+            <p className="text-xs text-muted-foreground">{a.lastSecurityScanAt ? `Last scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned"}</p>
+          </div>
+        ),
+      },
+    ];
+  }, [dashboard]);
+
+  const defaultTab = useMemo(() => {
+    const flagged = attentionCategories.find(c => c.items.length > 0 && c.tone !== "ok" && c.tone !== "default");
+    return flagged?.key ?? attentionCategories[0]?.key ?? "patches";
+  }, [attentionCategories]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Security Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Answers to the 10 core cybersecurity operations questions, updated in real time.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Security</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">A quick read on risk posture, plus the full vulnerability log.</p>
         </div>
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log Vulnerability</Button>
       </div>
 
-      {dashboardLoading ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-        </div>
-      ) : dashboard ? (
-        <>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-            <KpiCard title="Systems in Production" value={dashboard.systemsInProduction} icon={Layers} />
-            <KpiCard title="Servers Missing Patches" value={dashboard.serversMissingPatches.length} icon={ServerCog} tone={dashboard.serversMissingPatches.length > 0 ? "warning" : "ok"} />
-            <KpiCard title="Apps w/ Critical Vulns" value={dashboard.applicationsWithCriticalVulnerabilities.length} icon={ShieldAlert} tone={dashboard.applicationsWithCriticalVulnerabilities.length > 0 ? "danger" : "ok"} />
-            <KpiCard title="SSL Expiring <30d" value={dashboard.sslCertificatesExpiringSoon.length} icon={KeyRound} tone={dashboard.sslCertificatesExpiringSoon.length > 0 ? "warning" : "ok"} />
-            <KpiCard title="Domains Expiring Soon" value={dashboard.domainsExpiringSoon.length} icon={Globe2} tone={dashboard.domainsExpiringSoon.length > 0 ? "warning" : "ok"} />
-            <KpiCard title="Failed Backups" value={dashboard.failedBackups.length} icon={DatabaseBackup} tone={dashboard.failedBackups.length > 0 ? "danger" : "ok"} />
-            <KpiCard title="Admin Users" value={dashboard.adminUsers.length} icon={UserCog} />
-            <KpiCard title="Repos w/ Exposed Secrets" value={dashboard.reposWithExposedSecrets.length} icon={LockKeyholeOpen} tone={dashboard.reposWithExposedSecrets.length > 0 ? "danger" : "ok"} />
-            <KpiCard title="Outdated Dependencies" value={dashboard.outdatedDependencies.length} icon={PackageX} tone={dashboard.outdatedDependencies.length > 0 ? "warning" : "ok"} />
-            <KpiCard title="Apps Not Recently Scanned" value={dashboard.applicationsNotRecentlyScanned.length} icon={ScanEye} tone={dashboard.applicationsNotRecentlyScanned.length > 0 ? "warning" : "ok"} />
-          </div>
-          <p className="text-xs text-muted-foreground">Last computed {new Date(dashboard.generatedAt).toLocaleString()}</p>
-        </>
+      {summaryLoading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : summary ? (
+        <Card>
+          <CardContent className="flex flex-col sm:flex-row items-center gap-6 pt-6">
+            <div className="flex flex-col items-center justify-center shrink-0 px-4">
+              <Shield className="h-5 w-5 text-primary mb-1" />
+              <div className="text-4xl font-bold leading-none">{summary.securityScore}</div>
+              <div className="text-xs text-muted-foreground mt-1">Security score / 100</div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 flex-1 w-full sm:border-l sm:pl-6">
+              <StatItem icon={ShieldAlert} label="Critical / High" value={summary.critical + summary.high} tone={summary.critical + summary.high > 0 ? "danger" : "ok"} />
+              <StatItem icon={Clock} label="In Progress" value={summary.inProgress} tone={summary.inProgress > 0 ? "warning" : "ok"} />
+              <StatItem icon={CheckCircle} label="Resolved" value={summary.resolved} tone="ok" />
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Risk Indicators</CardTitle>
+          <CardDescription>Live counts across infrastructure, domains, backups, and dependencies.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {dashboardLoading ? (
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-5 p-4">
+              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : dashboard ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 border-t">
+                <StatItem icon={Layers} label="Systems in Production" value={dashboard.systemsInProduction} />
+                <StatItem icon={ServerCog} label="Servers Missing Patches" value={dashboard.serversMissingPatches.length} tone={toneOf(dashboard.serversMissingPatches.length)} />
+                <StatItem icon={ShieldAlert} label="Apps w/ Critical Vulns" value={dashboard.applicationsWithCriticalVulnerabilities.length} tone={toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger")} />
+                <StatItem icon={KeyRound} label="SSL Expiring <30d" value={dashboard.sslCertificatesExpiringSoon.length} tone={toneOf(dashboard.sslCertificatesExpiringSoon.length)} />
+                <StatItem icon={Globe2} label="Domains Expiring Soon" value={dashboard.domainsExpiringSoon.length} tone={toneOf(dashboard.domainsExpiringSoon.length)} />
+                <StatItem icon={DatabaseBackup} label="Failed Backups" value={dashboard.failedBackups.length} tone={toneOf(dashboard.failedBackups.length, "danger")} />
+                <StatItem icon={UserCog} label="Admin Users" value={dashboard.adminUsers.length} />
+                <StatItem icon={LockKeyholeOpen} label="Repos w/ Exposed Secrets" value={dashboard.reposWithExposedSecrets.length} tone={toneOf(dashboard.reposWithExposedSecrets.length, "danger")} />
+                <StatItem icon={PackageX} label="Outdated Dependencies" value={dashboard.outdatedDependencies.length} tone={toneOf(dashboard.outdatedDependencies.length)} />
+                <StatItem icon={ScanEye} label="Apps Not Recently Scanned" value={dashboard.applicationsNotRecentlyScanned.length} tone={toneOf(dashboard.applicationsNotRecentlyScanned.length)} />
+              </div>
+              <p className="text-xs text-muted-foreground px-4 py-3 border-t">Last computed {new Date(dashboard.generatedAt).toLocaleString()}</p>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {dashboard && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><ServerCog className="h-4 w-4" />Servers Missing Patches</CardTitle>
-            <CardDescription>Infrastructure not on the latest patch level.</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Needs Attention</CardTitle>
+            <CardDescription>Drill into each area to see the underlying records.</CardDescription>
           </CardHeader>
           <CardContent>
-            <DrillDownList
-              items={dashboard?.serversMissingPatches ?? []}
-              emptyLabel="All servers are patched."
-              render={(s) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}</p>
-                  </div>
-                  <Badge variant="outline" className="capitalize">{s.patchStatus}</Badge>
-                </div>
-              )}
-            />
+            <Tabs defaultValue={defaultTab}>
+              <div className="overflow-x-auto -mx-2 px-2 pb-1">
+                <TabsList className="h-auto flex-nowrap">
+                  {attentionCategories.map(cat => (
+                    <TabsTrigger key={cat.key} value={cat.key} className="gap-1.5 shrink-0">
+                      <cat.icon className="h-3.5 w-3.5" />
+                      <span>{cat.short}</span>
+                      <Badge variant={cat.items.length > 0 ? TONE_BADGE[cat.tone] : "outline"} className="ml-0.5 h-5 min-w-5 px-1 text-[10px] justify-center">
+                        {cat.items.length}
+                      </Badge>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {attentionCategories.map(cat => (
+                <TabsContent key={cat.key} value={cat.key} className="mt-3">
+                  <p className="text-sm font-medium mb-1">{cat.label}</p>
+                  <DrillDownList items={cat.items} emptyLabel={cat.emptyLabel} render={cat.render} />
+                </TabsContent>
+              ))}
+            </Tabs>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Apps with Critical Vulnerabilities</CardTitle>
-            <CardDescription>Applications currently carrying open critical-severity findings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.applicationsWithCriticalVulnerabilities ?? []}
-              emptyLabel="No applications with open critical vulnerabilities."
-              render={(a) => (
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{a.applicationName ?? `App #${a.applicationId}`}</p>
-                  <Badge variant="destructive">{a.criticalCount} critical</Badge>
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><KeyRound className="h-4 w-4" />SSL Certificates Expiring Soon</CardTitle>
-            <CardDescription>Certificates expiring within 30 days.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.sslCertificatesExpiringSoon ?? []}
-              emptyLabel="No SSL certificates expiring soon."
-              render={(d) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">{d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : "N/A"}</p>
-                  </div>
-                  {daysRemainingBadge(d.daysRemaining)}
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Globe2 className="h-4 w-4" />Domains Expiring Soon</CardTitle>
-            <CardDescription>Domain registrations expiring within 30 days.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.domainsExpiringSoon ?? []}
-              emptyLabel="No domains expiring soon."
-              render={(d) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">{d.registrationExpiry ? new Date(d.registrationExpiry).toLocaleDateString() : "N/A"}</p>
-                  </div>
-                  {daysRemainingBadge(d.daysRemaining)}
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><DatabaseBackup className="h-4 w-4" />Failed Backups</CardTitle>
-            <CardDescription>Databases whose most recent backup did not succeed.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.failedBackups ?? []}
-              emptyLabel="All backups completed successfully."
-              render={(b) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{b.name}</p>
-                    <p className="text-xs text-muted-foreground">{b.lastBackupAt ? new Date(b.lastBackupAt).toLocaleString() : "Never backed up"}</p>
-                  </div>
-                  <Badge variant="destructive" className="capitalize">{b.lastBackupStatus}</Badge>
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><UserCog className="h-4 w-4" />Admin Users</CardTitle>
-            <CardDescription>Users holding administrator-level access.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.adminUsers ?? []}
-              emptyLabel="No admin users found."
-              render={(u) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{u.name}</p>
-                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                  </div>
-                  {u.department && <Badge variant="outline">{u.department}</Badge>}
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><LockKeyholeOpen className="h-4 w-4" />Repos with Exposed Secrets</CardTitle>
-            <CardDescription>Repositories flagged for exposed credentials or secrets.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.reposWithExposedSecrets ?? []}
-              emptyLabel="No repositories with exposed secrets."
-              render={(r) => (
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{r.name}</p>
-                  <p className="text-xs text-muted-foreground">{r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}</p>
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><PackageX className="h-4 w-4" />Outdated Dependencies</CardTitle>
-            <CardDescription>Software components behind the latest release or past end-of-life.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.outdatedDependencies ?? []}
-              emptyLabel="All dependencies are current."
-              render={(d) => (
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">{d.installedVersion ?? "?"} → {d.latestVersion ?? "?"}</p>
-                  </div>
-                  {d.endOfLife && <Badge variant="destructive">EOL</Badge>}
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><ScanEye className="h-4 w-4" />Applications Not Recently Scanned</CardTitle>
-            <CardDescription>Applications without a security scan in the last 90 days.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DrillDownList
-              items={dashboard?.applicationsNotRecentlyScanned ?? []}
-              emptyLabel="All applications have been scanned recently."
-              render={(a) => (
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{a.name}</p>
-                  <p className="text-xs text-muted-foreground">{a.lastSecurityScanAt ? `Last scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned"}</p>
-                </div>
-              )}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {summaryLoading ? (
-          [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full" />)
-        ) : summary ? (
-          <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Security Score</CardTitle>
-                <Shield className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent><div className="text-2xl font-bold">{summary.securityScore}/100</div></CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Critical/High</CardTitle>
-                <ShieldAlert className="h-4 w-4 text-destructive" />
-              </CardHeader>
-              <CardContent><div className="text-2xl font-bold text-destructive">{summary.critical + summary.high}</div></CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent><div className="text-2xl font-bold">{summary.inProgress}</div></CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent><div className="text-2xl font-bold">{summary.resolved}</div></CardContent>
-            </Card>
-          </>
-        ) : null}
-      </div>
+      )}
 
       <Card>
-        <CardHeader><CardTitle>Vulnerabilities ({vulnerabilities?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Vulnerabilities ({vulnerabilities?.length ?? 0})</CardTitle>
+          <CardDescription>Every tracked finding, most recent first. Open a row to edit full details.</CardDescription>
+        </CardHeader>
         <CardContent>
           {vulnsLoading ? (
             <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
           ) : vulnerabilities && vulnerabilities.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[750px]">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
+                    <TableHead>Finding</TableHead>
                     <TableHead>Severity</TableHead>
                     <TableHead>Application</TableHead>
-                    <TableHead>CVE</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Installed On</TableHead>
-                    <TableHead>License Type</TableHead>
-                    <TableHead>License Expires</TableHead>
-                    <TableHead>EOL Date</TableHead>
                     <TableHead>Team</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
@@ -474,24 +437,15 @@ export default function Security() {
                 <TableBody>
                   {pagedVulnerabilities.map((vuln) => (
                     <TableRow key={vuln.id}>
-                      <TableCell className="font-medium">{vuln.title}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>{vuln.title}</div>
+                        {metaLine(vuln as VulnRow) && (
+                          <div className="text-xs text-muted-foreground font-normal font-mono mt-0.5">{metaLine(vuln as VulnRow)}</div>
+                        )}
+                      </TableCell>
                       <TableCell><Badge variant={severityVariant(vuln.severity)}>{vuln.severity}</Badge></TableCell>
                       <TableCell>{appLabel(vuln as VulnRow)}</TableCell>
-                      <TableCell className="font-mono text-xs">{vuln.cveId || 'N/A'}</TableCell>
-                      <TableCell>{vuln.status}</TableCell>
-                      <TableCell className="font-mono text-xs">{(vuln as VulnRow).version || 'N/A'}</TableCell>
-                      <TableCell>{(vuln as VulnRow).vendor || 'N/A'}</TableCell>
-                      <TableCell>{(vuln as VulnRow).category || 'N/A'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {(vuln as VulnRow).installationDate ? new Date((vuln as VulnRow).installationDate as string).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-                      <TableCell>{(vuln as VulnRow).licenseType || 'N/A'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {(vuln as VulnRow).licenseExpiration ? new Date((vuln as VulnRow).licenseExpiration as string).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {(vuln as VulnRow).endOfLifeDate ? new Date((vuln as VulnRow).endOfLifeDate as string).toLocaleDateString() : 'N/A'}
-                      </TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize">{vuln.status.replace(/_/g, " ")}</Badge></TableCell>
                       <TableCell><TeamBadge teamId={(vuln as VulnRow).teamId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
