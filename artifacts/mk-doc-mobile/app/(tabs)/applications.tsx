@@ -1,5 +1,6 @@
 import { useListApplications } from "@workspace/api-client-react";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -47,14 +48,20 @@ function envColor(env: string | null | undefined, colors: ReturnType<typeof useC
   }
 }
 
-function AppCard({ app }: { app: App }) {
+function AppCard({ app, onPress }: { app: App; onPress: () => void }) {
   const colors = useColors();
   const sc = statusColor(app.status, colors);
   const ec = envColor(app.environment, colors);
   const initial = app.name?.[0]?.toUpperCase() ?? "?";
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
       <View style={[styles.avatar, { backgroundColor: colors.primary + "18" }]}>
         <Text style={[styles.avatarText, { color: colors.primary }]}>{initial}</Text>
       </View>
@@ -80,13 +87,14 @@ function AppCard({ app }: { app: App }) {
         </View>
       </View>
       <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-    </View>
+    </Pressable>
   );
 }
 
 export default function ApplicationsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const isWeb = Platform.OS === "web";
   const [search, setSearch] = useState("");
 
@@ -155,7 +163,17 @@ export default function ApplicationsScreen() {
         <FlatList
           data={data ?? []}
           keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => <AppCard app={item} />}
+          renderItem={({ item }) => (
+            <AppCard
+              app={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/application/[id]",
+                  params: { id: String(item.id) },
+                })
+              }
+            />
+          )}
           contentContainerStyle={[
             styles.list,
             { paddingBottom: isWeb ? 34 : insets.bottom + 90 },
