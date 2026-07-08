@@ -8,6 +8,12 @@ out-tsc
 .expo
 .expo-shared
 
+# playwright
+test-results
+playwright-report
+blob-report
+playwright/.cache
+
 # dependencies
 node_modules
 
