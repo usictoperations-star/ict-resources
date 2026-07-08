@@ -75,8 +75,8 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Recent Alerts</CardTitle>
           </CardHeader>
@@ -88,13 +88,16 @@ export default function Dashboard() {
             ) : alerts && alerts.length > 0 ? (
               <div className="space-y-4">
                 {alerts.map((alert) => (
-                  <div key={alert.id} className="flex items-start gap-4 border-b pb-4 last:border-0 last:pb-0">
-                    <Badge variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}>
+                  <div key={alert.id} className="flex items-start gap-3 border-b pb-4 last:border-0 last:pb-0">
+                    <Badge
+                      variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                      className="flex-shrink-0"
+                    >
                       {alert.severity}
                     </Badge>
-                    <div>
-                      <p className="text-sm font-medium leading-none">{alert.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-none break-words">{alert.title}</p>
+                      <p className="text-sm text-muted-foreground mt-1 break-words">{alert.message}</p>
                     </div>
                   </div>
                 ))}
@@ -104,15 +107,15 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        
-        <Card className="col-span-3">
+
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>System Health</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="flex items-center justify-center h-48 border border-dashed rounded-md">
-               <p className="text-muted-foreground text-sm">Activity charts to be implemented</p>
-             </div>
+            <div className="flex items-center justify-center h-48 border border-dashed rounded-md">
+              <p className="text-muted-foreground text-sm">Activity charts to be implemented</p>
+            </div>
           </CardContent>
         </Card>
       </div>

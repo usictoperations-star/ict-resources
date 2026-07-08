@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
-  BarChart, Settings, Search, Menu, X
+  BarChart, Settings, Search, Menu
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () 
   );
 }
 
-function SidebarLogo() {
+function SidebarBranding() {
   return (
     <div className="flex items-center gap-3 px-4">
       <img
@@ -70,14 +70,15 @@ function SidebarLogo() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const [tabletSidebarOpen, setTabletSidebarOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex-col hidden md:flex bg-[#0F2D5C]">
+      {/* Desktop Sidebar — always visible on lg+ */}
+      <aside className="w-64 flex-shrink-0 flex-col bg-[#0F2D5C] hidden lg:flex">
         <div className="h-16 flex items-center border-b border-white/10 flex-shrink-0">
-          <SidebarLogo />
+          <SidebarBranding />
         </div>
         <div className="flex-1 overflow-y-auto py-3">
           <NavLinks location={location} />
@@ -87,15 +88,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile Nav Sheet */}
+      {/* Tablet Sidebar — toggleable at md, hidden at lg+ */}
+      {tabletSidebarOpen && (
+        <aside className="w-64 flex-shrink-0 flex-col bg-[#0F2D5C] hidden md:flex lg:hidden border-r border-white/10">
+          <div className="h-16 flex items-center border-b border-white/10 flex-shrink-0">
+            <SidebarBranding />
+          </div>
+          <div className="flex-1 overflow-y-auto py-3">
+            <NavLinks location={location} onNavigate={() => setTabletSidebarOpen(false)} />
+          </div>
+          <div className="p-3 border-t border-white/10 text-xs text-blue-300 text-center font-mono">
+            v1.0.0 © 2026 MK DOC
+          </div>
+        </aside>
+      )}
+
+      {/* Mobile Nav Sheet — full-screen */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-[#0F2D5C] border-r border-white/10">
-          <SheetHeader className="h-16 flex flex-row items-center justify-between px-4 border-b border-white/10">
+        <SheetContent
+          side="left"
+          className="w-full max-w-full p-0 bg-[#0F2D5C] border-r border-white/10 sm:max-w-sm"
+        >
+          <SheetHeader className="h-16 flex flex-row items-center px-4 border-b border-white/10">
             <SheetTitle asChild>
-              <SidebarLogo />
+              <SidebarBranding />
             </SheetTitle>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto py-3">
+          <div className="overflow-y-auto py-3">
             <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
           </div>
           <div className="p-3 border-t border-white/10 text-xs text-blue-300 text-center font-mono">
@@ -107,28 +126,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-16 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 bg-[#1B56A5] shadow-md">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-white hover:bg-white/10"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div className="md:hidden flex items-center gap-2">
-              <img src="/mk-logo.png" alt="MK Logo" className="h-8 w-8 object-contain" />
-              <span className="font-bold text-white text-sm tracking-wide">MK DOC</span>
-            </div>
+        <header className="h-16 flex items-center gap-3 px-4 sm:px-5 flex-shrink-0 bg-[#1B56A5] shadow-md">
+          {/* Mobile hamburger (<md) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-white hover:bg-white/10 flex-shrink-0"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {/* Tablet hamburger (md to lg) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex lg:hidden text-white hover:bg-white/10 flex-shrink-0"
+            onClick={() => setTabletSidebarOpen((v) => !v)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {/* Mobile logo */}
+          <div className="md:hidden flex items-center gap-2 flex-shrink-0">
+            <img src="/mk-logo.png" alt="MK Logo" className="h-8 w-8 object-contain" />
+            <span className="font-bold text-white text-sm tracking-wide">MK DOC</span>
           </div>
 
-          <div className="flex flex-1 justify-end md:justify-center max-w-xl ml-4 md:ml-0 relative">
+          {/* Search bar */}
+          <div className="flex flex-1 justify-end relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-200 pointer-events-none" />
             <Input
               type="search"
               placeholder="Search assets, IP, domains..."
-              className="w-full pl-9 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus-visible:ring-white/30 focus-visible:bg-white/20"
+              className="w-full pl-9 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus-visible:ring-white/30 focus-visible:bg-white/20 max-w-md"
             />
           </div>
         </header>
