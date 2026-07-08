@@ -24,6 +24,7 @@ import type {
   ActivityItem,
   Alert,
   Application,
+  ApplicationDependents,
   ApplicationInput,
   ApplicationSummary,
   ApplicationUpdate,
@@ -862,6 +863,83 @@ export const useDeleteApplication = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteApplicationMutationOptions(options));
     }
+
+export const getGetApplicationDependentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/applications/${id}/dependents`
+}
+
+/**
+ * @summary Get counts of records dependent on this application
+ */
+export const getApplicationDependents = async (id: number, options?: RequestInit): Promise<ApplicationDependents> => {
+
+  return customFetch<ApplicationDependents>(getGetApplicationDependentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApplicationDependentsQueryKey = (id: number,) => {
+    return [
+    `/api/applications/${id}/dependents`
+    ] as const;
+    }
+
+
+export const getGetApplicationDependentsQueryOptions = <TData = Awaited<ReturnType<typeof getApplicationDependents>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApplicationDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApplicationDependentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApplicationDependents>>> = ({ signal }) => getApplicationDependents(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApplicationDependents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetApplicationDependentsQueryResult = NonNullable<Awaited<ReturnType<typeof getApplicationDependents>>>
+export type GetApplicationDependentsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get counts of records dependent on this application
+ */
+
+export function useGetApplicationDependents<TData = Awaited<ReturnType<typeof getApplicationDependents>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApplicationDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetApplicationDependentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetApplicationSummaryUrl = () => {
 

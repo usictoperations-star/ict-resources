@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "@workspace/db";
-import { applicationsTable } from "@workspace/db";
+import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable } from "@workspace/db";
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
-import { eq, ilike, and } from "drizzle-orm";
+import { eq, ilike, and, count } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 const router = Router();
@@ -87,6 +87,43 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (err) {
     req.log.error({ err }, "Error creating application");
     return res.status(400).json({ error: "Invalid request" });
+  }
+});
+
+router.get("/:id/dependents", async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [app] = await db.select({ id: applicationsTable.id }).from(applicationsTable).where(eq(applicationsTable.id, id));
+    if (!app) return res.status(404).json({ error: "Not found" });
+
+    const [[relCount], [docCount], [vulnCount], [swCount], [repoCount], [domCount]] = await Promise.all([
+      db.select({ n: count() }).from(releasesTable).where(eq(releasesTable.applicationId, id)),
+      db.select({ n: count() }).from(documentsTable).where(eq(documentsTable.applicationId, id)),
+      db.select({ n: count() }).from(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.applicationId, id)),
+      db.select({ n: count() }).from(softwareTable).where(eq(softwareTable.applicationId, id)),
+      db.select({ n: count() }).from(repositoriesTable).where(eq(repositoriesTable.applicationId, id)),
+      db.select({ n: count() }).from(domainsTable).where(eq(domainsTable.applicationId, id)),
+    ]);
+
+    const releases = Number(relCount.n);
+    const documents = Number(docCount.n);
+    const vulnerabilities = Number(vulnCount.n);
+    const software = Number(swCount.n);
+    const repositories = Number(repoCount.n);
+    const domains = Number(domCount.n);
+
+    return res.json({
+      releases,
+      documents,
+      vulnerabilities,
+      software,
+      repositories,
+      domains,
+      total: releases + documents + vulnerabilities + software + repositories + domains,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching application dependents");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -327,6 +327,24 @@ export const DeleteApplicationResponse = zod.void()
 
 
 /**
+ * @summary Get counts of records dependent on this application
+ */
+export const GetApplicationDependentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetApplicationDependentsResponse = zod.object({
+  "releases": zod.number(),
+  "documents": zod.number(),
+  "vulnerabilities": zod.number(),
+  "software": zod.number(),
+  "repositories": zod.number(),
+  "domains": zod.number(),
+  "total": zod.number()
+})
+
+
+/**
  * @summary Get application counts by category, status, and environment
  */
 export const GetApplicationSummaryResponse = zod.object({

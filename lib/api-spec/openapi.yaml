@@ -219,6 +219,27 @@ paths:
         "204":
           description: Deleted
 
+  /applications/{id}/dependents:
+    get:
+      operationId: getApplicationDependents
+      tags: [applications]
+      summary: Get counts of records dependent on this application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dependent record counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDependents"
+        "404":
+          description: Not found
+
   /applications/summary:
     get:
       operationId: getApplicationSummary
@@ -1718,6 +1739,25 @@ components:
                 type: integer
             required: [classification, count]
       required: [byCategory, byStatus, byEnvironment, byClassification]
+
+    ApplicationDependents:
+      type: object
+      properties:
+        releases:
+          type: integer
+        documents:
+          type: integer
+        vulnerabilities:
+          type: integer
+        software:
+          type: integer
+        repositories:
+          type: integer
+        domains:
+          type: integer
+        total:
+          type: integer
+      required: [releases, documents, vulnerabilities, software, repositories, domains, total]
 
     # ── Infrastructure ────────────────────────────────────────────────────
     InfrastructureItem:

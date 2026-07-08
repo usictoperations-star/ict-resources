@@ -236,6 +236,16 @@ export interface ApplicationSummary {
   byClassification: ApplicationSummaryByClassificationItem[];
 }
 
+export interface ApplicationDependents {
+  releases: number;
+  documents: number;
+  vulnerabilities: number;
+  software: number;
+  repositories: number;
+  domains: number;
+  total: number;
+}
+
 export interface InfrastructureItem {
   id: number;
   name: string;

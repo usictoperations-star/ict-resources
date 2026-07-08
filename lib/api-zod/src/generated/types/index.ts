@@ -10,6 +10,7 @@ export * from './activityChartPoint';
 export * from './activityItem';
 export * from './alert';
 export * from './application';
+export * from './applicationDependents';
 export * from './applicationInput';
 export * from './applicationSummary';
 export * from './applicationSummaryByCategoryItem';

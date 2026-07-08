@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from "@workspace/api-client-react";
+import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication, useGetApplicationDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +84,11 @@ export default function Applications() {
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AppRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AppRow | null>(null);
+
+  const { data: dependents, isLoading: isLoadingDependents } = useGetApplicationDependents(
+    deleteTarget?.id ?? 0,
+    { query: { enabled: !!deleteTarget, queryKey: ["/api/applications", deleteTarget?.id, "dependents"] } }
+  );
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -427,6 +432,8 @@ export default function Applications() {
         itemLabel={deleteTarget?.name ?? ""}
         isPending={isDeleting}
         onConfirm={handleDelete}
+        dependents={dependents}
+        isLoadingDependents={!!deleteTarget && isLoadingDependents}
       />
     </div>
   );
