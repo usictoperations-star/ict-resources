@@ -2,3 +2,4 @@
 - [Form validation against generated Zod schemas](zod-form-validation-numeric-coercion.md) — extend generated Create*Body schemas for form validation; test numeric fields with decimals/negatives, not letters (type="number" blocks those).
 - [drizzle-kit push in non-interactive shell](drizzle-push-noninteractive.md) — use `--force` flag when a push has data-loss confirmation prompts; agent shells have no TTY to answer them.
 - [Playwright e2e setup in this pnpm monorepo](playwright-e2e-setup.md) — workspace-scoped install, Nix system deps needed for chromium to launch, and a Dialog/button text strict-mode selector gotcha.
+- [Orval hooks always pass a signal](orval-fetch-signal-defeats-timeout.md) — generated queryFn always forwards React Query's own signal, so "only timeout if no signal given" fetch logic is dead code; combine signals instead.

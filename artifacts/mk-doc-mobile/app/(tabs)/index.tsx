@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useColors } from "@/hooks/useColors";
 
 type KPI = {
@@ -86,6 +87,8 @@ export default function DashboardScreen() {
   const {
     data: stats,
     isLoading: statsLoading,
+    isError: statsIsError,
+    error: statsError,
     refetch: refetchStats,
     isRefetching: statsRefetching,
   } = useGetDashboardStats();
@@ -93,6 +96,8 @@ export default function DashboardScreen() {
   const {
     data: alerts,
     isLoading: alertsLoading,
+    isError: alertsIsError,
+    error: alertsError,
     refetch: refetchAlerts,
     isRefetching: alertsRefetching,
   } = useGetDashboardAlerts();
@@ -189,6 +194,12 @@ export default function DashboardScreen() {
             color={colors.primary}
             style={{ marginVertical: 24 }}
           />
+        ) : statsIsError ? (
+          <ErrorState
+            message={getErrorMessage(statsError)}
+            onRetry={refetchStats}
+            retrying={statsRefetching}
+          />
         ) : (
           <View style={styles.kpiGrid}>
             {kpis.map((k) => (
@@ -246,6 +257,12 @@ export default function DashboardScreen() {
           <ActivityIndicator
             color={colors.primary}
             style={{ marginVertical: 24 }}
+          />
+        ) : alertsIsError ? (
+          <ErrorState
+            message={getErrorMessage(alertsError)}
+            onRetry={refetchAlerts}
+            retrying={alertsRefetching}
           />
         ) : !alerts || alerts.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>

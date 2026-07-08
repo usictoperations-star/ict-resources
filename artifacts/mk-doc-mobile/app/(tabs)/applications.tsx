@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useColors } from "@/hooks/useColors";
 
 type App = {
@@ -98,9 +99,14 @@ export default function ApplicationsScreen() {
   const isWeb = Platform.OS === "web";
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, refetch, isRefetching } = useListApplications(
-    search ? { search } : {}
-  );
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useListApplications(search ? { search } : {});
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -158,6 +164,12 @@ export default function ApplicationsScreen() {
         <ActivityIndicator
           color={colors.primary}
           style={{ marginTop: 40 }}
+        />
+      ) : isError ? (
+        <ErrorState
+          message={getErrorMessage(error)}
+          onRetry={refetch}
+          retrying={isRefetching}
         />
       ) : (
         <FlatList

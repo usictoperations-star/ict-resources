@@ -20,7 +20,17 @@ setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cap retries so a downed API server fails fast with a visible error
+      // state instead of spinning through React Query's default 3 retries
+      // (each with growing backoff) on top of the request-level timeout.
+      retry: 1,
+      retryDelay: 1000,
+    },
+  },
+});
 
 function RootLayoutNav() {
   return (

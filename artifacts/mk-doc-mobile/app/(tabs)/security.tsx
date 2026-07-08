@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useColors } from "@/hooks/useColors";
 
 type Vuln = {
@@ -109,6 +110,8 @@ export default function SecurityScreen() {
   const {
     data: summary,
     isLoading: summaryLoading,
+    isError: summaryIsError,
+    error: summaryError,
     refetch: refetchSummary,
     isRefetching: summaryRefetching,
   } = useGetSecuritySummary();
@@ -116,6 +119,8 @@ export default function SecurityScreen() {
   const {
     data: vulns,
     isLoading: vulnsLoading,
+    isError: vulnsIsError,
+    error: vulnsError,
     refetch: refetchVulns,
     isRefetching: vulnsRefetching,
   } = useListVulnerabilities(filter !== "all" ? { severity: filter } : {});
@@ -176,6 +181,18 @@ export default function SecurityScreen() {
           </View>
         )}
 
+        {summaryIsError && (
+          <View style={[styles.summaryError, { backgroundColor: "rgba(255,255,255,0.12)" }]}>
+            <Feather name="wifi-off" size={14} color="#fff" />
+            <Text style={styles.summaryErrorText} numberOfLines={1}>
+              {getErrorMessage(summaryError)}
+            </Text>
+            <Pressable onPress={() => refetchSummary()} hitSlop={8}>
+              <Feather name="refresh-cw" size={14} color="#fff" />
+            </Pressable>
+          </View>
+        )}
+
         {/* Filter pills */}
         <View style={styles.filterRow}>
           {FILTERS.map((f) => {
@@ -207,6 +224,12 @@ export default function SecurityScreen() {
 
       {vulnsLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+      ) : vulnsIsError ? (
+        <ErrorState
+          message={getErrorMessage(vulnsError)}
+          onRetry={refetchVulns}
+          retrying={vulnsRefetching}
+        />
       ) : (
         <FlatList
           data={vulns ?? []}
@@ -298,6 +321,20 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     color: "rgba(255,255,255,0.7)",
     marginTop: 2,
+  },
+  summaryError: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  summaryErrorText: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
   },
   filterRow: { flexDirection: "row", gap: 6 },
   filterPill: {

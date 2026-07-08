@@ -18,6 +18,20 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
+// Requests that hang (e.g. API server unreachable / DNS black hole) would
+// otherwise wait on the platform's default socket timeout, which can be
+// well over a minute and make loading spinners appear stuck forever. Cap
+// every request so callers get a timely, actionable failure instead.
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+export class TimeoutError extends Error {
+  readonly name = "TimeoutError";
+
+  constructor(url: string, timeoutMs: number) {
+    super(`Request to ${url} timed out after ${timeoutMs}ms`);
+  }
+}
+
 /**
  * Set a base URL that is prepended to every relative request URL
  * (i.e. paths that start with `/`).
@@ -360,7 +374,29 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // Always enforce our own timeout, even when the caller (e.g. React
+  // Query's queryFn) already supplies its own abort-on-unmount signal.
+  // Combine both signals so either one can cancel the request.
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), DEFAULT_TIMEOUT_MS);
+
+  const callerSignal = init.signal;
+  const signal =
+    callerSignal && typeof AbortSignal.any === "function"
+      ? AbortSignal.any([callerSignal, timeoutController.signal])
+      : timeoutController.signal;
+
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, method, headers, signal });
+  } catch (cause) {
+    if (timeoutController.signal.aborted) {
+      throw new TimeoutError(requestInfo.url, DEFAULT_TIMEOUT_MS);
+    }
+    throw cause;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
