@@ -65,7 +65,7 @@ export default function Dashboard() {
     { module: "Apps", value: Math.min(100, ((stats.productionSystems ?? 0) / Math.max(stats.totalApplications ?? 1, 1)) * 100) },
     { module: "Infra", value: 87 },
     { module: "DBs", value: stats.databases ? 90 : 0 },
-    { module: "Domains", value: stats.expiringDomains ? Math.max(0, 100 - (stats.expiringDomains * 15)) : 95 },
+    { module: "Domains", value: stats.upcomingRenewals ? Math.max(0, 100 - (stats.upcomingRenewals * 5)) : 95 },
     { module: "Security", value: Math.max(0, 100 - ((stats.criticalVulnerabilities ?? 0) * 20) - ((stats.highVulnerabilities ?? 0) * 8)) },
     { module: "Releases", value: 92 },
   ] : [];
@@ -141,10 +141,10 @@ export default function Dashboard() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { icon: Globe, label: "Domains", value: stats.domains ?? 0, sub: `${stats.expiringDomains ?? 0} expiring`, color: "#0891b2" },
+            { icon: Globe, label: "Domains", value: stats.domains ?? 0, sub: `${stats.upcomingRenewals ?? 0} renewals due`, color: "#0891b2" },
             { icon: GitBranch, label: "Repositories", value: stats.repositories ?? 0, sub: "Active", color: "#7c3aed" },
             { icon: Database, label: "Databases", value: stats.databases, sub: "Tracked", color: "#059669" },
-            { icon: Package, label: "Software", value: stats.softwareItems ?? 0, sub: `${stats.eolSoftware ?? 0} EOL`, color: "#d97706" },
+            { icon: Package, label: "SSL Certs", value: stats.sslCertificates ?? 0, sub: "Monitored", color: "#d97706" },
           ].map(({ icon: Icon, label, value, sub, color }) => (
             <Card key={label} className="hover:shadow-sm transition-shadow">
               <CardContent className="pt-4 pb-3 px-4">

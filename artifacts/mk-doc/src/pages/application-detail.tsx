@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetApplication } from "@workspace/api-client-react";
+import { useGetApplication, getGetApplicationQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,7 +61,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 export default function ApplicationDetail() {
   const params = useParams<{ id: string }>();
   const id = parseInt(params.id || "0", 10);
-  const { data: app, isLoading } = useGetApplication(id, { query: { enabled: !!id } });
+  const { data: app, isLoading } = useGetApplication(id, { query: { enabled: !!id, queryKey: getGetApplicationQueryKey(id) } });
 
   if (isLoading) {
     return (
