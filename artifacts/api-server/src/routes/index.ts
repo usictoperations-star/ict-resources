@@ -13,6 +13,7 @@ import documentationRouter from "./documentation";
 import reportsRouter from "./reports";
 import adminRouter from "./admin";
 import searchRouter from "./search";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use("/documentation", documentationRouter);
 router.use("/reports", reportsRouter);
 router.use("/admin", adminRouter);
 router.use("/search", searchRouter);
+router.use(storageRouter);
 
 export default router;

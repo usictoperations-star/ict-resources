@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { z } from "zod";
 import { useListDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -13,8 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, ExternalLink, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FileText, ExternalLink, Plus, Loader2, Pencil, Trash2, UploadCloud, Link2, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ObjectUploader } from "@workspace/object-storage-web";
+import type { UppyFile, UploadResult } from "@uppy/core";
 
 const TYPE_OPTIONS = ["PRD", "TRD", "SOP", "ERD", "API", "Architecture", "Runbook", "Guide", "Policy", "Other"];
 
@@ -42,9 +45,24 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { title: "", type: "", content: "", url: "", applicationId: "", version: "v1.0", author: "", tags: "" };
+const EMPTY_FORM = { title: "", type: "", content: "", url: "", fileName: "", applicationId: "", version: "v1.0", author: "", tags: "" };
 
 type DocRow = { id: number; title: string; type: string; content?: string | null; url?: string | null; applicationId?: number | null; applicationName?: string | null; version?: string | null; author?: string | null; tags?: string | null; updatedAt: string };
+
+type AttachSource = "upload" | "gdrive" | "sharepoint" | "link";
+
+function detectSource(url: string): AttachSource {
+  if (!url) return "upload";
+  if (url.startsWith("/api/storage/objects/")) return "upload";
+  if (/drive\.google\.com|docs\.google\.com/.test(url)) return "gdrive";
+  if (/sharepoint\.com|1drv\.ms/.test(url)) return "sharepoint";
+  return "link";
+}
+
+function fileNameFromObjectPath(url: string): string {
+  const parts = url.split("/");
+  return decodeURIComponent(parts[parts.length - 1] || "Uploaded file");
+}
 
 export default function Documentation() {
   const { data: documents, isLoading } = useListDocuments();
@@ -58,31 +76,68 @@ export default function Documentation() {
   const [deleteTarget, setDeleteTarget] = useState<DocRow | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [attachSource, setAttachSource] = useState<AttachSource>("upload");
+  const [isUploading, setIsUploading] = useState(false);
 
   const isPending = isCreating || isUpdating;
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const lastObjectPathRef = useRef<string | null>(null);
+
+  const handleGetUploadParameters = async (file: UppyFile<Record<string, unknown>, Record<string, unknown>>) => {
+    setIsUploading(true);
+    const res = await fetch("/api/storage/uploads/request-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: file.name, size: file.size ?? 0, contentType: file.type || "application/octet-stream" }),
+    });
+    if (!res.ok) {
+      setIsUploading(false);
+      throw new Error("Failed to request upload URL");
+    }
+    const { uploadURL, objectPath } = (await res.json()) as { uploadURL: string; objectPath: string };
+    lastObjectPathRef.current = objectPath;
+    return { method: "PUT" as const, url: uploadURL, headers: { "Content-Type": file.type || "application/octet-stream" } };
+  };
+
+  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    setIsUploading(false);
+    const uploaded = result.successful?.[0];
+    const objectPath = lastObjectPathRef.current;
+    if (!uploaded || !objectPath) return;
+    const servingUrl = `/api/storage${objectPath}`;
+    setForm(f => ({
+      ...f,
+      url: servingUrl,
+      fileName: uploaded.name || fileNameFromObjectPath(servingUrl),
+      title: f.title || (uploaded.name ?? "").replace(/\.[^./]+$/, ""),
+    }));
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
       await deleteDocument({ id: deleteTarget.id });
-      await queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/documentation"] });
       setDeleteTarget(null);
     } catch {
       // keep dialog open on failure; user can retry or cancel
     }
   };
 
-  const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
+  const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setAttachSource("upload"); setOpen(true); };
 
   const openEdit = (doc: DocRow) => {
     setEditTarget(doc);
+    const url = doc.url ?? "";
     setForm({
       title: doc.title ?? "", type: doc.type ?? "", content: doc.content ?? "",
-      url: doc.url ?? "", applicationId: doc.applicationId?.toString() ?? "",
+      url, fileName: url.startsWith("/api/storage/objects/") ? fileNameFromObjectPath(url) : "",
+      applicationId: doc.applicationId?.toString() ?? "",
       version: doc.version ?? "v1.0", author: doc.author ?? "", tags: doc.tags ?? "",
     });
     setErrors({});
+    setAttachSource(detectSource(url));
     setOpen(true);
   };
 
@@ -118,7 +173,7 @@ export default function Documentation() {
       } else {
         await createDocument({ data: payload });
       }
-      await queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/documentation"] });
       setOpen(false);
       setForm({ ...EMPTY_FORM });
       setErrors({});
@@ -210,9 +265,6 @@ export default function Documentation() {
                   <SelectField value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))} placeholder="Select type" options={TYPE_OPTIONS} />
                   {errors.type && <p className="text-xs text-destructive mt-1">{errors.type}</p>}
                 </Field>
-                <Field label="URL">
-                  <Input placeholder="https://confluence.org/..." value={form.url} onChange={set("url")} className="h-9" />
-                </Field>
                 <Field label="Version">
                   <Input placeholder="v1.0" value={form.version} onChange={set("version")} className="h-9" />
                 </Field>
@@ -224,6 +276,60 @@ export default function Documentation() {
                   {errors.applicationId && <p className="text-xs text-destructive mt-1">{errors.applicationId}</p>}
                 </Field>
               </div>
+              <Field label="Attachment">
+                <Tabs value={attachSource} onValueChange={(v) => setAttachSource(v as AttachSource)}>
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="upload">Desktop</TabsTrigger>
+                    <TabsTrigger value="gdrive">Google Drive</TabsTrigger>
+                    <TabsTrigger value="sharepoint">SharePoint</TabsTrigger>
+                    <TabsTrigger value="link">Other Link</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="upload" className="space-y-2">
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={26214400}
+                      onGetUploadParameters={handleGetUploadParameters}
+                      onComplete={handleUploadComplete}
+                      buttonClassName="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 border [border-color:var(--button-outline)] shadow-xs hover-elevate active-elevate-2 h-9 w-full px-4"
+                    >
+                      <UploadCloud className="h-4 w-4 mr-2" />
+                      {isUploading ? "Uploading..." : "Choose file from computer"}
+                    </ObjectUploader>
+                    {form.fileName && attachSource === "upload" && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> {form.fileName}
+                      </p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="gdrive" className="space-y-1">
+                    <Input
+                      placeholder="Paste Google Drive share link..."
+                      value={form.url}
+                      onChange={set("url")}
+                      className="h-9"
+                    />
+                    <p className="text-xs text-muted-foreground">Paste a shareable link from Google Drive (set access to "Anyone with the link").</p>
+                  </TabsContent>
+                  <TabsContent value="sharepoint" className="space-y-1">
+                    <Input
+                      placeholder="Paste SharePoint link..."
+                      value={form.url}
+                      onChange={set("url")}
+                      className="h-9"
+                    />
+                    <p className="text-xs text-muted-foreground">Paste a shared link from SharePoint or OneDrive.</p>
+                  </TabsContent>
+                  <TabsContent value="link" className="space-y-1">
+                    <Input
+                      placeholder="https://confluence.org/..."
+                      value={form.url}
+                      onChange={set("url")}
+                      className="h-9"
+                    />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Link2 className="h-3 w-3" /> Any other external URL.</p>
+                  </TabsContent>
+                </Tabs>
+              </Field>
               <Field label="Tags">
                 <Input placeholder="api, public, v2 (comma separated)" value={form.tags} onChange={set("tags")} className="h-9" />
               </Field>

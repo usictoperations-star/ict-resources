@@ -29,6 +29,8 @@ A centralized internal platform to register, monitor, secure, and manage all dig
 - `artifacts/mk-doc/src/` — React frontend (pages, layout, components)
 - `lib/api-client-react/src/generated/` — auto-generated React Query hooks (do not edit)
 - `lib/api-zod/src/generated/` — auto-generated Zod validation schemas (do not edit)
+- `lib/object-storage-web/` — `ObjectUploader` component + `useUpload` hook for desktop file uploads to object storage
+- `artifacts/api-server/src/routes/storage.ts`, `src/lib/objectStorage.ts`, `src/lib/objectAcl.ts` — object storage upload-URL request + serving routes
 
 ## Architecture decisions
 
@@ -65,6 +67,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Route for `/applications/summary` must come BEFORE `/:id` in the router — Express matches routes in order
 - `domains/expiring` route similarly must precede `/:id`
 - DB dates stored as `text` for flexibility in the schema; format as ISO strings in API responses
+- `queryClient.invalidateQueries({ queryKey: [...] })` calls must exactly match the generated hook's query key (e.g. `getList<X>QueryKey` in `lib/api-client-react/src/generated/api.ts`, usually the literal API path like `/api/documentation`, not a guessed resource name) — a mismatch silently breaks list refresh after create/update/delete
 
 ## Pointers
 
