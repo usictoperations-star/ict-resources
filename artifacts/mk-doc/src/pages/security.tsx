@@ -71,7 +71,7 @@ export default function Security() {
                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
              </div>
           ) : vulnerabilities && vulnerabilities.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-6"><Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -100,7 +100,7 @@ export default function Security() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table></div>
           ) : (
              <p className="text-sm text-muted-foreground text-center py-8">No vulnerabilities found.</p>
           )}

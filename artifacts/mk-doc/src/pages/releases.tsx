@@ -24,7 +24,7 @@ export default function Releases() {
                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
              </div>
           ) : releases && releases.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-6"><Table className="min-w-[650px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Application</TableHead>
@@ -57,7 +57,7 @@ export default function Releases() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table></div>
           ) : (
              <p className="text-sm text-muted-foreground text-center py-8">No releases found.</p>
           )}

@@ -25,7 +25,7 @@ export default function Repositories() {
                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
              </div>
           ) : repositories && repositories.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-6"><Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -68,7 +68,7 @@ export default function Repositories() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table></div>
           ) : (
              <p className="text-sm text-muted-foreground text-center py-8">No repositories found.</p>
           )}

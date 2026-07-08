@@ -23,7 +23,7 @@ export default function Infrastructure() {
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : infra && infra.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-6"><Table className="min-w-[500px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -42,7 +42,7 @@ export default function Infrastructure() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table></div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">No infrastructure found.</p>
           )}

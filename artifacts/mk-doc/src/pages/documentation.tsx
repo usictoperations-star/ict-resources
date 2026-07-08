@@ -25,7 +25,7 @@ export default function Documentation() {
                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
              </div>
           ) : documents && documents.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-6"><Table className="min-w-[550px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -57,7 +57,7 @@ export default function Documentation() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </Table></div>
           ) : (
              <p className="text-sm text-muted-foreground text-center py-8">No documents found.</p>
           )}

@@ -57,7 +57,7 @@ export default function Domains() {
                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                </div>
             ) : domains && domains.length > 0 ? (
-              <Table>
+              <div className="overflow-x-auto -mx-2"><Table className="min-w-[550px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -82,7 +82,7 @@ export default function Domains() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table></div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">No domains found.</p>
             )}

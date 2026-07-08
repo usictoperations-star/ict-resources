@@ -34,7 +34,7 @@ export default function Admin() {
                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                  </div>
               ) : users && users.length > 0 ? (
-                <Table>
+                <div className="overflow-x-auto -mx-6"><Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
@@ -63,7 +63,7 @@ export default function Admin() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </Table></div>
               ) : (
                  <p className="text-sm text-muted-foreground text-center py-8">No users found.</p>
               )}
@@ -83,8 +83,7 @@ export default function Admin() {
                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                  </div>
               ) : auditLogs && auditLogs.length > 0 ? (
-                <div className="border rounded-md">
-                  <Table>
+                <div className="overflow-x-auto -mx-6"><Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Timestamp</TableHead>
@@ -109,8 +108,7 @@ export default function Admin() {
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
-                </div>
+                  </Table></div>
               ) : (
                  <p className="text-sm text-muted-foreground text-center py-8">No audit logs found.</p>
               )}
