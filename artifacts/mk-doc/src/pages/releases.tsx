@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const ENV_OPTIONS = ["Production", "Staging", "Testing", "Development"];
 const STATUS_OPTIONS = ["pending", "in_progress", "successful", "failed", "rolled_back"];
@@ -69,6 +71,7 @@ export default function Releases() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedReleases, startIndex, endIndex, total } = usePagination(releases, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -179,7 +182,7 @@ export default function Releases() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {releases.map((release) => (
+                  {pagedReleases.map((release) => (
                     <TableRow key={release.id}>
                       <TableCell className="font-medium">{release.applicationName || `App #${release.applicationId}`}</TableCell>
                       <TableCell className="font-mono text-xs">{release.version}</TableCell>
@@ -214,6 +217,7 @@ export default function Releases() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log First Release</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

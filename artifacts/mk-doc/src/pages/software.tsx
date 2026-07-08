@@ -20,6 +20,8 @@ import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const TYPE_OPTIONS = ["framework", "library", "runtime", "database", "tool", "os", "language", "other"];
 
@@ -64,6 +66,7 @@ export default function Software() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedSoftware, startIndex, endIndex, total } = usePagination(software, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -153,7 +156,7 @@ export default function Software() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {software.map((item) => (
+                  {pagedSoftware.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.type}</TableCell>
@@ -199,6 +202,7 @@ export default function Software() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Software</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

@@ -18,6 +18,8 @@ import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const appSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -86,6 +88,7 @@ export default function Applications() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedApplications, startIndex, endIndex, total } = usePagination(applications, 10);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -237,7 +240,7 @@ export default function Applications() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {applications.map((app) => (
+                  {pagedApplications.map((app) => (
                     <TableRow key={app.id}>
                       <TableCell className="font-medium">
                         <Link href={`/applications/${app.id}`} className="hover:underline text-primary">
@@ -276,6 +279,7 @@ export default function Applications() {
               </Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

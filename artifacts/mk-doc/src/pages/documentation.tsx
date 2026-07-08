@@ -18,6 +18,8 @@ import { FileText, ExternalLink, Plus, Loader2, Pencil, Trash2, UploadCloud, Lin
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import type { UppyFile, UploadResult } from "@uppy/core";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const TYPE_OPTIONS = ["PRD", "TRD", "SOP", "ERD", "API", "Architecture", "Runbook", "Guide", "Policy", "Other"];
 
@@ -80,6 +82,7 @@ export default function Documentation() {
   const [isUploading, setIsUploading] = useState(false);
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedDocuments, startIndex, endIndex, total } = usePagination(documents, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const lastObjectPathRef = useRef<string | null>(null);
@@ -208,7 +211,7 @@ export default function Documentation() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {documents.map((doc) => (
+                  {pagedDocuments.map((doc) => (
                     <TableRow key={doc.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center">
@@ -245,6 +248,7 @@ export default function Documentation() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Document</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

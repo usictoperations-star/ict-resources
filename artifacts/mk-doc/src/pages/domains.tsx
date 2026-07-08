@@ -18,6 +18,8 @@ import { AlertCircle, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const STATUS_OPTIONS = ["active", "inactive", "expired", "pending"];
 const SSL_STATUS_OPTIONS = ["valid", "expiring", "expired", "none"];
@@ -64,6 +66,7 @@ export default function Domains() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedDomains, startIndex, endIndex, total } = usePagination(domains, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -196,7 +199,7 @@ export default function Domains() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {domains.map((domain) => (
+                    {pagedDomains.map((domain) => (
                       <TableRow key={domain.id}>
                         <TableCell className="font-medium">{domain.name}</TableCell>
                         <TableCell>{domain.registrar || 'N/A'}</TableCell>
@@ -227,6 +230,7 @@ export default function Domains() {
                 <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Domain</Button>
               </div>
             )}
+            <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
           </CardContent>
         </Card>
       </div>

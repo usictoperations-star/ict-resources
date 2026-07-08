@@ -17,6 +17,8 @@ import { GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } from "lucide
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const VISIBILITY_OPTIONS = ["public", "private", "internal"];
 const STATUS_OPTIONS = ["active", "archived", "inactive"];
@@ -65,6 +67,7 @@ export default function Repositories() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedRepositories, startIndex, endIndex, total } = usePagination(repositories, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -166,7 +169,7 @@ export default function Repositories() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {repositories.map((repo) => (
+                  {pagedRepositories.map((repo) => (
                     <TableRow key={repo.id}>
                       <TableCell className="font-medium">
                         {repo.url ? (
@@ -204,6 +207,7 @@ export default function Repositories() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Repository</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

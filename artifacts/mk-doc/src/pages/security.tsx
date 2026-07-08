@@ -23,6 +23,8 @@ import {
   GitPullRequestArrow, PackageX, ScanEye, Layers,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "info"];
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "accepted", "false_positive"];
@@ -98,6 +100,7 @@ export default function Security() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedVulnerabilities, startIndex, endIndex, total } = usePagination(vulnerabilities, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -468,7 +471,7 @@ export default function Security() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vulnerabilities.map((vuln) => (
+                  {pagedVulnerabilities.map((vuln) => (
                     <TableRow key={vuln.id}>
                       <TableCell className="font-medium">{vuln.title}</TableCell>
                       <TableCell><Badge variant={severityVariant(vuln.severity)}>{vuln.severity}</Badge></TableCell>
@@ -510,6 +513,7 @@ export default function Security() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log First Vulnerability</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

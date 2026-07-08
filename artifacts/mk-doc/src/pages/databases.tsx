@@ -20,6 +20,8 @@ import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const TYPE_OPTIONS = ["PostgreSQL", "MySQL", "MariaDB", "MSSQL", "Oracle", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "deprecated"];
@@ -66,6 +68,7 @@ export default function Databases() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedDatabases, startIndex, endIndex, total } = usePagination(databases, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -158,7 +161,7 @@ export default function Databases() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {databases.map((db) => (
+                  {pagedDatabases.map((db) => (
                     <TableRow key={db.id}>
                       <TableCell className="font-medium">{db.name}</TableCell>
                       <TableCell>{db.type}</TableCell>
@@ -186,6 +189,7 @@ export default function Databases() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Database</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 

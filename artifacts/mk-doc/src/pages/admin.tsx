@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const ROLE_OPTIONS = ["admin", "manager", "operator", "viewer", "auditor"];
 const STATUS_OPTIONS = ["active", "inactive", "suspended"];
@@ -72,6 +74,7 @@ export default function Admin() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page: usersPage, setPage: setUsersPage, totalPages: usersTotalPages, pageItems: pagedUsers, startIndex: usersStartIndex, endIndex: usersEndIndex, total: usersTotal } = usePagination(users, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const { data: teams, isLoading: teamsLoading } = useListTeams();
@@ -86,6 +89,8 @@ export default function Admin() {
   const [teamErrors, setTeamErrors] = useState<Record<string, string>>({});
 
   const isTeamPending = isCreatingTeam || isUpdatingTeam;
+  const { page: teamsPage, setPage: setTeamsPage, totalPages: teamsTotalPages, pageItems: pagedTeams, startIndex: teamsStartIndex, endIndex: teamsEndIndex, total: teamsTotal } = usePagination(teams, 10);
+  const { page: auditPage, setPage: setAuditPage, totalPages: auditTotalPages, pageItems: pagedAuditLogs, startIndex: auditStartIndex, endIndex: auditEndIndex, total: auditTotal } = usePagination(auditLogs, 10);
   const setTeam = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTeamForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleTeamDelete = async () => {
@@ -234,7 +239,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users.map((user) => (
+                      {pagedUsers.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.name}</TableCell>
                           <TableCell>{user.email}</TableCell>
@@ -263,6 +268,7 @@ export default function Admin() {
                   <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First User</Button>
                 </div>
               )}
+              <TablePagination page={usersPage} totalPages={usersTotalPages} onPageChange={setUsersPage} startIndex={usersStartIndex} endIndex={usersEndIndex} total={usersTotal} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -291,7 +297,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {teams.map((team) => (
+                      {pagedTeams.map((team) => (
                         <TableRow key={team.id}>
                           <TableCell className="font-medium">{team.name}</TableCell>
                           <TableCell><Badge variant="outline" className="font-mono text-xs">{team.slug}</Badge></TableCell>
@@ -317,6 +323,7 @@ export default function Admin() {
                   <Button variant="outline" onClick={openTeamCreate}><Plus className="h-4 w-4 mr-2" />Add First Team</Button>
                 </div>
               )}
+              <TablePagination page={teamsPage} totalPages={teamsTotalPages} onPageChange={setTeamsPage} startIndex={teamsStartIndex} endIndex={teamsEndIndex} total={teamsTotal} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -343,7 +350,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {auditLogs.map((log) => (
+                      {pagedAuditLogs.map((log) => (
                         <TableRow key={log.id} className="text-sm">
                           <TableCell className="text-muted-foreground whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
                           <TableCell className="font-medium">{log.userName || `User #${log.userId}`}</TableCell>
@@ -358,6 +365,7 @@ export default function Admin() {
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">No audit logs found.</p>
               )}
+              <TablePagination page={auditPage} totalPages={auditTotalPages} onPageChange={setAuditPage} startIndex={auditStartIndex} endIndex={auditEndIndex} total={auditTotal} />
             </CardContent>
           </Card>
         </TabsContent>

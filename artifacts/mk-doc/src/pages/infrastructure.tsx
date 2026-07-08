@@ -19,6 +19,8 @@ import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamSelectField } from "@/components/team-select-field";
+import { TablePagination } from "@/components/table-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 const TYPE_OPTIONS = ["VPS", "Bare Metal", "Docker", "VM", "Container", "Load Balancer", "Database Server", "CDN", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "decommissioned"];
@@ -69,6 +71,7 @@ export default function Infrastructure() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
+  const { page, setPage, totalPages, pageItems: pagedInfra, startIndex, endIndex, total } = usePagination(infra, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -163,7 +166,7 @@ export default function Infrastructure() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {infra.map((item) => (
+                  {pagedInfra.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.type}</TableCell>
@@ -191,6 +194,7 @@ export default function Infrastructure() {
               <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Server</Button>
             </div>
           )}
+          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
       </Card>
 
