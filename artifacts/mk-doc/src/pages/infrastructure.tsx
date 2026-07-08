@@ -208,7 +208,7 @@ export default function Infrastructure() {
             <div className="px-6 py-5 space-y-4">
               {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Name" required>
+                <Field label="Server Name" required>
                   <Input placeholder="prod-web-01" value={form.name} onChange={set("name")} className="h-9" />
                   {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                 </Field>
