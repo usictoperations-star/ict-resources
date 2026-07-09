@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
@@ -22,7 +22,11 @@ export const repositoriesTable = pgTable("repositories", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),
-});
+}, (table) => [
+  index("repositories_owner_id_idx").on(table.ownerId),
+  index("repositories_application_id_idx").on(table.applicationId),
+  index("repositories_deleted_at_idx").on(table.deletedAt),
+]);
 
 export const insertRepositorySchema = createInsertSchema(repositoriesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertRepository = z.infer<typeof insertRepositorySchema>;

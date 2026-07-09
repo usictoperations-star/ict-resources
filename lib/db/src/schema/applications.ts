@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
@@ -40,7 +40,13 @@ export const applicationsTable = pgTable("applications", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),
-});
+}, (table) => [
+  index("applications_owner_id_idx").on(table.ownerId),
+  index("applications_infrastructure_id_idx").on(table.infrastructureId),
+  index("applications_database_id_idx").on(table.databaseId),
+  index("applications_deleted_at_idx").on(table.deletedAt),
+  index("applications_status_idx").on(table.status),
+]);
 
 export const insertApplicationSchema = createInsertSchema(applicationsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;

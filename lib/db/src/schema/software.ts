@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
@@ -20,7 +20,10 @@ export const softwareTable = pgTable("software", {
   ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("software_owner_id_idx").on(table.ownerId),
+  index("software_application_id_idx").on(table.applicationId),
+]);
 
 export const insertSoftwareSchema = createInsertSchema(softwareTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertSoftware = z.infer<typeof insertSoftwareSchema>;

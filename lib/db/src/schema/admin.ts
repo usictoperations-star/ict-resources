@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -19,7 +19,9 @@ export const sessionsTable = pgTable("sessions", {
   sid: text("sid").primaryKey(),
   sess: text("sess").notNull(),
   expire: timestamp("expire", { precision: 6 }).notNull(),
-});
+}, (table) => [
+  index("sessions_expire_idx").on(table.expire),
+]);
 
 export const auditLogsTable = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
@@ -31,7 +33,10 @@ export const auditLogsTable = pgTable("audit_logs", {
   userName: text("user_name"),
   changes: text("changes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("audit_logs_user_id_idx").on(table.userId),
+  index("audit_logs_created_at_idx").on(table.createdAt),
+]);
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;

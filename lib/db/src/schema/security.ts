@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
@@ -26,7 +26,12 @@ export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("vulnerabilities_owner_id_idx").on(table.ownerId),
+  index("vulnerabilities_application_id_idx").on(table.applicationId),
+  index("vulnerabilities_severity_idx").on(table.severity),
+  index("vulnerabilities_status_idx").on(table.status),
+]);
 
 export const insertVulnerabilitySchema = createInsertSchema(vulnerabilitiesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertVulnerability = z.infer<typeof insertVulnerabilitySchema>;
