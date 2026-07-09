@@ -85,8 +85,11 @@ export function exportPDF(
   filename: string,
   title: string,
 ) {
-  const doc = new jsPDF({ orientation: cols.length > 6 ? "landscape" : "portrait", unit: "mm", format: "a4" });
+  const landscape = cols.length > 6;
+  const doc = new jsPDF({ orientation: landscape ? "landscape" : "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const marginH = 10;
+  const availableW = pageW - marginH * 2;
 
   // Header bar
   doc.setFillColor(15, 45, 92);
@@ -94,16 +97,36 @@ export function exportPDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("MK Digital Operations Center", 10, 8);
+  doc.text("MK Digital Operations Center", marginH, 8);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(title, 10, 14);
+  doc.text(title, marginH, 14);
 
   // Date
   doc.setTextColor(180, 180, 180);
   doc.setFontSize(8);
   const now = new Date().toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" });
-  doc.text(`Generated: ${now}`, pageW - 10, 14, { align: "right" });
+  doc.text(`Generated: ${now}`, pageW - marginH, 14, { align: "right" });
+
+  // Compute proportional column widths so headers always fit
+  // Weight = max(header chars, median content chars), minimum = header length
+  const CHAR_MM = 1.8; // approximate mm per character at font size 7.5
+  const colWeights = cols.map((col) => {
+    const headerChars = col.label.length;
+    const contentSample = rows.slice(0, 50).map(r => cellValue(r, col).length);
+    const maxContent = contentSample.length ? Math.max(...contentSample) : 0;
+    // At least wide enough for the header, weight toward longer content
+    return Math.max(headerChars, Math.min(maxContent, headerChars * 2.5));
+  });
+  const totalWeight = colWeights.reduce((s, w) => s + w, 0);
+  // Ensure each column is at minimum wide enough to show its header unclipped
+  const minWidths = cols.map(col => col.label.length * CHAR_MM + 4);
+  const rawWidths = colWeights.map(w => (w / totalWeight) * availableW);
+  // Scale up any column that's below its minimum, then scale the rest down
+  const colWidths = rawWidths.map((w, i) => Math.max(w, minWidths[i]));
+  const totalRaw = colWidths.reduce((s, w) => s + w, 0);
+  const scale = totalRaw > availableW ? availableW / totalRaw : 1;
+  const finalWidths = colWidths.map(w => w * scale);
 
   // Table
   const headers = cols.map(c => c.label);
@@ -114,18 +137,18 @@ export function exportPDF(
     body,
     startY: 22,
     theme: "grid",
-    styles: { fontSize: 7.5, cellPadding: 2, overflow: "linebreak" },
-    headStyles: { fillColor: [15, 45, 92], textColor: 255, fontStyle: "bold", fontSize: 8 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, overflow: "linebreak", halign: "left" },
+    headStyles: { fillColor: [15, 45, 92], textColor: 255, fontStyle: "bold", fontSize: 7.5, halign: "left", overflow: "linebreak" },
     alternateRowStyles: { fillColor: [245, 247, 250] },
-    columnStyles: Object.fromEntries(cols.map((_, i) => [i, { cellWidth: "auto" }])),
-    margin: { left: 10, right: 10 },
-    didDrawPage: (data) => {
+    columnStyles: Object.fromEntries(finalWidths.map((w, i) => [i, { cellWidth: parseFloat(w.toFixed(2)) }])),
+    margin: { left: marginH, right: marginH },
+    tableWidth: availableW,
+    didDrawPage: () => {
       const pg = doc.getCurrentPageInfo().pageNumber;
-      const total = (doc as any).internal.getNumberOfPages?.() ?? "?";
       doc.setFontSize(7);
       doc.setTextColor(150);
       doc.text(
-        `Page ${pg}  ·  ${rows.length} records`,
+        `Page ${pg}  ·  ${rows.length} record${rows.length !== 1 ? "s" : ""}`,
         pageW / 2,
         doc.internal.pageSize.getHeight() - 5,
         { align: "center" },
