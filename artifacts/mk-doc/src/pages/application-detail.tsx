@@ -9,6 +9,7 @@ import {
   ArrowLeft, AppWindow, Server, Globe, Tag, User, Building2,
   Code2, Database, Cloud, CalendarDays, ShieldCheck, Layers
 } from "lucide-react";
+import { TeamBadge } from "@/components/team-badge";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -144,6 +145,10 @@ export default function ApplicationDetail() {
         <Field label="Technical Owner" value={app.technicalOwner} />
         <Field label="Product Owner" value={app.productOwner} />
         <Field label="Support Contact" value={app.supportContact} />
+        <div>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
+          <dd><TeamBadge teamId={app.teamId} /></dd>
+        </div>
       </Section>
 
       {/* Technology Stack */}
