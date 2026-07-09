@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { CreateSoftwareBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
@@ -52,6 +53,20 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", ownerId: "" };
 
 type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const SOFTWARE_EXPORT_COLS = [
+  { key: "name", label: "Name" },
+  { key: "type", label: "Type" },
+  { key: "vendor", label: "Vendor" },
+  { key: "installedVersion", label: "Installed Version" },
+  { key: "latestVersion", label: "Latest Version" },
+  { key: "license", label: "License" },
+  { key: "supported", label: "Supported" },
+  { key: "endOfLife", label: "End of Life" },
+  { key: "endOfLifeDate", label: "EOL Date" },
+  { key: "upgradeAvailable", label: "Upgrade Available" },
+  { key: "ownerName", label: "Owner" },
+];
 
 export default function Software() {
   const { data: software, isLoading } = useListSoftware();
@@ -131,7 +146,10 @@ export default function Software() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Software Inventory</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Software</Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(software ?? []) as unknown as Record<string, unknown>[]} columns={SOFTWARE_EXPORT_COLS} filename="software-inventory" title="Software Inventory" />
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Software</Button>
+        </div>
       </div>
 
       <Card>

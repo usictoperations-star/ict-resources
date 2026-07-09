@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListRepositories, useCreateRepository, useUpdateRepository, useDeleteRepository } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -52,6 +53,18 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "", ownerId: "" };
 
 type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const REPO_EXPORT_COLS = [
+  { key: "name", label: "Repository" },
+  { key: "url", label: "URL" },
+  { key: "defaultBranch", label: "Default Branch" },
+  { key: "visibility", label: "Visibility" },
+  { key: "language", label: "Language" },
+  { key: "openPullRequests", label: "Open PRs" },
+  { key: "openIssues", label: "Open Issues" },
+  { key: "status", label: "Status" },
+  { key: "ownerName", label: "Owner" },
+];
 
 export default function Repositories() {
   const { data: repositories, isLoading } = useListRepositories();
@@ -145,7 +158,10 @@ export default function Repositories() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Repository Management</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Repository</Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(repositories ?? []) as unknown as Record<string, unknown>[]} columns={REPO_EXPORT_COLS} filename="repositories" title="Repository Management" />
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Repository</Button>
+        </div>
       </div>
 
       <Card>

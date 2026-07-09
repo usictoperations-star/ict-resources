@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { CreateInfrastructureBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
@@ -57,6 +58,20 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "" };
 
 type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const INFRA_EXPORT_COLS = [
+  { key: "name", label: "Name" },
+  { key: "type", label: "Type" },
+  { key: "provider", label: "Provider" },
+  { key: "status", label: "Status" },
+  { key: "ipAddress", label: "IP Address" },
+  { key: "location", label: "Location" },
+  { key: "cpuCores", label: "CPU Cores" },
+  { key: "ramGb", label: "RAM (GB)" },
+  { key: "diskGb", label: "Disk (GB)" },
+  { key: "os", label: "OS" },
+  { key: "ownerName", label: "Owner" },
+];
 
 export default function Infrastructure() {
   const { data: infra, isLoading } = useListInfrastructure();
@@ -150,7 +165,10 @@ export default function Infrastructure() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Infrastructure Management</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Server</Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(infra ?? []) as unknown as Record<string, unknown>[]} columns={INFRA_EXPORT_COLS} filename="infrastructure" title="Infrastructure Management" />
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Server</Button>
+        </div>
       </div>
 
       <Card>

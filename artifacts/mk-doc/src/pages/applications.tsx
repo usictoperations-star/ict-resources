@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication, useGetApplicationDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -73,6 +74,25 @@ const EMPTY_FORM = {
 };
 
 type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const APP_EXPORT_COLS = [
+  { key: "name", label: "Name" },
+  { key: "category", label: "Category" },
+  { key: "classification", label: "Classification" },
+  { key: "environment", label: "Environment" },
+  { key: "status", label: "Status" },
+  { key: "priority", label: "Priority" },
+  { key: "criticality", label: "Criticality" },
+  { key: "department", label: "Department" },
+  { key: "technicalOwner", label: "Technical Owner" },
+  { key: "ownerName", label: "Owner" },
+  { key: "frontend", label: "Frontend" },
+  { key: "backend", label: "Backend" },
+  { key: "framework", label: "Framework" },
+  { key: "language", label: "Language" },
+  { key: "domain", label: "Domain" },
+  { key: "currentVersion", label: "Version" },
+];
 
 export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
@@ -218,10 +238,13 @@ export default function Applications() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Application Registry</h1>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Application
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(applications ?? []) as unknown as Record<string, unknown>[]} columns={APP_EXPORT_COLS} filename="applications" title="Application Registry" />
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Application
+          </Button>
+        </div>
       </div>
 
       <Card>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { CreateDatabaseBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
@@ -54,6 +55,18 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", ownerId: "" };
 
 type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const DB_EXPORT_COLS = [
+  { key: "name", label: "Name" },
+  { key: "type", label: "Type" },
+  { key: "version", label: "Version" },
+  { key: "server", label: "Server" },
+  { key: "sizeGb", label: "Size (GB)" },
+  { key: "backupEnabled", label: "Backup Enabled" },
+  { key: "encryptionEnabled", label: "Encryption Enabled" },
+  { key: "status", label: "Status" },
+  { key: "ownerName", label: "Owner" },
+];
 
 export default function Databases() {
   const { data: databases, isLoading } = useListDatabases();
@@ -145,7 +158,10 @@ export default function Databases() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Database Management</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Database</Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(databases ?? []) as unknown as Record<string, unknown>[]} columns={DB_EXPORT_COLS} filename="databases" title="Database Management" />
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Database</Button>
+        </div>
       </div>
 
       <Card>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import {
   useListVulnerabilities, useGetSecuritySummary, useGetSecurityDashboard,
@@ -69,6 +70,21 @@ type VulnRow = {
   licenseExpiration?: string | null; endOfLifeDate?: string | null; discoveredAt?: string | null;
   assignedTo?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null;
 };
+
+const VULN_EXPORT_COLS = [
+  { key: "title", label: "Finding" },
+  { key: "severity", label: "Severity" },
+  { key: "status", label: "Status" },
+  { key: "cveId", label: "CVE ID" },
+  { key: "affectedComponent", label: "Affected Component" },
+  { key: "applicationName", label: "Application" },
+  { key: "version", label: "Version" },
+  { key: "vendor", label: "Vendor" },
+  { key: "category", label: "Category" },
+  { key: "discoveredAt", label: "Discovered At" },
+  { key: "assignedTo", label: "Assigned To" },
+  { key: "ownerName", label: "Owner" },
+];
 
 const TONE_TEXT: Record<string, string> = { danger: "text-destructive", warning: "text-amber-600", ok: "text-emerald-600", default: "text-foreground" };
 const TONE_BADGE: Record<string, "destructive" | "secondary" | "outline"> = { danger: "destructive", warning: "secondary", ok: "outline", default: "outline" };
@@ -672,7 +688,8 @@ export default function Security() {
         badgeVariant="outline"
       >
         <div className="pt-2">
-          <div className="flex justify-end mb-3">
+          <div className="flex justify-end items-center gap-2 mb-3">
+            <ExportButton data={(vulnerabilities ?? []) as unknown as Record<string, unknown>[]} columns={VULN_EXPORT_COLS} filename="vulnerabilities" title="Vulnerability Log" />
             <Button size="sm" onClick={resetCreate} className="h-8 text-xs gap-1.5">
               <Plus className="h-3.5 w-3.5" />Log Vulnerability
             </Button>

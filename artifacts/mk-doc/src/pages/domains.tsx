@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListDomains, useGetExpiringDomains, useCreateDomain, useUpdateDomain, useDeleteDomain } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -50,6 +51,19 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", ownerId: "" };
 
 type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+
+const DOMAIN_EXPORT_COLS = [
+  { key: "name", label: "Domain" },
+  { key: "registrar", label: "Registrar" },
+  { key: "registrationExpiry", label: "Registration Expiry" },
+  { key: "sslProvider", label: "SSL Provider" },
+  { key: "sslExpiry", label: "SSL Expiry" },
+  { key: "sslStatus", label: "SSL Status" },
+  { key: "dnsProvider", label: "DNS Provider" },
+  { key: "cloudflarEnabled", label: "Cloudflare" },
+  { key: "status", label: "Status" },
+  { key: "ownerName", label: "Owner" },
+];
 
 export default function Domains() {
   const { data: domains, isLoading: domainsLoading } = useListDomains();
@@ -148,7 +162,10 @@ export default function Domains() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Domain & SSL Management</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Domain</Button>
+        <div className="flex items-center gap-2">
+          <ExportButton data={(domains ?? []) as unknown as Record<string, unknown>[]} columns={DOMAIN_EXPORT_COLS} filename="domains" title="Domain & SSL Management" />
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Domain</Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
