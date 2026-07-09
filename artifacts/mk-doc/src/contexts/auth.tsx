@@ -6,7 +6,8 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: Role;
+  roles: Role[];
+  phone?: string | null;
   department?: string | null;
   status: string;
 }
@@ -73,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const can = (action: "write" | "delete" | "admin" | "reports") =>
-    user ? roleCanDo(user.role, action) : false;
+    user ? user.roles.some(r => roleCanDo(r as Role, action)) : false;
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout, can }}>

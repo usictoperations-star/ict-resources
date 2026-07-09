@@ -10,7 +10,9 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  roles: string[];
+  /** @nullable */
+  phone?: string | null;
   /** @nullable */
   department?: string | null;
   status: string;

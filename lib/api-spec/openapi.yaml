@@ -3087,13 +3087,17 @@ components:
           type: string
         email:
           type: string
-        role:
-          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        phone:
+          type: ["string", "null"]
         department:
           type: ["string", "null"]
         status:
           type: string
-      required: [id, name, email, role, status]
+      required: [id, name, email, roles, status]
 
     # ── Admin ─────────────────────────────────────────────────────────────
     User:
@@ -3105,8 +3109,12 @@ components:
           type: string
         email:
           type: string
-        role:
-          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        phone:
+          type: ["string", "null"]
         department:
           type: ["string", "null"]
         status:
@@ -3115,7 +3123,7 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
-      required: [id, name, email, role, status, createdAt]
+      required: [id, name, email, roles, status, createdAt]
 
     UserInput:
       type: object
@@ -3126,13 +3134,17 @@ components:
         email:
           type: string
           minLength: 1
-        role:
+        roles:
+          type: array
+          items:
+            type: string
+        phone:
           type: string
         department:
           type: string
         status:
           type: string
-      required: [name, email, role, status]
+      required: [name, email, roles, status]
 
     UserUpdate:
       type: object
@@ -3141,7 +3153,11 @@ components:
           type: string
         email:
           type: string
-        role:
+        roles:
+          type: array
+          items:
+            type: string
+        phone:
           type: string
         department:
           type: string

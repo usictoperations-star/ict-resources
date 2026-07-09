@@ -20,7 +20,8 @@ export const LoginResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
   "department": zod.string().nullish(),
   "status": zod.string()
 })
@@ -39,7 +40,8 @@ export const GetMeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
   "department": zod.string().nullish(),
   "status": zod.string()
 })
@@ -1982,7 +1984,8 @@ export const ListUsersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
   "department": zod.string().nullish(),
   "status": zod.string(),
   "lastLoginAt": zod.string().nullish(),
@@ -2001,7 +2004,8 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
 export const CreateUserBody = zod.object({
   "name": zod.string().min(1),
   "email": zod.string().min(1),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().optional(),
   "department": zod.string().optional(),
   "status": zod.string()
 })
@@ -2010,7 +2014,8 @@ export const CreateUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
   "department": zod.string().nullish(),
   "status": zod.string(),
   "lastLoginAt": zod.string().nullish(),
@@ -2028,7 +2033,8 @@ export const UpdateUserParams = zod.object({
 export const UpdateUserBody = zod.object({
   "name": zod.string().optional(),
   "email": zod.string().optional(),
-  "role": zod.string().optional(),
+  "roles": zod.array(zod.string()).optional(),
+  "phone": zod.string().optional(),
   "department": zod.string().optional(),
   "status": zod.string().optional()
 })
@@ -2037,7 +2043,8 @@ export const UpdateUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.string(),
+  "roles": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
   "department": zod.string().nullish(),
   "status": zod.string(),
   "lastLoginAt": zod.string().nullish(),

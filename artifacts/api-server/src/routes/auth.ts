@@ -54,7 +54,8 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      roles: user.roles,
+      phone: user.phone,
       department: user.department,
       status: user.status,
     });
@@ -88,7 +89,8 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role,
+    roles: user.roles,
+    phone: user.phone,
     department: user.department,
     status: user.status,
   });

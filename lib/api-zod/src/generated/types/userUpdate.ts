@@ -9,7 +9,8 @@
 export interface UserUpdate {
   name?: string;
   email?: string;
-  role?: string;
+  roles?: string[];
+  phone?: string;
   department?: string;
   status?: string;
 }

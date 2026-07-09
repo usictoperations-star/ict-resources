@@ -13,13 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2, RotateCcw, KeyRound, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { useAuth } from "@/contexts/auth";
 
-const ROLE_OPTIONS = ["admin", "editor", "analyst", "viewer"];
+const ROLE_OPTIONS = ["admin", "editor", "analyst", "viewer"] as const;
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -39,8 +40,9 @@ const ROLE_BADGE: Record<string, string> = {
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().min(1, "Email is required").email("Must be a valid email address"),
-  role: z.string().min(1, "Role is required"),
+  roles: z.array(z.string()).min(1, "At least one role is required"),
   status: z.string().min(1, "Status is required"),
+  phone: z.string().optional(),
   password: z.string().optional(),
 });
 
@@ -69,6 +71,37 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
+function RolesCheckboxGroup({ value, onChange, error }: { value: string[]; onChange: (v: string[]) => void; error?: string }) {
+  const toggle = (role: string) => {
+    if (value.includes(role)) {
+      onChange(value.filter(r => r !== role));
+    } else {
+      onChange([...value, role]);
+    }
+  };
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">Roles<span className="text-destructive ml-0.5">*</span></Label>
+      <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
+        {ROLE_OPTIONS.map(role => (
+          <label key={role} className="flex items-center gap-2 cursor-pointer select-none">
+            <Checkbox
+              checked={value.includes(role)}
+              onCheckedChange={() => toggle(role)}
+              id={`role-${role}`}
+            />
+            <div>
+              <span className="text-sm font-medium capitalize">{role}</span>
+              <p className="text-[10px] text-muted-foreground leading-tight">{ROLE_DESCRIPTIONS[role]}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 function PasswordInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const [show, setShow] = useState(false);
   return (
@@ -93,12 +126,12 @@ function PasswordInput({ value, onChange, placeholder }: { value: string; onChan
   );
 }
 
-const EMPTY_FORM = { name: "", email: "", role: "viewer", department: "", status: "Active", password: "" };
+const EMPTY_FORM = { name: "", email: "", roles: ["viewer"] as string[], phone: "", department: "", status: "Active", password: "" };
 
 type UserRow = {
-  id: number; name: string; email: string; role: string;
-  department?: string | null; status: string; lastLoginAt?: string | null;
-  hasPassword?: boolean;
+  id: number; name: string; email: string; roles: string[];
+  phone?: string | null; department?: string | null; status: string;
+  lastLoginAt?: string | null; hasPassword?: boolean;
 };
 
 const EMPTY_TEAM_FORM = { name: "", slug: "", description: "" };
@@ -244,7 +277,15 @@ export default function Admin() {
 
   const openEdit = (user: UserRow) => {
     setEditTarget(user);
-    setForm({ name: user.name ?? "", email: user.email ?? "", role: user.role ?? "viewer", department: user.department ?? "", status: user.status ?? "Active", password: "" });
+    setForm({
+      name: user.name ?? "",
+      email: user.email ?? "",
+      roles: Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : ["viewer"],
+      phone: user.phone ?? "",
+      department: user.department ?? "",
+      status: user.status ?? "Active",
+      password: "",
+    });
     setErrors({});
     setOpen(true);
   };
@@ -269,7 +310,8 @@ export default function Admin() {
     const payload: Record<string, unknown> = {
       name: form.name,
       email: form.email,
-      role: form.role,
+      roles: form.roles,
+      phone: form.phone || undefined,
       department: form.department || undefined,
       status: form.status,
     };
@@ -381,12 +423,13 @@ export default function Admin() {
                 <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
               ) : users && users.length > 0 ? (
                 <div className="overflow-x-auto -mx-6">
-                  <Table className="min-w-[700px]">
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Roles</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Password</TableHead>
@@ -397,14 +440,20 @@ export default function Admin() {
                     <TableBody>
                       {pagedUsers.map((user) => {
                         const u = user as UserRow;
+                        const userRoles = Array.isArray(u.roles) ? u.roles : [];
                         return (
                           <TableRow key={u.id}>
                             <TableCell className="font-medium">{u.name}</TableCell>
                             <TableCell className="text-sm">{u.email}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{u.phone || '—'}</TableCell>
                             <TableCell>
-                              <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${ROLE_BADGE[u.role] ?? ""}`}>
-                                {u.role}
-                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {userRoles.map(role => (
+                                  <span key={role} className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${ROLE_BADGE[role] ?? ""}`}>
+                                    {role}
+                                  </span>
+                                ))}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">{u.department || '—'}</TableCell>
                             <TableCell>
@@ -578,7 +627,7 @@ export default function Admin() {
       {/* User create/edit dialog */}
       {canAdmin && (
         <Dialog open={open} onOpenChange={(v) => { if (!isPending) { setOpen(v); if (!v) { setForm({ ...EMPTY_FORM }); setErrors({}); } } }}>
-          <DialogContent className="max-w-md p-0 gap-0">
+          <DialogContent className="max-w-md p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <DialogHeader className="px-6 pt-6 pb-4 border-b">
               <DialogTitle>{editTarget ? "Edit User" : "Add User"}</DialogTitle>
             </DialogHeader>
@@ -590,17 +639,22 @@ export default function Admin() {
               <Field label="Email" required error={errors.email}>
                 <Input type="email" placeholder="john.smith@mk.gov" value={form.email} onChange={set("email")} className="h-9" />
               </Field>
+              <Field label="Phone" error={errors.phone}>
+                <Input type="tel" placeholder="+252 61 234 5678" value={form.phone} onChange={set("phone")} className="h-9" />
+              </Field>
+              <RolesCheckboxGroup
+                value={form.roles}
+                onChange={(roles) => setForm(f => ({ ...f, roles }))}
+                error={errors.roles}
+              />
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Role" required error={errors.role}>
-                  <SelectField value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))} placeholder="Select role" options={ROLE_OPTIONS} />
-                </Field>
                 <Field label="Status">
                   <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
                 </Field>
+                <Field label="Department">
+                  <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
+                </Field>
               </div>
-              <Field label="Department">
-                <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
-              </Field>
               <Field
                 label={editTarget ? "New Password" : "Password"}
                 hint={editTarget ? "Leave blank to keep the existing password" : "Required — user will use this to log in"}

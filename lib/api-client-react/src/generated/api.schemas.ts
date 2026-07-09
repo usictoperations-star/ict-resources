@@ -937,7 +937,9 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: string;
+  roles: string[];
+  /** @nullable */
+  phone?: string | null;
   /** @nullable */
   department?: string | null;
   status: string;
@@ -947,7 +949,9 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  roles: string[];
+  /** @nullable */
+  phone?: string | null;
   /** @nullable */
   department?: string | null;
   status: string;
@@ -961,7 +965,8 @@ export interface UserInput {
   name: string;
   /** @minLength 1 */
   email: string;
-  role: string;
+  roles: string[];
+  phone?: string;
   department?: string;
   status: string;
 }
@@ -969,7 +974,8 @@ export interface UserInput {
 export interface UserUpdate {
   name?: string;
   email?: string;
-  role?: string;
+  roles?: string[];
+  phone?: string;
   department?: string;
   status?: string;
 }
