@@ -4,7 +4,7 @@ import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
   BarChart, Settings, Menu, Activity, PenLine, AlertTriangle, Table2,
-  LogOut, User, ChevronDown,
+  LogOut, User, ChevronDown, UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -148,6 +148,13 @@ function UserMenu() {
             {badge.label}
           </span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <Link href="/profile">
+          <DropdownMenuItem className="cursor-pointer">
+            <UserCircle className="h-3.5 w-3.5 mr-2" />
+            My Profile
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive cursor-pointer"

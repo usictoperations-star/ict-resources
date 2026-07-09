@@ -26,6 +26,7 @@ import Documentation from "@/pages/documentation";
 import DocumentDetail from "@/pages/document-detail";
 import Reports from "@/pages/reports";
 import Admin from "@/pages/admin";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="/documentation/:id" component={DocumentDetail} />
         <Route path="/reports" component={Reports} />
         <Route path="/admin" component={Admin} />
+        <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
