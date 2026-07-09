@@ -7,10 +7,16 @@
  */
 import type { Application } from './application';
 import type { DatabaseRecord } from './databaseRecord';
+import type { Domain } from './domain';
 import type { InfrastructureItem } from './infrastructureItem';
+import type { Release } from './release';
+import type { Repository } from './repository';
 
 export interface DeletedRecordsResponse {
   applications: Application[];
   infrastructure: InfrastructureItem[];
   databases: DatabaseRecord[];
+  domains: Domain[];
+  repositories: Repository[];
+  releases: Release[];
 }

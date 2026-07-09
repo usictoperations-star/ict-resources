@@ -4,12 +4,22 @@ import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { domainsTable, auditLogsTable, usersTable } from "@workspace/db";
 import { CreateDomainBody, UpdateDomainBody } from "@workspace/api-zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, isNull, isNotNull, and, gte } from "drizzle-orm";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
   const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, ownerId));
   return user?.name ?? null;
+}
+
+function fmt(d: typeof domainsTable.$inferSelect, ownerName: string | null = null) {
+  return {
+    ...d,
+    ownerName,
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+    deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
+  };
 }
 
 const router = Router();
@@ -19,7 +29,8 @@ router.get("/expiring", async (req: Request, res: Response) => {
     const all = await db
       .select({ domain: domainsTable, ownerName: usersTable.name })
       .from(domainsTable)
-      .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id));
+      .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
+      .where(isNull(domainsTable.deletedAt));
     const now = new Date();
     const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
     const expiring = all.filter(({ domain: d }) => {
@@ -28,7 +39,7 @@ router.get("/expiring", async (req: Request, res: Response) => {
       const date = new Date(expiry);
       return date >= now && date <= in90Days;
     });
-    return res.json(expiring.map(({ domain: d, ownerName }) => ({ ...d, ownerName: ownerName ?? null, createdAt: d.createdAt.toISOString(), updatedAt: d.updatedAt.toISOString() })));
+    return res.json(expiring.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)));
   } catch (err) {
     req.log.error({ err }, "Error fetching expiring domains");
     return res.status(500).json({ error: "Internal server error" });
@@ -40,8 +51,9 @@ router.get("/", async (req: Request, res: Response) => {
     const results = await db
       .select({ domain: domainsTable, ownerName: usersTable.name })
       .from(domainsTable)
-      .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id));
-    return res.json(results.map(({ domain: d, ownerName }) => ({ ...d, ownerName: ownerName ?? null, createdAt: d.createdAt.toISOString(), updatedAt: d.updatedAt.toISOString() })));
+      .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
+      .where(isNull(domainsTable.deletedAt));
+    return res.json(results.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)));
   } catch (err) {
     req.log.error({ err }, "Error listing domains");
     return res.status(500).json({ error: "Internal server error" });
@@ -54,10 +66,28 @@ router.post("/", async (req: Request, res: Response) => {
     const [item] = await db.insert(domainsTable).values(body).returning();
     const ownerName = await resolveOwnerName(item.ownerId);
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Domain", entityId: item.id, entityName: item.name, userName: "System" });
-    return res.status(201).json({ ...item, ownerName, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.status(201).json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error creating domain");
     return res.status(400).json({ error: "Invalid request" });
+  }
+});
+
+router.post("/:id/restore", async (req: Request, res: Response) => {
+  try {
+    const id = parseIdParam(req);
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [item] = await db.update(domainsTable)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(and(eq(domainsTable.id, id), isNotNull(domainsTable.deletedAt), gte(domainsTable.deletedAt, cutoff)))
+      .returning();
+    if (!item) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
+    const ownerName = await resolveOwnerName(item.ownerId);
+    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Domain", entityId: item.id, entityName: item.name, userName: "System" });
+    return res.json(fmt(item, ownerName));
+  } catch (err) {
+    req.log.error({ err }, "Error restoring domain");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -93,9 +123,9 @@ router.get("/:id", async (req: Request, res: Response) => {
       .select({ domain: domainsTable, ownerName: usersTable.name })
       .from(domainsTable)
       .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
-      .where(eq(domainsTable.id, id));
+      .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)));
     if (!result) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...result.domain, ownerName: result.ownerName ?? null, createdAt: result.domain.createdAt.toISOString(), updatedAt: result.domain.updatedAt.toISOString() });
+    return res.json(fmt(result.domain, result.ownerName ?? null));
   } catch (err) {
     req.log.error({ err }, "Error fetching domain");
     return res.status(500).json({ error: "Internal server error" });
@@ -106,10 +136,13 @@ router.patch("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
     const body = UpdateDomainBody.parse(req.body);
-    const [item] = await db.update(domainsTable).set({ ...body, updatedAt: new Date() }).where(eq(domainsTable.id, id)).returning();
+    const [item] = await db.update(domainsTable)
+      .set({ ...body, updatedAt: new Date() })
+      .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)))
+      .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     const ownerName = await resolveOwnerName(item.ownerId);
-    return res.json({ ...item, ownerName, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error updating domain");
     return res.status(400).json({ error: "Invalid request" });
@@ -119,8 +152,12 @@ router.patch("/:id", async (req: Request, res: Response) => {
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
-    const [item] = await db.delete(domainsTable).where(eq(domainsTable.id, id)).returning();
+    const [item] = await db.update(domainsTable)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)))
+      .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
+    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Domain", entityId: item.id, entityName: item.name, userName: "System" });
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting domain");

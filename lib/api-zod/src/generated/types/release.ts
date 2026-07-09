@@ -26,4 +26,6 @@ export interface Release {
   approvedBy?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

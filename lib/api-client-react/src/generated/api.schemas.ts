@@ -424,6 +424,8 @@ export interface Domain {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface DomainInput {
@@ -499,6 +501,8 @@ export interface Repository {
   lastScannedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface RepositoryInput {
@@ -558,6 +562,8 @@ export interface Release {
   approvedBy?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface ReleaseInput {
@@ -1039,6 +1045,9 @@ export interface DeletedRecordsResponse {
   applications: Application[];
   infrastructure: InfrastructureItem[];
   databases: DatabaseRecord[];
+  domains: Domain[];
+  repositories: Repository[];
+  releases: Release[];
 }
 
 export interface SearchResults {

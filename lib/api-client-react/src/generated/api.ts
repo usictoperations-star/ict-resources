@@ -2718,6 +2718,76 @@ export const useDeleteDomain = <TError = ErrorType<unknown>,
       return useMutation(getDeleteDomainMutationOptions(options));
     }
 
+export const getRestoreDomainUrl = (id: number,) => {
+
+
+
+
+  return `/api/domains/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted domain
+ */
+export const restoreDomain = async (id: number, options?: RequestInit): Promise<Domain> => {
+
+  return customFetch<Domain>(getRestoreDomainUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreDomainMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreDomain>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreDomain>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreDomain'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreDomain>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreDomain(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreDomainMutationResult = NonNullable<Awaited<ReturnType<typeof restoreDomain>>>
+
+    export type RestoreDomainMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted domain
+ */
+export const useRestoreDomain = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreDomain>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreDomain>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreDomainMutationOptions(options));
+    }
+
 export const getGetDomainHistoryUrl = (id: number,) => {
 
 
@@ -3237,6 +3307,76 @@ export const useDeleteRepository = <TError = ErrorType<unknown>,
       return useMutation(getDeleteRepositoryMutationOptions(options));
     }
 
+export const getRestoreRepositoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/repositories/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted repository
+ */
+export const restoreRepository = async (id: number, options?: RequestInit): Promise<Repository> => {
+
+  return customFetch<Repository>(getRestoreRepositoryUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreRepositoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreRepository>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreRepository>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreRepository'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreRepository>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreRepository(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreRepositoryMutationResult = NonNullable<Awaited<ReturnType<typeof restoreRepository>>>
+
+    export type RestoreRepositoryMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted repository
+ */
+export const useRestoreRepository = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreRepository>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreRepository>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreRepositoryMutationOptions(options));
+    }
+
 export const getListReleasesUrl = (params?: ListReleasesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -3607,6 +3747,76 @@ export const useDeleteRelease = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteReleaseMutationOptions(options));
+    }
+
+export const getRestoreReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/releases/${id}/restore`
+}
+
+/**
+ * @summary Restore a soft-deleted release
+ */
+export const restoreRelease = async (id: number, options?: RequestInit): Promise<Release> => {
+
+  return customFetch<Release>(getRestoreReleaseUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreReleaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreRelease>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreRelease>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreRelease'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreRelease>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreRelease(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreReleaseMutationResult = NonNullable<Awaited<ReturnType<typeof restoreRelease>>>
+
+    export type RestoreReleaseMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore a soft-deleted release
+ */
+export const useRestoreRelease = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreRelease>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreRelease>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreReleaseMutationOptions(options));
     }
 
 export const getListVulnerabilitiesUrl = (params?: ListVulnerabilitiesParams,) => {

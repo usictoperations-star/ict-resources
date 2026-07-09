@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase } from "@workspace/api-client-react";
+import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase, useRestoreDomain, useRestoreRepository, useRestoreRelease } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -188,6 +188,9 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   applications: "Application",
   infrastructure: "Infrastructure",
   databases: "Database",
+  domains: "Domain",
+  repositories: "Repository",
+  releases: "Release",
 };
 
 export default function Admin() {
@@ -232,13 +235,19 @@ export default function Admin() {
   const { mutateAsync: restoreApplication, isPending: isRestoringApp } = useRestoreApplication();
   const { mutateAsync: restoreInfrastructure, isPending: isRestoringInfra } = useRestoreInfrastructure();
   const { mutateAsync: restoreDatabase, isPending: isRestoringDb } = useRestoreDatabase();
+  const { mutateAsync: restoreDomain } = useRestoreDomain();
+  const { mutateAsync: restoreRepository } = useRestoreRepository();
+  const { mutateAsync: restoreRelease } = useRestoreRelease();
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const totalDeleted = (deletedRecords?.applications?.length ?? 0) +
     (deletedRecords?.infrastructure?.length ?? 0) +
-    (deletedRecords?.databases?.length ?? 0);
+    (deletedRecords?.databases?.length ?? 0) +
+    (deletedRecords?.domains?.length ?? 0) +
+    (deletedRecords?.repositories?.length ?? 0) +
+    (deletedRecords?.releases?.length ?? 0);
 
-  const handleRestore = async (entityType: "applications" | "infrastructure" | "databases", id: number) => {
+  const handleRestore = async (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases", id: number) => {
     const key = `${entityType}:${id}`;
     setRestoringId(key);
     try {
@@ -248,9 +257,18 @@ export default function Admin() {
       } else if (entityType === "infrastructure") {
         await restoreInfrastructure({ id });
         await queryClient.invalidateQueries({ queryKey: ["/api/infrastructure"] });
-      } else {
+      } else if (entityType === "databases") {
         await restoreDatabase({ id });
         await queryClient.invalidateQueries({ queryKey: ["/api/databases"] });
+      } else if (entityType === "domains") {
+        await restoreDomain({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
+      } else if (entityType === "repositories") {
+        await restoreRepository({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/repositories"] });
+      } else {
+        await restoreRelease({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       }
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/deleted-records"] });
     } catch {
@@ -377,7 +395,7 @@ export default function Admin() {
     }
   };
 
-  const renderDeletedSection = (entityType: "applications" | "infrastructure" | "databases", items: DeletedEntity[]) => {
+  const renderDeletedSection = (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases", items: DeletedEntity[]) => {
     if (items.length === 0) return null;
     const isRestoring = (id: number) => restoringId === `${entityType}:${id}`;
     return (
@@ -607,7 +625,7 @@ export default function Admin() {
           <Card>
             <CardHeader>
               <CardTitle>Recently Deleted</CardTitle>
-              <CardDescription>Applications, infrastructure, and databases deleted in the last 30 days. Permanently removed after 30 days.</CardDescription>
+              <CardDescription>Applications, infrastructure, databases, domains, repositories, and releases deleted in the last 30 days. Permanently removed after 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               {deletedLoading ? (
@@ -621,6 +639,9 @@ export default function Admin() {
                   {renderDeletedSection("applications", (deletedRecords?.applications ?? []) as DeletedEntity[])}
                   {renderDeletedSection("infrastructure", (deletedRecords?.infrastructure ?? []) as DeletedEntity[])}
                   {renderDeletedSection("databases", (deletedRecords?.databases ?? []) as DeletedEntity[])}
+                  {renderDeletedSection("domains", (deletedRecords?.domains ?? []) as DeletedEntity[])}
+                  {renderDeletedSection("repositories", (deletedRecords?.repositories ?? []) as DeletedEntity[])}
+                  {renderDeletedSection("releases", (deletedRecords?.releases ?? []).map(r => ({ id: r.id, name: `v${r.version}`, deletedAt: r.deletedAt })) as DeletedEntity[])}
                 </div>
               )}
             </CardContent>

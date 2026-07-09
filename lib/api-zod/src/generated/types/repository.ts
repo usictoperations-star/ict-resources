@@ -34,4 +34,6 @@ export interface Repository {
   lastScannedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

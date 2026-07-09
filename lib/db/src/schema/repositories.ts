@@ -21,6 +21,7 @@ export const repositoriesTable = pgTable("repositories", {
   lastScannedAt: text("last_scanned_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertRepositorySchema = createInsertSchema(repositoriesTable).omit({ id: true, createdAt: true, updatedAt: true });

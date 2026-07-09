@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
-import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable } from "@workspace/db";
+import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable, domainsTable, repositoriesTable, releasesTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
 import { eq, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
@@ -13,37 +13,57 @@ router.get("/deleted-records", async (req: Request, res: Response) => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
 
-    const [applications, infrastructure, databases] = await Promise.all([
+    const [applications, infrastructure, databases, domains, repositories, releases] = await Promise.all([
       db.select().from(applicationsTable).where(isNotNull(applicationsTable.deletedAt)),
       db.select().from(infrastructureTable).where(isNotNull(infrastructureTable.deletedAt)),
       db.select().from(databasesTable).where(isNotNull(databasesTable.deletedAt)),
+      db.select().from(domainsTable).where(isNotNull(domainsTable.deletedAt)),
+      db.select().from(repositoriesTable).where(isNotNull(repositoriesTable.deletedAt)),
+      db.select().from(releasesTable).where(isNotNull(releasesTable.deletedAt)),
     ]);
-
-    const fmtApp = (a: typeof applicationsTable.$inferSelect) => ({
-      ...a,
-      createdAt: a.createdAt.toISOString(),
-      updatedAt: a.updatedAt.toISOString(),
-      deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
-    });
-    const fmtInfra = (i: typeof infrastructureTable.$inferSelect) => ({
-      ...i,
-      createdAt: i.createdAt.toISOString(),
-      updatedAt: i.updatedAt.toISOString(),
-      deletedAt: i.deletedAt ? i.deletedAt.toISOString() : null,
-    });
-    const fmtDb = (d: typeof databasesTable.$inferSelect) => ({
-      ...d,
-      createdAt: d.createdAt.toISOString(),
-      updatedAt: d.updatedAt.toISOString(),
-      deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
-    });
 
     const within30Days = (deletedAt: Date | null) => deletedAt && deletedAt >= cutoff;
 
     return res.json({
-      applications: applications.filter(a => within30Days(a.deletedAt)).map(fmtApp),
-      infrastructure: infrastructure.filter(i => within30Days(i.deletedAt)).map(fmtInfra),
-      databases: databases.filter(d => within30Days(d.deletedAt)).map(fmtDb),
+      applications: applications.filter(a => within30Days(a.deletedAt)).map(a => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
+        deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
+      })),
+      infrastructure: infrastructure.filter(i => within30Days(i.deletedAt)).map(i => ({
+        ...i,
+        createdAt: i.createdAt.toISOString(),
+        updatedAt: i.updatedAt.toISOString(),
+        deletedAt: i.deletedAt ? i.deletedAt.toISOString() : null,
+      })),
+      databases: databases.filter(d => within30Days(d.deletedAt)).map(d => ({
+        ...d,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString(),
+        deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
+      })),
+      domains: domains.filter(d => within30Days(d.deletedAt)).map(d => ({
+        ...d,
+        ownerName: null,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString(),
+        deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
+      })),
+      repositories: repositories.filter(r => within30Days(r.deletedAt)).map(r => ({
+        ...r,
+        ownerName: null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+        deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+      })),
+      releases: releases.filter(r => within30Days(r.deletedAt)).map(r => ({
+        ...r,
+        applicationName: null,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+        deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+      })),
     });
   } catch (err) {
     req.log.error({ err }, "Error listing deleted records");

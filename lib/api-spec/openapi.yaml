@@ -694,6 +694,27 @@ paths:
         "204":
           description: Deleted
 
+  /domains/{id}/restore:
+    post:
+      operationId: restoreDomain
+      tags: [domains]
+      summary: Restore a soft-deleted domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+        "404":
+          description: Not found
+
   /domains/{id}/history:
     get:
       operationId: getDomainHistory
@@ -818,6 +839,27 @@ paths:
         "204":
           description: Deleted
 
+  /repositories/{id}/restore:
+    post:
+      operationId: restoreRepository
+      tags: [repositories]
+      summary: Restore a soft-deleted repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored repository
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repository"
+        "404":
+          description: Not found
+
   # ─── Releases ─────────────────────────────────────────────────────────────
   /releases:
     get:
@@ -914,6 +956,27 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /releases/{id}/restore:
+    post:
+      operationId: restoreRelease
+      tags: [releases]
+      summary: Restore a soft-deleted release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored release
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+        "404":
+          description: Not found
 
   # ─── Security ─────────────────────────────────────────────────────────────
   /security/vulnerabilities:
@@ -2255,6 +2318,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, name, sslStatus, cloudflarEnabled, status, createdAt, updatedAt]
 
     DomainInput:
@@ -2372,6 +2437,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, name, visibility, openPullRequests, openIssues, status, secretsExposed, createdAt, updatedAt]
 
     RepositoryInput:
@@ -2472,6 +2539,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, applicationId, version, environment, status, rollbackAvailable, approved, createdAt, updatedAt]
 
     ReleaseInput:
@@ -3291,7 +3360,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DatabaseRecord"
-      required: [applications, infrastructure, databases]
+        domains:
+          type: array
+          items:
+            $ref: "#/components/schemas/Domain"
+        repositories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
+        releases:
+          type: array
+          items:
+            $ref: "#/components/schemas/Release"
+      required: [applications, infrastructure, databases, domains, repositories, releases]
 
     # ── Search ────────────────────────────────────────────────────────────
     SearchResults:
