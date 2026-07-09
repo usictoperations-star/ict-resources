@@ -16,7 +16,7 @@ export const softwareTable = pgTable("software", {
   upgradeAvailable: boolean("upgrade_available").notNull().default(false),
   applicationId: integer("application_id"),
   notes: text("notes"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

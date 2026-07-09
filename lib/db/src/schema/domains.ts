@@ -14,7 +14,7 @@ export const domainsTable = pgTable("domains", {
   cloudflarEnabled: boolean("cloudflare_enabled").notNull().default(false),
   status: text("status").notNull().default("Active"),
   applicationId: integer("application_id"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

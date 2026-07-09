@@ -54,7 +54,7 @@ export interface Application {
   /** @nullable */
   tags?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   /** @nullable */
   lastSecurityScanAt?: string | null;
   createdAt: string;

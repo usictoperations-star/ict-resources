@@ -26,7 +26,7 @@ export interface Repository {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   secretsExposed: boolean;
   /** @nullable */
   lastScannedAt?: string | null;

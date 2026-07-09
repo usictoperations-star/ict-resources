@@ -15,7 +15,7 @@ export const repositoriesTable = pgTable("repositories", {
   applicationId: integer("application_id"),
   status: text("status").notNull().default("Active"),
   notes: text("notes"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   secretsExposed: boolean("secrets_exposed").notNull().default(false),
   lastScannedAt: text("last_scanned_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

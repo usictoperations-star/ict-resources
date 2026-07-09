@@ -17,8 +17,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamSelectField } from "@/components/team-select-field";
+import { OwnerBadge } from "@/components/owner-badge";
+import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -31,7 +31,7 @@ const infraFormSchema = CreateInfrastructureBody.extend({
   cpuCores: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
   ramGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
   diskGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").nonnegative("Must be a whole number")),
-  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
+  ownerId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid owner" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -54,9 +54,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", teamId: "" };
+const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "" };
 
-type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; teamId?: number | null };
+type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null };
 
 export default function Infrastructure() {
   const { data: infra, isLoading } = useListInfrastructure();
@@ -96,7 +96,7 @@ export default function Infrastructure() {
       location: item.location ?? "", cpuCores: item.cpuCores?.toString() ?? "",
       ramGb: item.ramGb?.toString() ?? "", diskGb: item.diskGb?.toString() ?? "",
       os: item.os ?? "", notes: item.notes ?? "",
-      teamId: item.teamId?.toString() ?? "",
+      ownerId: item.ownerId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -122,7 +122,7 @@ export default function Infrastructure() {
       diskGb: parsed.diskGb,
       os: parsed.os || undefined,
       notes: parsed.notes || undefined,
-      teamId: form.teamId ? Number(form.teamId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
     };
     try {
       if (editTarget) {
@@ -162,7 +162,7 @@ export default function Infrastructure() {
                     <TableHead>Type</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Team</TableHead>
+                    <TableHead>Owner</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,7 +173,7 @@ export default function Infrastructure() {
                       <TableCell>{item.type}</TableCell>
                       <TableCell className="font-mono text-sm">{item.ipAddress || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(item.status)}>{item.status}</Badge></TableCell>
-                      <TableCell><TeamBadge teamId={(item as InfraRow).teamId} /></TableCell>
+                      <TableCell><OwnerBadge ownerId={(item as InfraRow).ownerId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as InfraRow)}>
@@ -243,8 +243,8 @@ export default function Infrastructure() {
                 <Field label="OS">
                   <Input placeholder="Ubuntu 22.04 LTS" value={form.os} onChange={set("os")} className="h-9" />
                 </Field>
-                <Field label="Team">
-                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+                <Field label="Owner">
+                  <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
                 </Field>
               </div>
               <Field label="Notes">

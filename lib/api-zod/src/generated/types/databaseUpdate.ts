@@ -19,5 +19,5 @@ export interface DatabaseUpdate {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }

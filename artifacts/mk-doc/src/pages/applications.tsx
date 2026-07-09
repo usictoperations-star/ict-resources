@@ -16,8 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamSelectField } from "@/components/team-select-field";
+import { OwnerBadge } from "@/components/owner-badge";
+import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -69,10 +69,10 @@ const EMPTY_FORM = {
   environment: "", status: "Active", priority: "Medium", criticality: "Medium",
   ministry: "", department: "", businessOwner: "", technicalOwner: "",
   frontend: "", backend: "", framework: "", language: "", database: "",
-  serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", teamId: ""
+  serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", ownerId: ""
 };
 
-type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; teamId?: number | null };
+type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null };
 
 export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
@@ -142,7 +142,7 @@ export default function Applications() {
       domain: app.domain ?? "",
       currentVersion: app.currentVersion ?? "",
       tags: app.tags ?? "",
-      teamId: app.teamId?.toString() ?? "",
+      ownerId: app.ownerId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -189,7 +189,7 @@ export default function Applications() {
       domain: form.domain || undefined,
       currentVersion: form.currentVersion || undefined,
       tags: form.tags || undefined,
-      teamId: form.teamId ? Number(form.teamId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
     };
     try {
       if (editTarget) {
@@ -242,7 +242,7 @@ export default function Applications() {
                     <TableHead>Category</TableHead>
                     <TableHead>Environment</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Team</TableHead>
+                    <TableHead>Owner</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -261,7 +261,7 @@ export default function Applications() {
                           {app.status}
                         </Badge>
                       </TableCell>
-                      <TableCell><TeamBadge teamId={(app as AppRow).teamId} /></TableCell>
+                      <TableCell><OwnerBadge ownerId={(app as AppRow).ownerId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(app as AppRow)}>
@@ -364,8 +364,8 @@ export default function Applications() {
                   <Field label="Technical Owner">
                     <Input placeholder="Name" value={form.technicalOwner} onChange={set("technicalOwner")} className="h-9" />
                   </Field>
-                  <Field label="Team">
-                    <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+                  <Field label="Owner">
+                    <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
                   </Field>
                 </div>
               </section>

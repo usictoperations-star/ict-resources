@@ -15,7 +15,7 @@ export const infrastructureTable = pgTable("infrastructure", {
   diskGb: integer("disk_gb"),
   os: text("os"),
   notes: text("notes"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   patchStatus: text("patch_status").notNull().default("Up to Date"),
   lastPatchedAt: text("last_patched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

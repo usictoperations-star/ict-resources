@@ -139,7 +139,7 @@ export interface Application {
   /** @nullable */
   tags?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   /** @nullable */
   lastSecurityScanAt?: string | null;
   createdAt: string;
@@ -176,7 +176,7 @@ export interface ApplicationInput {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
-  teamId?: number;
+  ownerId?: number;
   lastSecurityScanAt?: string;
 }
 
@@ -207,7 +207,7 @@ export interface ApplicationUpdate {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
-  teamId?: number;
+  ownerId?: number;
   lastSecurityScanAt?: string;
 }
 
@@ -270,7 +270,7 @@ export interface InfrastructureItem {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   patchStatus: string;
   /** @nullable */
   lastPatchedAt?: string | null;
@@ -293,7 +293,7 @@ export interface InfrastructureInput {
   diskGb?: number;
   os?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
   patchStatus?: string;
   lastPatchedAt?: string;
 }
@@ -310,7 +310,7 @@ export interface InfrastructureUpdate {
   diskGb?: number;
   os?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
   patchStatus?: string;
   lastPatchedAt?: string;
 }
@@ -336,7 +336,7 @@ export interface DatabaseRecord {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */
@@ -357,7 +357,7 @@ export interface DatabaseInput {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface DatabaseUpdate {
@@ -373,7 +373,7 @@ export interface DatabaseUpdate {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface Domain {
@@ -395,7 +395,7 @@ export interface Domain {
   /** @nullable */
   applicationId?: number | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   /** @nullable */
   notes?: string | null;
   createdAt: string;
@@ -414,7 +414,7 @@ export interface DomainInput {
   cloudflarEnabled?: boolean;
   status: string;
   applicationId?: number;
-  teamId?: number;
+  ownerId?: number;
   notes?: string;
 }
 
@@ -429,7 +429,7 @@ export interface DomainUpdate {
   cloudflarEnabled?: boolean;
   status?: string;
   applicationId?: number;
-  teamId?: number;
+  ownerId?: number;
   notes?: string;
 }
 
@@ -465,7 +465,7 @@ export interface Repository {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   secretsExposed: boolean;
   /** @nullable */
   lastScannedAt?: string | null;
@@ -486,7 +486,7 @@ export interface RepositoryInput {
   applicationId?: number;
   status: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }
@@ -503,7 +503,7 @@ export interface RepositoryUpdate {
   applicationId?: number;
   status?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }
@@ -594,7 +594,7 @@ export interface Vulnerability {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -619,7 +619,7 @@ export interface VulnerabilityInput {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface VulnerabilityUpdate {
@@ -641,7 +641,7 @@ export interface VulnerabilityUpdate {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface SecuritySummary {
@@ -792,7 +792,7 @@ export interface SoftwareItem {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -811,7 +811,7 @@ export interface SoftwareInput {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface SoftwareUpdate {
@@ -827,7 +827,7 @@ export interface SoftwareUpdate {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }
 
 export interface Document {

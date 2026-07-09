@@ -30,7 +30,7 @@ export const applicationsTable = pgTable("applications", {
   currentVersion: text("current_version"),
   launchDate: text("launch_date"),
   tags: text("tags"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   lastSecurityScanAt: text("last_security_scan_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

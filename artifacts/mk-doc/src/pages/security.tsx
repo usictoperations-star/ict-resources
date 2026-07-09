@@ -7,8 +7,8 @@ import {
 import { CreateVulnerabilityBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamSelectField } from "@/components/team-select-field";
+import { OwnerBadge } from "@/components/owner-badge";
+import { OwnerSelectField } from "@/components/owner-select-field";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,7 +35,7 @@ const vulnFormSchema = CreateVulnerabilityBody.extend({
   severity: CreateVulnerabilityBody.shape.severity.min(1, "Severity is required"),
   status: CreateVulnerabilityBody.shape.status.min(1, "Status is required"),
   applicationId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid ID" }).int("Must be a valid ID").positive("Must be a valid ID")),
-  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
+  ownerId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid owner" }).int().positive()),
 });
 
 function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
@@ -59,7 +59,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { title: "", description: "", severity: "medium", status: "open", applicationId: "", cveId: "", affectedComponent: "", version: "", vendor: "", category: "", installationDate: "", licenseType: "", licenseExpiration: "", endOfLifeDate: "", discoveredAt: "", assignedTo: "", notes: "", teamId: "" };
+const EMPTY_FORM = { title: "", description: "", severity: "medium", status: "open", applicationId: "", cveId: "", affectedComponent: "", version: "", vendor: "", category: "", installationDate: "", licenseType: "", licenseExpiration: "", endOfLifeDate: "", discoveredAt: "", assignedTo: "", notes: "", ownerId: "" };
 
 type VulnRow = {
   id: number; title: string; description?: string | null; severity: string; status: string;
@@ -67,7 +67,7 @@ type VulnRow = {
   affectedComponent?: string | null; version?: string | null; vendor?: string | null;
   category?: string | null; installationDate?: string | null; licenseType?: string | null;
   licenseExpiration?: string | null; endOfLifeDate?: string | null; discoveredAt?: string | null;
-  assignedTo?: string | null; notes?: string | null; teamId?: number | null;
+  assignedTo?: string | null; notes?: string | null; ownerId?: number | null;
 };
 
 const TONE_TEXT: Record<string, string> = { danger: "text-destructive", warning: "text-amber-600", ok: "text-emerald-600", default: "text-foreground" };
@@ -234,7 +234,7 @@ export default function Security() {
       endOfLifeDate: v.endOfLifeDate ? v.endOfLifeDate.substring(0, 10) : "",
       discoveredAt: v.discoveredAt ? v.discoveredAt.substring(0, 10) : "",
       assignedTo: v.assignedTo ?? "", notes: v.notes ?? "",
-      teamId: v.teamId?.toString() ?? "",
+      ownerId: v.ownerId?.toString() ?? "",
     });
     setErrors({});
     setLogSectionOpen(true);
@@ -256,7 +256,7 @@ export default function Security() {
       licenseType: form.licenseType || undefined, licenseExpiration: form.licenseExpiration || undefined,
       endOfLifeDate: form.endOfLifeDate || undefined, discoveredAt: parsed.discoveredAt || undefined,
       assignedTo: parsed.assignedTo || undefined, notes: parsed.notes || undefined,
-      teamId: form.teamId ? Number(form.teamId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
     };
     try {
       if (editTarget) { await updateVulnerability({ id: editTarget.id, data: payload }); }
@@ -519,8 +519,8 @@ export default function Security() {
                     <Field label="Category">
                       <SelectField value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))} placeholder="Category" options={CATEGORY_OPTIONS} />
                     </Field>
-                    <Field label="Team">
-                      <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+                    <Field label="Owner">
+                      <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
                     </Field>
                   </div>
                 </div>
@@ -688,7 +688,7 @@ export default function Security() {
                     <TableHead className="text-xs font-medium h-8 w-24">Severity</TableHead>
                     <TableHead className="text-xs font-medium h-8">Application</TableHead>
                     <TableHead className="text-xs font-medium h-8 w-28">Status</TableHead>
-                    <TableHead className="text-xs font-medium h-8">Team</TableHead>
+                    <TableHead className="text-xs font-medium h-8">Owner</TableHead>
                     <TableHead className="w-16 h-8" />
                   </TableRow>
                 </TableHeader>
@@ -710,7 +710,7 @@ export default function Security() {
                       <TableCell className="py-2.5">
                         <Badge variant="outline" className="capitalize text-[10px] font-normal">{vuln.status.replace(/_/g, " ")}</Badge>
                       </TableCell>
-                      <TableCell className="py-2.5"><TeamBadge teamId={(vuln as VulnRow).teamId} /></TableCell>
+                      <TableCell className="py-2.5"><OwnerBadge ownerId={(vuln as VulnRow).ownerId} /></TableCell>
                       <TableCell className="py-2.5">
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(vuln as VulnRow)}>

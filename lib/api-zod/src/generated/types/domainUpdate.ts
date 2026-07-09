@@ -17,6 +17,6 @@ export interface DomainUpdate {
   cloudflarEnabled?: boolean;
   status?: string;
   applicationId?: number;
-  teamId?: number;
+  ownerId?: number;
   notes?: string;
 }

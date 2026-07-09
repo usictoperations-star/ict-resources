@@ -16,7 +16,7 @@ export const databasesTable = pgTable("databases", {
   lastBackupAt: text("last_backup_at"),
   lastBackupStatus: text("last_backup_status").notNull().default("Unknown"),
   notes: text("notes"),
-  teamId: integer("team_id"),
+  ownerId: integer("owner_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),

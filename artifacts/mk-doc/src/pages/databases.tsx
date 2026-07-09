@@ -18,8 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamSelectField } from "@/components/team-select-field";
+import { OwnerBadge } from "@/components/owner-badge";
+import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -30,7 +30,7 @@ const dbFormSchema = CreateDatabaseBody.extend({
   type: CreateDatabaseBody.shape.type.min(1, "Type is required"),
   status: CreateDatabaseBody.shape.status.min(1, "Status is required"),
   sizeGb: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid number" }).nonnegative("Must be a valid number")),
-  teamId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid team" }).int().positive()),
+  ownerId: numericStringField(z.coerce.number({ invalid_type_error: "Must be a valid owner" }).int().positive()),
 });
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -51,9 +51,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", teamId: "" };
+const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", ownerId: "" };
 
-type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; teamId?: number | null };
+type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null };
 
 export default function Databases() {
   const { data: databases, isLoading } = useListDatabases();
@@ -93,7 +93,7 @@ export default function Databases() {
       owner: db.owner ?? "", backupEnabled: db.backupEnabled ?? true,
       encryptionEnabled: db.encryptionEnabled ?? false, status: db.status ?? "active",
       notes: db.notes ?? "",
-      teamId: db.teamId?.toString() ?? "",
+      ownerId: db.ownerId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -117,7 +117,7 @@ export default function Databases() {
       encryptionEnabled: parsed.encryptionEnabled,
       status: parsed.status,
       notes: parsed.notes || undefined,
-      teamId: form.teamId ? Number(form.teamId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
     };
     try {
       if (editTarget) {
@@ -157,7 +157,7 @@ export default function Databases() {
                     <TableHead>Type</TableHead>
                     <TableHead>Server</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Team</TableHead>
+                    <TableHead>Owner</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -168,7 +168,7 @@ export default function Databases() {
                       <TableCell>{db.type}</TableCell>
                       <TableCell>{db.server || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(db.status)}>{db.status}</Badge></TableCell>
-                      <TableCell><TeamBadge teamId={(db as DbRow).teamId} /></TableCell>
+                      <TableCell><OwnerBadge ownerId={(db as DbRow).ownerId} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(db as DbRow)}>
@@ -227,8 +227,8 @@ export default function Databases() {
                 <Field label="Status">
                   <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
                 </Field>
-                <Field label="Team">
-                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+                <Field label="Owner">
+                  <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
                 </Field>
               </div>
               <div className="flex gap-6">

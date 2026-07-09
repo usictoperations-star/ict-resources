@@ -19,5 +19,5 @@ export interface SoftwareUpdate {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }

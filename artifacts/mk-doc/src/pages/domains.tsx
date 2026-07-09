@@ -16,8 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { TeamBadge } from "@/components/team-badge";
-import { TeamSelectField } from "@/components/team-select-field";
+import { OwnerBadge } from "@/components/owner-badge";
+import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
@@ -47,9 +47,9 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", teamId: "" };
+const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", ownerId: "" };
 
-type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; teamId?: number | null };
+type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null };
 
 export default function Domains() {
   const { data: domains, isLoading: domainsLoading } = useListDomains();
@@ -93,7 +93,7 @@ export default function Domains() {
       sslStatus: d.sslStatus ?? "valid", dnsProvider: d.dnsProvider ?? "",
       cloudflarEnabled: d.cloudflarEnabled ?? false, status: d.status ?? "active",
       notes: d.notes ?? "",
-      teamId: d.teamId?.toString() ?? "",
+      ownerId: d.ownerId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -127,7 +127,7 @@ export default function Domains() {
       cloudflarEnabled: form.cloudflarEnabled,
       status: form.status,
       notes: form.notes || undefined,
-      teamId: form.teamId ? Number(form.teamId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
     };
     try {
       if (editTarget) {
@@ -194,7 +194,7 @@ export default function Domains() {
                       <TableHead>Reg. Expiry</TableHead>
                       <TableHead>SSL Status</TableHead>
                       <TableHead>Cloudflare</TableHead>
-                      <TableHead>Team</TableHead>
+                      <TableHead>Owner</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -208,7 +208,7 @@ export default function Domains() {
                           <Badge variant={domain.sslStatus === 'valid' ? 'default' : 'destructive'}>{domain.sslStatus}</Badge>
                         </TableCell>
                         <TableCell>{domain.cloudflarEnabled ? 'Yes' : 'No'}</TableCell>
-                        <TableCell><TeamBadge teamId={(domain as DomainRow).teamId} /></TableCell>
+                        <TableCell><OwnerBadge ownerId={(domain as DomainRow).ownerId} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(domain as DomainRow)}>
@@ -269,8 +269,8 @@ export default function Domains() {
                 <Field label="Status">
                   <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
                 </Field>
-                <Field label="Team">
-                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
+                <Field label="Owner">
+                  <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
                 </Field>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

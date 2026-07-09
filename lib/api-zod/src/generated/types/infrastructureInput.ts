@@ -19,7 +19,7 @@ export interface InfrastructureInput {
   diskGb?: number;
   os?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
   patchStatus?: string;
   lastPatchedAt?: string;
 }

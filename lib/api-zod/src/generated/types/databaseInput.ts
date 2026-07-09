@@ -20,5 +20,5 @@ export interface DatabaseInput {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  teamId?: number;
+  ownerId?: number;
 }

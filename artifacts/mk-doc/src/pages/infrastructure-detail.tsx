@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, Server, Cpu, HardDrive, MapPin, Network, Settings } from "lucide-react";
-import { TeamBadge } from "@/components/team-badge";
+import { OwnerBadge } from "@/components/owner-badge";
 
 function Field({ label, value }: { label: string; value?: string | number | null }) {
   if (value === null || value === undefined || value === "") return null;
@@ -138,8 +138,8 @@ export default function InfrastructureDetail() {
         <Field label="Created" value={item.createdAt} />
         <Field label="Updated" value={item.updatedAt} />
         <div>
-          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
-          <dd><TeamBadge teamId={item.teamId} /></dd>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
+          <dd><OwnerBadge ownerId={item.ownerId} /></dd>
         </div>
       </Section>
 

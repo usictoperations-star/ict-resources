@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, Globe, Shield, Server, Settings } from "lucide-react";
-import { TeamBadge } from "@/components/team-badge";
+import { OwnerBadge } from "@/components/owner-badge";
 
 function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
   if (value === null || value === undefined || value === "") return null;
@@ -137,8 +137,8 @@ export default function DomainDetail() {
         <Field label="Created" value={domain.createdAt} />
         <Field label="Updated" value={domain.updatedAt} />
         <div>
-          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
-          <dd><TeamBadge teamId={domain.teamId} /></dd>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
+          <dd><OwnerBadge ownerId={domain.ownerId} /></dd>
         </div>
       </Section>
 

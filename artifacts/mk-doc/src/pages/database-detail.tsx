@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, Database, Server, Shield, Settings } from "lucide-react";
-import { TeamBadge } from "@/components/team-badge";
+import { OwnerBadge } from "@/components/owner-badge";
 
 function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
   if (value === null || value === undefined || value === "") return null;
@@ -134,8 +134,8 @@ export default function DatabaseDetail() {
         <Field label="Created" value={db.createdAt} />
         <Field label="Updated" value={db.updatedAt} />
         <div>
-          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
-          <dd><TeamBadge teamId={db.teamId} /></dd>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
+          <dd><OwnerBadge ownerId={db.ownerId} /></dd>
         </div>
       </Section>
 

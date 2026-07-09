@@ -28,7 +28,7 @@ export interface SoftwareItem {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  teamId?: number | null;
+  ownerId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
