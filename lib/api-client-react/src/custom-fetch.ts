@@ -7,6 +7,7 @@ export type ErrorType<T = unknown> = ApiError<T>;
 export type BodyType<T> = T;
 
 export type AuthTokenGetter = () => Promise<string | null> | string | null;
+export type CookieGetter = () => Promise<string | null> | string | null;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
@@ -17,6 +18,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _cookieGetter: CookieGetter | null = null;
 
 // Requests that hang (e.g. API server unreachable / DNS black hole) would
 // otherwise wait on the platform's default socket timeout, which can be
@@ -56,6 +58,23 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Register a getter that supplies a raw `Cookie` header value.  Before every
+ * fetch the getter is invoked; when it returns a non-null string it is set
+ * as the `Cookie` request header.
+ *
+ * Use this in React Native / Expo bundles where the browser cookie jar is
+ * absent and cookies must be managed manually (e.g. stored in SecureStore
+ * and replayed on every request).
+ * Pass `null` to clear the getter.
+ *
+ * NOTE: Do NOT use this in web applications — the browser manages cookies
+ * automatically and manually setting the Cookie header is blocked by CORS.
+ */
+export function setCookieGetter(getter: CookieGetter | null): void {
+  _cookieGetter = getter;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -361,6 +380,15 @@ export async function customFetch<T = unknown>(
 
   if (responseType === "json" && !headers.has("accept")) {
     headers.set("accept", DEFAULT_JSON_ACCEPT);
+  }
+
+  // Attach manually managed cookie when a getter is configured and no
+  // Cookie header has been explicitly provided (React Native only pattern).
+  if (_cookieGetter && !headers.has("cookie")) {
+    const cookie = await _cookieGetter();
+    if (cookie) {
+      headers.set("cookie", cookie);
+    }
   }
 
   // Attach bearer token when an auth getter is configured and no

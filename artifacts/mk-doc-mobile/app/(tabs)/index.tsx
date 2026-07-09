@@ -6,7 +6,6 @@ import { Feather } from "@expo/vector-icons";
 import React, { useCallback } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Platform,
   Pressable,
   RefreshControl,
@@ -18,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ErrorState, getErrorMessage } from "@/components/ErrorState";
+import { useAuth } from "@/contexts/auth";
 import { useColors } from "@/hooks/useColors";
 
 type KPI = {
@@ -83,6 +83,7 @@ export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
+  const { logout } = useAuth();
 
   const {
     data: stats,
@@ -163,9 +164,18 @@ export default function DashboardScreen() {
             <Text style={styles.headerTitle}>MK DOC</Text>
             <Text style={styles.headerSub}>Operations Center</Text>
           </View>
-          <View style={[styles.headerBadge, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
-            <Feather name="activity" size={14} color="#fff" />
-            <Text style={styles.headerBadgeText}>Live</Text>
+          <View style={styles.headerRight}>
+            <View style={[styles.headerBadge, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
+              <Feather name="activity" size={14} color="#fff" />
+              <Text style={styles.headerBadgeText}>Live</Text>
+            </View>
+            <Pressable
+              onPress={logout}
+              style={[styles.headerBadge, { backgroundColor: "rgba(255,255,255,0.15)" }]}
+              hitSlop={8}
+            >
+              <Feather name="log-out" size={14} color="#fff" />
+            </Pressable>
           </View>
         </View>
       </View>
@@ -294,6 +304,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   headerTitle: {
     fontSize: 22,
