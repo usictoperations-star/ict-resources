@@ -97,7 +97,7 @@ export function exportPDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("MK Digital Operations Center", marginH, 8);
+  doc.text("Mahibere Kidusan Digital System Operations Center", marginH, 8);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text(title, marginH, 14);

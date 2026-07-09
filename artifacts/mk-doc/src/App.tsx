@@ -45,7 +45,7 @@ function AppRoutes() {
       <div className="min-h-screen flex items-center justify-center bg-[#0F2D5C]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
-            <img src="/mk-logo.png" alt="MK DOC" className="h-8 w-8 object-contain" />
+            <img src="/mk-logo.png" alt="Mahibere Kidusan" className="h-8 w-8 object-contain" />
           </div>
           <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden">
             <div className="h-full bg-blue-400 rounded-full animate-[loading_1.2s_ease-in-out_infinite]" style={{ width: "60%" }} />

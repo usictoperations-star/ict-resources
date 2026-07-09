@@ -31,11 +31,11 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
           <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center">
-            <img src="/mk-logo.png" alt="MK DOC" className="h-10 w-10 object-contain" />
+            <img src="/mk-logo.png" alt="Mahibere Kidusan" className="h-10 w-10 object-contain" />
           </div>
           <div className="text-center">
-            <h1 className="text-white text-2xl font-bold tracking-wide">MK DOC</h1>
-            <p className="text-blue-300 text-sm mt-0.5">Digital Operations Center</p>
+            <h1 className="text-white text-xl font-bold tracking-wide leading-tight">Mahibere Kidusan</h1>
+            <p className="text-blue-300 text-sm mt-0.5">Digital System Operations Center</p>
           </div>
         </div>
 

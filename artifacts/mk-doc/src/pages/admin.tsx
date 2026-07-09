@@ -659,7 +659,7 @@ export default function Admin() {
           <Card>
             <CardHeader>
               <CardTitle>System Audit Logs</CardTitle>
-              <CardDescription>Recent activity across all MK DOC modules.</CardDescription>
+              <CardDescription>Recent activity across all system modules.</CardDescription>
             </CardHeader>
             <CardContent>
               {logsLoading ? (

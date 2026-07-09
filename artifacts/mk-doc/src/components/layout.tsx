@@ -108,8 +108,8 @@ function SidebarBranding() {
         className="h-10 w-10 object-contain flex-shrink-0"
       />
       <div>
-        <div className="font-bold text-white text-base leading-tight tracking-wide">MK DOC</div>
-        <div className="text-blue-200 text-xs leading-tight">Digital Operations Center</div>
+        <div className="font-bold text-white text-sm leading-tight tracking-wide">Mahibere Kidusan</div>
+        <div className="text-blue-200 text-xs leading-tight">Digital System Operations Center</div>
       </div>
     </div>
   );
@@ -180,7 +180,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <NavLinks location={location} />
         </div>
         <div className="p-3 border-t border-white/10 text-xs text-blue-300 text-center font-mono">
-          v1.0.0 © 2026 MK DOC
+          v1.0.0 © 2026 Mahibere Kidusan
         </div>
       </aside>
 
@@ -194,7 +194,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavLinks location={location} onNavigate={() => setTabletSidebarOpen(false)} />
           </div>
           <div className="p-3 border-t border-white/10 text-xs text-blue-300 text-center font-mono">
-            v1.0.0 © 2026 MK DOC
+            v1.0.0 © 2026 Mahibere Kidusan
           </div>
         </aside>
       )}
@@ -214,7 +214,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
           </div>
           <div className="p-3 border-t border-white/10 text-xs text-blue-300 text-center font-mono">
-            v1.0.0 © 2026 MK DOC
+            v1.0.0 © 2026 Mahibere Kidusan
           </div>
         </SheetContent>
       </Sheet>
@@ -246,7 +246,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 flex-shrink-0">
             <img src="/mk-logo.png" alt="MK Logo" className="h-8 w-8 object-contain" />
-            <span className="font-bold text-white text-sm tracking-wide">MK DOC</span>
+            <span className="font-bold text-white text-sm tracking-wide">Mahibere Kidusan</span>
           </div>
 
           {/* Search bar */}
@@ -265,7 +265,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <footer className="bg-[#1B56A5] border-t border-white/10 px-4 sm:px-6 py-2 flex items-center justify-between flex-shrink-0">
-          <span className="text-blue-100 text-xs">MK Digital Operations Center</span>
+          <span className="text-blue-100 text-xs">Mahibere Kidusan Digital System Operations Center</span>
           <span className="text-blue-200 text-xs font-mono">v1.0.0</span>
         </footer>
       </main>
