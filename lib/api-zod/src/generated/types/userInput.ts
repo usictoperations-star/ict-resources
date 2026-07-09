@@ -11,7 +11,7 @@ export interface UserInput {
   name: string;
   /** @minLength 1 */
   email: string;
-  roles: string[];
+  role: string;
   phone?: string;
   department?: string;
   status: string;

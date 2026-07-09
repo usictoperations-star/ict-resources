@@ -14,7 +14,7 @@ const ROLE_RANK: Record<string, number> = {
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: number; roles: string[] };
+      user?: { id: number; role: string };
     }
   }
 }
@@ -26,7 +26,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
   try {
     const [user] = await db
-      .select({ id: usersTable.id, roles: usersTable.roles })
+      .select({ id: usersTable.id, role: usersTable.role })
       .from(usersTable)
       .where(eq(usersTable.id, req.session.userId));
     if (!user) {
@@ -47,7 +47,7 @@ export function requireRole(minRole: Role) {
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
-    const userRole = req.user?.roles?.[0] ?? "viewer";
+    const userRole = req.user?.role ?? "viewer";
     const rank = ROLE_RANK[userRole] ?? 0;
     const required = ROLE_RANK[minRole] ?? 0;
     if (rank < required) {

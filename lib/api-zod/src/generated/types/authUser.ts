@@ -10,7 +10,7 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  roles: string[];
+  role: string;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

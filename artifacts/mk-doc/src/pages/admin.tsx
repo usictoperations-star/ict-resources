@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2, Pencil, Trash2, RotateCcw, KeyRound, CheckCircle2, Eye, EyeOff, Wand2, Copy, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
@@ -59,7 +58,7 @@ const ROLE_BADGE: Record<string, string> = {
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().min(1, "Email is required").email("Must be a valid email address"),
-  roles: z.array(z.string()).min(1, "At least one role is required"),
+  role: z.string().min(1, "Role is required"),
   status: z.string().min(1, "Status is required"),
   phone: z.string().optional(),
   password: z.string().optional(),
@@ -90,32 +89,23 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   );
 }
 
-function RolesCheckboxGroup({ value, onChange, error }: { value: string[]; onChange: (v: string[]) => void; error?: string }) {
-  const toggle = (role: string) => {
-    if (value.includes(role)) {
-      onChange(value.filter(r => r !== role));
-    } else {
-      onChange([...value, role]);
-    }
-  };
+function RoleSelectField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm font-medium">Roles<span className="text-destructive ml-0.5">*</span></Label>
-      <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
-        {ROLE_OPTIONS.map(role => (
-          <label key={role} className="flex items-center gap-2 cursor-pointer select-none">
-            <Checkbox
-              checked={value.includes(role)}
-              onCheckedChange={() => toggle(role)}
-              id={`role-${role}`}
-            />
-            <div>
-              <span className="text-sm font-medium">{ROLE_LABELS[role] ?? role}</span>
-              <p className="text-[10px] text-muted-foreground leading-tight">{ROLE_DESCRIPTIONS[role]}</p>
-            </div>
-          </label>
-        ))}
-      </div>
+      <Label className="text-sm font-medium">Role<span className="text-destructive ml-0.5">*</span></Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-9"><SelectValue placeholder="Select role" /></SelectTrigger>
+        <SelectContent>
+          {ROLE_OPTIONS.map(role => (
+            <SelectItem key={role} value={role}>
+              <div>
+                <span className="font-medium">{ROLE_LABELS[role] ?? role}</span>
+                <p className="text-[10px] text-muted-foreground leading-tight">{ROLE_DESCRIPTIONS[role]}</p>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
@@ -179,10 +169,10 @@ function PasswordInput({ value, onChange, placeholder, onGenerate }: { value: st
   );
 }
 
-const EMPTY_FORM = { name: "", email: "", roles: ["viewer"] as string[], phone: "", department: "", status: "Active", password: "" };
+const EMPTY_FORM = { name: "", email: "", role: "viewer", phone: "", department: "", status: "Active", password: "" };
 
 type UserRow = {
-  id: number; name: string; email: string; roles: string[];
+  id: number; name: string; email: string; role: string;
   phone?: string | null; department?: string | null; status: string;
   lastLoginAt?: string | null; hasPassword?: boolean;
 };
@@ -381,7 +371,7 @@ export default function Admin() {
     setForm({
       name: user.name ?? "",
       email: user.email ?? "",
-      roles: Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : ["viewer"],
+      role: user.role ?? "viewer",
       phone: user.phone ?? "",
       department: user.department ?? "",
       status: user.status ?? "Active",
@@ -411,7 +401,7 @@ export default function Admin() {
     const payload: Record<string, unknown> = {
       name: form.name,
       email: form.email,
-      roles: form.roles,
+      role: form.role,
       phone: form.phone || undefined,
       department: form.department || undefined,
       status: form.status,
@@ -530,7 +520,7 @@ export default function Admin() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
-                        <TableHead>Roles</TableHead>
+                        <TableHead>Role</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Password</TableHead>
@@ -541,20 +531,15 @@ export default function Admin() {
                     <TableBody>
                       {pagedUsers.map((user) => {
                         const u = user as UserRow;
-                        const userRoles = Array.isArray(u.roles) ? u.roles : [];
                         return (
                           <TableRow key={u.id}>
                             <TableCell className="font-medium">{u.name}</TableCell>
                             <TableCell className="text-sm">{u.email}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{u.phone || '—'}</TableCell>
                             <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {userRoles.map(role => (
-                                  <span key={role} className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${ROLE_BADGE[role] ?? ""}`}>
-                                    {role}
-                                  </span>
-                                ))}
-                              </div>
+                              <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${ROLE_BADGE[u.role] ?? ""}`}>
+                                {ROLE_LABELS[u.role] ?? u.role}
+                              </span>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">{u.department || '—'}</TableCell>
                             <TableCell>
@@ -749,10 +734,10 @@ export default function Admin() {
               <Field label="Phone" error={errors.phone}>
                 <Input type="tel" placeholder="+252 61 234 5678" value={form.phone} onChange={set("phone")} className="h-9" />
               </Field>
-              <RolesCheckboxGroup
-                value={form.roles}
-                onChange={(roles) => setForm(f => ({ ...f, roles }))}
-                error={errors.roles}
+              <RoleSelectField
+                value={form.role}
+                onChange={(role) => setForm(f => ({ ...f, role }))}
+                error={errors.role}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Status">

@@ -118,7 +118,7 @@ export default function Profile() {
     );
   }
 
-  const roleBadge = user?.roles?.[0] ?? "viewer";
+  const roleBadge = user?.role ?? "viewer";
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">

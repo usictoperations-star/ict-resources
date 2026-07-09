@@ -104,7 +104,7 @@ router.get("/users", async (req: Request, res: Response) => {
       id: usersTable.id,
       name: usersTable.name,
       email: usersTable.email,
-      roles: usersTable.roles,
+      role: usersTable.role,
       phone: usersTable.phone,
       department: usersTable.department,
       status: usersTable.status,

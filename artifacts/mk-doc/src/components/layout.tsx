@@ -118,7 +118,7 @@ function SidebarBranding() {
 function UserMenu() {
   const { user, logout } = useAuth();
   if (!user) return null;
-  const badge = ROLE_BADGE[user.roles?.[0] ?? "viewer"] ?? ROLE_BADGE.viewer;
+  const badge = ROLE_BADGE[user.role ?? "viewer"] ?? ROLE_BADGE.viewer;
 
   return (
     <DropdownMenu>
