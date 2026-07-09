@@ -14,11 +14,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Pencil, Trash2, RotateCcw, KeyRound, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, RotateCcw, KeyRound, CheckCircle2, Eye, EyeOff, Wand2, Copy, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { useAuth } from "@/contexts/auth";
+
+function generatePassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*-+=?";
+  const all = upper + lower + digits + symbols;
+  const rand = (chars: string) => chars[Math.floor(Math.random() * chars.length)];
+  const core = [rand(upper), rand(upper), rand(lower), rand(lower), rand(digits), rand(digits), rand(symbols)];
+  const rest = Array.from({ length: 7 }, () => rand(all));
+  return [...core, ...rest].sort(() => Math.random() - 0.5).join("");
+}
 
 const ROLE_OPTIONS = ["admin", "editor", "analyst", "viewer"] as const;
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
@@ -102,26 +114,60 @@ function RolesCheckboxGroup({ value, onChange, error }: { value: string[]; onCha
   );
 }
 
-function PasswordInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function PasswordInput({ value, onChange, placeholder, onGenerate }: { value: string; onChange: (v: string) => void; placeholder?: string; onGenerate?: () => void }) {
   const [show, setShow] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
-    <div className="relative">
-      <Input
-        type={show ? "text" : "password"}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-9 pr-9 font-mono text-sm"
-        autoComplete="new-password"
-      />
-      <button
-        type="button"
-        onClick={() => setShow(v => !v)}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        tabIndex={-1}
-      >
-        {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-      </button>
+    <div className="space-y-2">
+      <div className="relative">
+        <Input
+          type={show ? "text" : "password"}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 pr-9 font-mono text-sm"
+          autoComplete="new-password"
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          tabIndex={-1}
+        >
+          {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        {onGenerate && (
+          <button
+            type="button"
+            onClick={() => { onGenerate(); setShow(true); }}
+            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            <Wand2 className="h-3 w-3" />
+            Generate strong password
+          </button>
+        )}
+        {value && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto"
+          >
+            {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -663,6 +709,7 @@ export default function Admin() {
                 <PasswordInput
                   value={form.password}
                   onChange={(v) => setForm(f => ({ ...f, password: v }))}
+                  onGenerate={() => setForm(f => ({ ...f, password: generatePassword() }))}
                   placeholder={editTarget ? "Leave blank to keep unchanged" : "Set login password"}
                 />
               </Field>
