@@ -39,11 +39,9 @@ const NAV_ITEMS = [
 ];
 
 const SECURITY_SUB_ITEMS = [
-  { id: "vulnerability-health", label: "Vulnerability Health", icon: Activity },
-  { id: "log-vulnerability",    label: "Log Vulnerability",    icon: PenLine },
-  { id: "risk-indicators",      label: "Risk Indicators",      icon: AlertTriangle },
-  { id: "needs-attention",      label: "Needs Attention",      icon: Shield },
-  { id: "vulnerabilities",      label: "Vulnerabilities",      icon: Table2 },
+  { id: "risk-indicators",  label: "Risk Indicators",  icon: AlertTriangle },
+  { id: "needs-attention",  label: "Needs Attention",  icon: Shield },
+  { id: "vulnerabilities",  label: "Vulnerabilities",  icon: Table2 },
 ];
 
 function scrollToSection(id: string) {
