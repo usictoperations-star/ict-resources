@@ -75,7 +75,8 @@ export const GetDashboardStatsResponse = zod.object({
   "highVulnerabilities": zod.number(),
   "upcomingRenewals": zod.number(),
   "securityScore": zod.number(),
-  "recentReleases": zod.number()
+  "recentReleases": zod.number(),
+  "cachedAt": zod.string().describe('ISO timestamp of when this response was cached (60 s TTL)')
 })
 
 
@@ -1785,7 +1786,8 @@ export const GetSecurityDashboardResponse = zod.object({
   "name": zod.string(),
   "lastSecurityScanAt": zod.string().nullish()
 })),
-  "generatedAt": zod.string()
+  "generatedAt": zod.string().describe('ISO timestamp of when the data was first computed'),
+  "cachedAt": zod.string().describe('ISO timestamp of when this response was cached (60 s TTL)')
 }).describe('Aggregated KPIs answering the core cybersecurity operations questions.')
 
 

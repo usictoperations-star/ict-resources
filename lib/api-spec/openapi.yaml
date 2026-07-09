@@ -124,6 +124,11 @@ paths:
       responses:
         "200":
           description: Alerts list
+          headers:
+            X-Cached-At:
+              schema:
+                type: string
+              description: ISO timestamp of when this response was cached (60 s TTL)
           content:
             application/json:
               schema:
@@ -139,6 +144,11 @@ paths:
       responses:
         "200":
           description: Activity list
+          headers:
+            X-Cached-At:
+              schema:
+                type: string
+              description: ISO timestamp of when this response was cached (60 s TTL)
           content:
             application/json:
               schema:
@@ -154,6 +164,11 @@ paths:
       responses:
         "200":
           description: Activity chart data
+          headers:
+            X-Cached-At:
+              schema:
+                type: string
+              description: ISO timestamp of when this response was cached (60 s TTL)
           content:
             application/json:
               schema:
@@ -1869,6 +1884,9 @@ components:
           type: integer
         recentReleases:
           type: integer
+        cachedAt:
+          type: string
+          description: ISO timestamp of when this response was cached (60 s TTL)
       required:
         - totalApplications
         - productionSystems
@@ -1887,6 +1905,7 @@ components:
         - upcomingRenewals
         - securityScore
         - recentReleases
+        - cachedAt
 
     Alert:
       type: object
@@ -3046,6 +3065,10 @@ components:
             required: [id, name]
         generatedAt:
           type: string
+          description: ISO timestamp of when the data was first computed
+        cachedAt:
+          type: string
+          description: ISO timestamp of when this response was cached (60 s TTL)
       required:
         - systemsInProduction
         - serversMissingPatches
@@ -3058,6 +3081,7 @@ components:
         - outdatedDependencies
         - applicationsNotRecentlyScanned
         - generatedAt
+        - cachedAt
 
     # ── Teams ─────────────────────────────────────────────────────────────
     Team:

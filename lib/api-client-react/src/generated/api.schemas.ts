@@ -57,6 +57,8 @@ export interface DashboardStats {
   upcomingRenewals: number;
   securityScore: number;
   recentReleases: number;
+  /** ISO timestamp of when this response was cached (60 s TTL) */
+  cachedAt: string;
 }
 
 export interface Alert {
@@ -785,7 +787,10 @@ export interface SecurityDashboard {
   reposWithExposedSecrets: SecurityDashboardReposWithExposedSecretsItem[];
   outdatedDependencies: SecurityDashboardOutdatedDependenciesItem[];
   applicationsNotRecentlyScanned: SecurityDashboardApplicationsNotRecentlyScannedItem[];
+  /** ISO timestamp of when the data was first computed */
   generatedAt: string;
+  /** ISO timestamp of when this response was cached (60 s TTL) */
+  cachedAt: string;
 }
 
 export interface Team {

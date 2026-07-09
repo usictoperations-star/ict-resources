@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
+import { cache, DASHBOARD_TTL_MS } from "../lib/cache";
 import { db } from "@workspace/db";
 import {
   vulnerabilitiesTable,
@@ -29,6 +30,9 @@ function daysRemaining(dateStr: string | null): number | null {
 
 router.get("/dashboard", async (req: Request, res: Response) => {
   try {
+    const hit = cache.get<Record<string, unknown>>("security:dashboard");
+    if (hit) return res.json({ ...hit.value, cachedAt: hit.cachedAt });
+
     const [apps, infra, domains, databases, repos, software, users, vulns] = await Promise.all([
       db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt)),
       db.select().from(infrastructureTable).where(isNull(infrastructureTable.deletedAt)),
@@ -107,7 +111,7 @@ router.get("/dashboard", async (req: Request, res: Response) => {
       })
       .map(a => ({ id: a.id, name: a.name, lastSecurityScanAt: a.lastSecurityScanAt }));
 
-    return res.json({
+    const result = {
       systemsInProduction,
       serversMissingPatches,
       applicationsWithCriticalVulnerabilities: Array.from(criticalByApp.values()),
@@ -119,7 +123,9 @@ router.get("/dashboard", async (req: Request, res: Response) => {
       outdatedDependencies,
       applicationsNotRecentlyScanned,
       generatedAt: new Date().toISOString(),
-    });
+    };
+    const cachedAt = cache.set("security:dashboard", result, DASHBOARD_TTL_MS);
+    return res.json({ ...result, cachedAt });
   } catch (err) {
     req.log.error({ err }, "Error fetching security dashboard");
     return res.status(500).json({ error: "Internal server error" });

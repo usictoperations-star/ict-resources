@@ -24,4 +24,6 @@ export interface DashboardStats {
   upcomingRenewals: number;
   securityScore: number;
   recentReleases: number;
+  /** ISO timestamp of when this response was cached (60 s TTL) */
+  cachedAt: string;
 }

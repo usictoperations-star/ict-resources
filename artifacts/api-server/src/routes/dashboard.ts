@@ -2,12 +2,16 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "@workspace/db";
 import { applicationsTable, infrastructureTable, databasesTable, domainsTable, repositoriesTable, vulnerabilitiesTable, releasesTable, auditLogsTable } from "@workspace/db";
-import { sql, count, and, lt, gt, isNull } from "drizzle-orm";
+import { sql, gt, isNull } from "drizzle-orm";
+import { cache, DASHBOARD_TTL_MS } from "../lib/cache";
 
 const router = Router();
 
 router.get("/stats", async (req: Request, res: Response) => {
   try {
+    const hit = cache.get<Record<string, unknown>>("dashboard:stats");
+    if (hit) return res.json({ ...hit.value, cachedAt: hit.cachedAt });
+
     const [
       appRows,
       infraRows,
@@ -38,7 +42,6 @@ router.get("/stats", async (req: Request, res: Response) => {
     const highVulnerabilities = vulnRows.filter(v => v.severity === "High" && v.status === "Open").length;
     const openIncidents = vulnRows.filter(v => v.status === "Open").length;
 
-    // Upcoming renewals (next 90 days)
     const now = new Date();
     const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
     const upcomingRenewals = domainRows.filter(d => {
@@ -56,7 +59,7 @@ router.get("/stats", async (req: Request, res: Response) => {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const recentReleases = releaseRows.filter(r => r.createdAt > new Date(thirtyDaysAgo)).length;
 
-    return res.json({
+    const result = {
       totalApplications,
       productionSystems,
       testSystems,
@@ -74,7 +77,11 @@ router.get("/stats", async (req: Request, res: Response) => {
       upcomingRenewals,
       securityScore,
       recentReleases,
-    });
+      resolvedVulns,
+    };
+
+    const cachedAt = cache.set("dashboard:stats", result, DASHBOARD_TTL_MS);
+    return res.json({ ...result, cachedAt });
   } catch (err) {
     req.log.error({ err }, "Error fetching dashboard stats");
     return res.status(500).json({ error: "Internal server error" });
@@ -83,12 +90,17 @@ router.get("/stats", async (req: Request, res: Response) => {
 
 router.get("/alerts", async (req: Request, res: Response) => {
   try {
+    const hit = cache.get<unknown[]>("dashboard:alerts");
+    if (hit) {
+      res.setHeader("X-Cached-At", hit.cachedAt);
+      return res.json(hit.value);
+    }
+
     const vulns = await db.select().from(vulnerabilitiesTable).limit(10);
     const domains = await db.select().from(domainsTable);
     const alerts: Array<{ id: number; type: string; severity: string; title: string; message: string; dueDate: string | null; createdAt: string }> = [];
     let id = 1;
 
-    // Critical vulnerabilities as alerts
     vulns.filter(v => v.severity === "Critical" && v.status === "Open").slice(0, 3).forEach(v => {
       alerts.push({
         id: id++,
@@ -101,7 +113,6 @@ router.get("/alerts", async (req: Request, res: Response) => {
       });
     });
 
-    // Expiring domains/SSL
     const now = new Date();
     const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     domains.forEach(d => {
@@ -123,7 +134,10 @@ router.get("/alerts", async (req: Request, res: Response) => {
       }
     });
 
-    return res.json(alerts.slice(0, 10));
+    const sliced = alerts.slice(0, 10);
+    const cachedAt = cache.set("dashboard:alerts", sliced, DASHBOARD_TTL_MS);
+    res.setHeader("X-Cached-At", cachedAt);
+    return res.json(sliced);
   } catch (err) {
     req.log.error({ err }, "Error fetching alerts");
     return res.status(500).json({ error: "Internal server error" });
@@ -132,15 +146,25 @@ router.get("/alerts", async (req: Request, res: Response) => {
 
 router.get("/activity", async (req: Request, res: Response) => {
   try {
+    const hit = cache.get<unknown[]>("dashboard:activity");
+    if (hit) {
+      res.setHeader("X-Cached-At", hit.cachedAt);
+      return res.json(hit.value);
+    }
+
     const logs = await db.select().from(auditLogsTable).orderBy(sql`${auditLogsTable.createdAt} DESC`).limit(20);
-    return res.json(logs.map(l => ({
+    const activity = logs.map(l => ({
       id: l.id,
       action: l.action,
       entityType: l.entityType,
       entityName: l.entityName ?? l.entityType,
       user: l.userName ?? "System",
       createdAt: l.createdAt.toISOString(),
-    })));
+    }));
+
+    const cachedAt = cache.set("dashboard:activity", activity, DASHBOARD_TTL_MS);
+    res.setHeader("X-Cached-At", cachedAt);
+    return res.json(activity);
   } catch (err) {
     req.log.error({ err }, "Error fetching activity");
     return res.status(500).json({ error: "Internal server error" });
@@ -149,6 +173,12 @@ router.get("/activity", async (req: Request, res: Response) => {
 
 router.get("/activity-chart", async (req: Request, res: Response) => {
   try {
+    const hit = cache.get<unknown[]>("dashboard:activity-chart");
+    if (hit) {
+      res.setHeader("X-Cached-At", hit.cachedAt);
+      return res.json(hit.value);
+    }
+
     const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -158,7 +188,6 @@ router.get("/activity-chart", async (req: Request, res: Response) => {
       .from(auditLogsTable)
       .where(gt(auditLogsTable.createdAt, sevenDaysAgo));
 
-    // Build a map of isoDate -> counts
     const countMap = new Map<string, { total: number; creates: number; updates: number; deletes: number }>();
 
     for (const log of logs) {
@@ -173,19 +202,16 @@ router.get("/activity-chart", async (req: Request, res: Response) => {
       countMap.set(iso, entry);
     }
 
-    // Build 7-day series (oldest first)
     const points = [];
     for (let i = 6; i >= 0; i--) {
       const day = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
       const counts = countMap.get(iso) ?? { total: 0, creates: 0, updates: 0, deletes: 0 };
-      points.push({
-        date: DAY_LABELS[day.getDay()],
-        isoDate: iso,
-        ...counts,
-      });
+      points.push({ date: DAY_LABELS[day.getDay()], isoDate: iso, ...counts });
     }
 
+    const cachedAt = cache.set("dashboard:activity-chart", points, DASHBOARD_TTL_MS);
+    res.setHeader("X-Cached-At", cachedAt);
     return res.json(points);
   } catch (err) {
     req.log.error({ err }, "Error fetching activity chart");

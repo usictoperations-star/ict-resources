@@ -29,5 +29,8 @@ export interface SecurityDashboard {
   reposWithExposedSecrets: SecurityDashboardReposWithExposedSecretsItem[];
   outdatedDependencies: SecurityDashboardOutdatedDependenciesItem[];
   applicationsNotRecentlyScanned: SecurityDashboardApplicationsNotRecentlyScannedItem[];
+  /** ISO timestamp of when the data was first computed */
   generatedAt: string;
+  /** ISO timestamp of when this response was cached (60 s TTL) */
+  cachedAt: string;
 }
