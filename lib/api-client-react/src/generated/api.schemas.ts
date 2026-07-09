@@ -433,6 +433,18 @@ export interface DomainUpdate {
   notes?: string;
 }
 
+export interface DomainHistoryEntry {
+  id: number;
+  action: string;
+  /** @nullable */
+  entityName?: string | null;
+  /** @nullable */
+  userName?: string | null;
+  /** @nullable */
+  changes?: string | null;
+  createdAt: string;
+}
+
 export interface Repository {
   id: number;
   name: string;

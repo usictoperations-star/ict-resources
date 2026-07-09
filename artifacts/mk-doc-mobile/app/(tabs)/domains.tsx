@@ -3,7 +3,7 @@ import {
   useListDomains,
 } from "@workspace/api-client-react";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,7 +27,12 @@ type Domain = {
   sslProvider?: string | null;
   sslExpiry?: string | null;
   sslStatus: string;
+  dnsProvider?: string | null;
+  cloudflarEnabled?: boolean;
   status: string;
+  applicationId?: number | null;
+  notes?: string | null;
+  createdAt?: string | null;
 };
 
 type Urgency = "expired" | "critical" | "warning" | "ok" | "unknown";
@@ -90,6 +95,7 @@ function isValidFilter(value: string | undefined): value is UrgencyFilter {
 
 function DomainCard({ domain }: { domain: Domain }) {
   const colors = useColors();
+  const router = useRouter();
   const urgency = getUrgency(domain);
   const { color, label } = urgencyMeta(urgency, colors);
   const expiry = getRelevantExpiry(domain);
@@ -102,7 +108,18 @@ function DomainCard({ domain }: { domain: Domain }) {
         : `Expires in ${days} day${days === 1 ? "" : "s"}`;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderLeftColor: color }]}>
+    <Pressable
+      onPress={() => router.push(`/domain/${domain.id}` as never)}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderLeftColor: color,
+          opacity: pressed ? 0.75 : 1,
+        },
+      ]}
+    >
       <View style={styles.cardTop}>
         <View style={styles.cardTitleRow}>
           <Text style={[styles.domainName, { color: colors.foreground }]} numberOfLines={1}>
@@ -110,8 +127,11 @@ function DomainCard({ domain }: { domain: Domain }) {
           </Text>
           <Text style={[styles.expiryLabel, { color }]}>{expiryLabel}</Text>
         </View>
-        <View style={[styles.urgencyBadge, { backgroundColor: color }]}>
-          <Text style={styles.urgencyText}>{label}</Text>
+        <View style={styles.cardRight}>
+          <View style={[styles.urgencyBadge, { backgroundColor: color }]}>
+            <Text style={styles.urgencyText}>{label}</Text>
+          </View>
+          <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
         </View>
       </View>
       <View style={styles.cardMeta}>
@@ -131,8 +151,16 @@ function DomainCard({ domain }: { domain: Domain }) {
             </Text>
           </View>
         )}
+        {domain.dnsProvider && (
+          <View style={styles.metaItem}>
+            <Feather name="server" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+              {domain.dnsProvider}
+            </Text>
+          </View>
+        )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -390,6 +418,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
+  },
+  cardRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
   },
   cardTitleRow: { flex: 1, gap: 4 },
   domainName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },

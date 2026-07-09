@@ -29,6 +29,7 @@ export * from './document';
 export * from './documentInput';
 export * from './documentUpdate';
 export * from './domain';
+export * from './domainHistoryEntry';
 export * from './domainInput';
 export * from './domainUpdate';
 export * from './errorEnvelope';

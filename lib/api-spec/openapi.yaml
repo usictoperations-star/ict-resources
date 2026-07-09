@@ -638,6 +638,27 @@ paths:
         "204":
           description: Deleted
 
+  /domains/{id}/history:
+    get:
+      operationId: getDomainHistory
+      tags: [domains]
+      summary: Get audit/change history for a domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DomainHistoryEntry"
+
   /domains/expiring:
     get:
       operationId: getExpiringDomains
@@ -2211,6 +2232,23 @@ components:
           type: integer
         notes:
           type: string
+
+    DomainHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        entityName:
+          type: ["string", "null"]
+        userName:
+          type: ["string", "null"]
+        changes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, action, createdAt]
 
     # ── Repositories ──────────────────────────────────────────────────────
     Repository:

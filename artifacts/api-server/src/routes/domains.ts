@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { db } from "@workspace/db";
 import { domainsTable, auditLogsTable } from "@workspace/db";
 import { CreateDomainBody, UpdateDomainBody } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
@@ -44,6 +44,31 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (err) {
     req.log.error({ err }, "Error creating domain");
     return res.status(400).json({ error: "Invalid request" });
+  }
+});
+
+router.get("/:id/history", async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const entries = await db
+      .select()
+      .from(auditLogsTable)
+      .where(eq(auditLogsTable.entityId, id))
+      .orderBy(desc(auditLogsTable.createdAt));
+    const domainEntries = entries.filter(e => e.entityType === "Domain");
+    return res.json(
+      domainEntries.map(e => ({
+        id: e.id,
+        action: e.action,
+        entityName: e.entityName,
+        userName: e.userName,
+        changes: e.changes,
+        createdAt: e.createdAt.toISOString(),
+      }))
+    );
+  } catch (err) {
+    req.log.error({ err }, "Error fetching domain history");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

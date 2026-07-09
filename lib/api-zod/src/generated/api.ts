@@ -960,6 +960,24 @@ export const DeleteDomainResponse = zod.void()
 
 
 /**
+ * @summary Get audit/change history for a domain
+ */
+export const GetDomainHistoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetDomainHistoryResponseItem = zod.object({
+  "id": zod.number(),
+  "action": zod.string(),
+  "entityName": zod.string().nullish(),
+  "userName": zod.string().nullish(),
+  "changes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetDomainHistoryResponse = zod.array(GetDomainHistoryResponseItem)
+
+
+/**
  * @summary Get domains expiring soon (SSL or registration)
  */
 export const GetExpiringDomainsResponseItem = zod.object({

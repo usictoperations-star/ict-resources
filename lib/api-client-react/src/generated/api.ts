@@ -39,6 +39,7 @@ import type {
   DocumentInput,
   DocumentUpdate,
   Domain,
+  DomainHistoryEntry,
   DomainInput,
   DomainUpdate,
   ErrorEnvelope,
@@ -2550,6 +2551,83 @@ export const useDeleteDomain = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteDomainMutationOptions(options));
     }
+
+export const getGetDomainHistoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/domains/${id}/history`
+}
+
+/**
+ * @summary Get audit/change history for a domain
+ */
+export const getDomainHistory = async (id: number, options?: RequestInit): Promise<DomainHistoryEntry[]> => {
+
+  return customFetch<DomainHistoryEntry[]>(getGetDomainHistoryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDomainHistoryQueryKey = (id: number,) => {
+    return [
+    `/api/domains/${id}/history`
+    ] as const;
+    }
+
+
+export const getGetDomainHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getDomainHistory>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDomainHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDomainHistoryQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDomainHistory>>> = ({ signal }) => getDomainHistory(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDomainHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDomainHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getDomainHistory>>>
+export type GetDomainHistoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get audit/change history for a domain
+ */
+
+export function useGetDomainHistory<TData = Awaited<ReturnType<typeof getDomainHistory>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDomainHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDomainHistoryQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetExpiringDomainsUrl = () => {
 
