@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
-  BarChart, Settings, Menu, Activity, PenLine, AlertTriangle, Table2,
-  LogOut, User, ChevronDown, UserCircle,
+  BarChart, Settings, Menu, AlertTriangle, Table2,
+  LogOut, User, ChevronDown, UserCircle, ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -39,17 +39,13 @@ const NAV_ITEMS = [
 ];
 
 const SECURITY_SUB_ITEMS = [
-  { id: "risk-indicators",  label: "Risk Indicators",  icon: AlertTriangle },
-  { id: "needs-attention",  label: "Needs Attention",  icon: Shield },
-  { id: "vulnerabilities",  label: "Vulnerabilities",  icon: Table2 },
+  { view: "risk-indicators", label: "Risk Indicators", icon: AlertTriangle },
+  { view: "needs-attention", label: "Needs Attention", icon: ShieldAlert },
+  { view: "vulnerabilities", label: "Vulnerabilities", icon: Table2 },
 ];
 
-function scrollToSection(id: string) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
 function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () => void }) {
+  const search = useSearch();
   return (
     <nav className="space-y-0.5 px-2">
       {NAV_ITEMS.map((item) => {
@@ -77,19 +73,22 @@ function NavLinks({ location, onNavigate }: { location: string; onNavigate?: () 
               <div className="ml-4 pl-2.5 border-l border-white/15 mt-0.5 mb-1">
                 {SECURITY_SUB_ITEMS.map((sub) => {
                   const SubIcon = sub.icon;
+                  const currentView = new URLSearchParams(search).get("view") ?? "risk-indicators";
+                  const isSubActive = currentView === sub.view;
                   return (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => {
-                        onNavigate?.();
-                        scrollToSection(sub.id);
-                      }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors text-left leading-none"
+                    <Link
+                      key={sub.view}
+                      href={`/security?view=${sub.view}`}
+                      onClick={onNavigate}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium transition-colors text-left leading-none ${
+                        isSubActive
+                          ? "bg-white/15 text-white"
+                          : "text-blue-300 hover:bg-white/10 hover:text-white"
+                      }`}
                     >
                       <SubIcon className="h-3 w-3 flex-shrink-0 opacity-70" />
                       {sub.label}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>

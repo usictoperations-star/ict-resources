@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useSearch, useLocation } from "wouter";
 import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import {
@@ -20,7 +21,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Shield, ShieldAlert, CheckCircle, Plus, Loader2, Pencil, Trash2,
@@ -73,7 +73,7 @@ const EMPTY_FORM = {
   discoveredAt: "", resolvedAt: "", assignedTo: "", notes: "", ownerId: "",
 };
 
-// ── Severity / Status style maps ───────────────────────────────────────────────
+// ── Style helpers ──────────────────────────────────────────────────────────────
 const SEV_STYLES: Record<string, string> = {
   critical: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800",
   high:     "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-orange-200 dark:border-orange-800",
@@ -82,14 +82,13 @@ const SEV_STYLES: Record<string, string> = {
   info:     "bg-gray-100 text-gray-600 dark:bg-gray-800/60 dark:text-gray-400 border-gray-200 dark:border-gray-700",
 };
 
-const TONE_BG:   Record<string, string>                              = { danger: "bg-red-50 dark:bg-red-950/30", warning: "bg-amber-50 dark:bg-amber-950/30", ok: "bg-emerald-50 dark:bg-emerald-950/20", default: "bg-muted/40" };
-const TONE_TEXT: Record<string, string>                              = { danger: "text-destructive", warning: "text-amber-600", ok: "text-emerald-600", default: "text-foreground" };
-const TONE_ICON: Record<string, string>                              = { danger: "text-red-500", warning: "text-amber-500", ok: "text-emerald-500", default: "text-muted-foreground" };
-const TONE_BADGE: Record<string, "destructive"|"secondary"|"outline"> = { danger: "destructive", warning: "secondary", ok: "outline", default: "outline" };
+const TONE_BG:   Record<string, string> = { danger: "bg-red-50 dark:bg-red-950/30", warning: "bg-amber-50 dark:bg-amber-950/20", ok: "bg-emerald-50 dark:bg-emerald-950/20", default: "bg-muted/40" };
+const TONE_TEXT: Record<string, string> = { danger: "text-destructive", warning: "text-amber-600", ok: "text-emerald-600", default: "text-foreground" };
+const TONE_ICON: Record<string, string> = { danger: "text-red-500", warning: "text-amber-500", ok: "text-emerald-500", default: "text-muted-foreground" };
 
-function toneOf(n: number, dangerIfAny: "danger"|"warning" = "warning") { return n > 0 ? dangerIfAny : "ok"; }
+function toneOf(n: number, whenBad: "danger" | "warning" = "warning") { return n > 0 ? whenBad : "ok"; }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Shared sub-components ──────────────────────────────────────────────────────
 function ScoreRing({ score }: { score: number }) {
   const r = 34, circ = 2 * Math.PI * r;
   const color = score >= 70 ? "#10b981" : score >= 40 ? "#f59e0b" : "#ef4444";
@@ -144,46 +143,348 @@ function daysRemainingBadge(days?: number | null) {
   if (days == null) return null;
   const overdue = days < 0, urgent = !overdue && days <= 7;
   return (
-    <Badge variant={overdue || urgent ? "destructive" : "secondary"} className="font-mono text-[10px]">
+    <Badge variant={overdue || urgent ? "destructive" : "secondary"} className="font-mono text-[10px] shrink-0">
       {overdue ? `${Math.abs(days)}d overdue` : `${days}d left`}
     </Badge>
   );
 }
 
-function DrillList({ items, emptyLabel, render }: {
-  items: unknown[]; emptyLabel: string; render: (item: any, i: number) => React.ReactNode;
-}) {
-  if (!items?.length) {
-    return (
-      <div className="flex flex-col items-center py-6 text-center">
-        <CheckCircle className="h-6 w-6 text-emerald-400 mb-1.5" />
-        <p className="text-xs text-muted-foreground">{emptyLabel}</p>
-      </div>
-    );
-  }
+// ── VIEW: Risk Indicators ──────────────────────────────────────────────────────
+function RiskIndicatorsView() {
+  const { data: summary, isLoading: summaryLoading } = useGetSecuritySummary();
+  const { data: dashboard, isLoading: dashLoading }  = useGetSecurityDashboard();
+
   return (
-    <ul className="divide-y divide-border/60">
-      {items.map((item, i) => <li key={i} className="py-2.5 first:pt-0 last:pb-0">{render(item, i)}</li>)}
-    </ul>
+    <div className="space-y-5 max-w-5xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Risk Indicators</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Security posture score and key risk metrics</p>
+      </div>
+
+      {/* Score + Severity + KPI */}
+      <Card>
+        <CardContent className="pt-6 pb-6">
+          {summaryLoading ? (
+            <Skeleton className="h-28 w-full" />
+          ) : summary ? (
+            <div className="flex flex-col lg:flex-row gap-6">
+
+              {/* Score ring */}
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                <ScoreRing score={summary.securityScore} />
+                <p className="text-xs text-muted-foreground">Security Score</p>
+              </div>
+
+              {/* Severity bars */}
+              <div className="flex-1 min-w-0 lg:border-l lg:pl-6 flex flex-col justify-center space-y-3">
+                {[
+                  { label: "Critical", count: summary.critical, bar: "bg-red-500" },
+                  { label: "High",     count: summary.high,     bar: "bg-orange-500" },
+                  { label: "Medium",   count: summary.medium,   bar: "bg-amber-500" },
+                  { label: "Low",      count: summary.low,      bar: "bg-blue-400" },
+                ].map(({ label, count, bar }) => {
+                  const tot = summary.critical + summary.high + summary.medium + summary.low;
+                  const pct = tot > 0 ? Math.round((count / tot) * 100) : 0;
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground w-14 shrink-0">{label}</span>
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className={`h-full ${bar} rounded-full`} style={{ width: `${pct}%`, transition: "width 0.8s ease" }} />
+                      </div>
+                      <span className="text-xs font-medium w-5 text-right tabular-nums">{count}</span>
+                    </div>
+                  );
+                })}
+                <div className="flex gap-5 pt-2 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground">Open <span className="font-semibold text-foreground">{summary.open}</span></span>
+                  <span className="text-xs text-muted-foreground">In Progress <span className="font-semibold text-amber-600">{summary.inProgress}</span></span>
+                  <span className="text-xs text-muted-foreground">Resolved <span className="font-semibold text-emerald-600">{summary.resolved}</span></span>
+                </div>
+              </div>
+
+              {/* 5×2 KPI grid */}
+              {dashLoading || !dashboard ? (
+                <div className="grid grid-cols-5 gap-2 shrink-0">
+                  {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 w-20" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-2 shrink-0 lg:border-l lg:pl-6">
+                  {[
+                    { icon: Layers,          label: "Production",  value: dashboard.systemsInProduction,                           tone: "default" },
+                    { icon: ServerCog,       label: "Unpatched",   value: dashboard.serversMissingPatches.length,                  tone: toneOf(dashboard.serversMissingPatches.length) },
+                    { icon: ShieldAlert,     label: "Critical",    value: dashboard.applicationsWithCriticalVulnerabilities.length, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger") },
+                    { icon: KeyRound,        label: "SSL exp.",     value: dashboard.sslCertificatesExpiringSoon.length,            tone: toneOf(dashboard.sslCertificatesExpiringSoon.length) },
+                    { icon: Globe2,          label: "Domains",     value: dashboard.domainsExpiringSoon.length,                    tone: toneOf(dashboard.domainsExpiringSoon.length) },
+                    { icon: DatabaseBackup,  label: "Backups",     value: dashboard.failedBackups.length,                          tone: toneOf(dashboard.failedBackups.length, "danger") },
+                    { icon: UserCog,         label: "Admins",      value: dashboard.adminUsers.length,                             tone: "default" },
+                    { icon: LockKeyholeOpen, label: "Secrets",     value: dashboard.reposWithExposedSecrets.length,                tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger") },
+                    { icon: PackageX,        label: "Outdated",    value: dashboard.outdatedDependencies.length,                   tone: toneOf(dashboard.outdatedDependencies.length) },
+                    { icon: ScanEye,         label: "Unscanned",   value: dashboard.applicationsNotRecentlyScanned.length,         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length) },
+                  ].map((kpi, i) => (
+                    <KpiTile key={i} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone} />
+                  ))}
+                </div>
+              )}
+
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
-export default function Security() {
-  const { data: vulnerabilities, isLoading: vulnsLoading }   = useListVulnerabilities();
-  const { data: summary,         isLoading: summaryLoading } = useGetSecuritySummary();
-  const { data: dashboard,       isLoading: dashLoading }    = useGetSecurityDashboard();
-  const { data: applications }                               = useListApplications();
+// ── VIEW: Needs Attention ──────────────────────────────────────────────────────
+function NeedsAttentionView() {
+  const { data: dashboard, isLoading } = useGetSecurityDashboard();
+
+  const categories = useMemo(() => {
+    if (!dashboard) return [];
+    return [
+      {
+        key: "criticalVulns", label: "Apps with Critical Vulnerabilities", icon: ShieldAlert,
+        tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
+        items: dashboard.applicationsWithCriticalVulnerabilities,
+        emptyLabel: "No apps with open critical vulnerabilities",
+        render: (a: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <span className="text-sm">{a.applicationName ?? `App #${a.applicationId}`}</span>
+            <Badge variant="destructive" className="text-[10px] shrink-0">{a.criticalCount} critical</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "patches", label: "Servers Missing Patches", icon: ServerCog,
+        tone: toneOf(dashboard.serversMissingPatches.length),
+        items: dashboard.serversMissingPatches,
+        emptyLabel: "All servers are patched",
+        render: (s: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{s.name}</p>
+              <p className="text-[10px] text-muted-foreground">{s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}</p>
+            </div>
+            <Badge variant="outline" className="capitalize text-[10px] shrink-0">{s.patchStatus}</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "ssl", label: "SSL Certificates Expiring Soon", icon: KeyRound,
+        tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
+        items: dashboard.sslCertificatesExpiringSoon,
+        emptyLabel: "No SSL certificates expiring soon",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{d.name}</p>
+              <p className="text-[10px] text-muted-foreground">{d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : "No expiry set"}</p>
+            </div>
+            {daysRemainingBadge(d.daysRemaining)}
+          </div>
+        ),
+      },
+      {
+        key: "domains", label: "Domains Expiring Soon", icon: Globe2,
+        tone: toneOf(dashboard.domainsExpiringSoon.length),
+        items: dashboard.domainsExpiringSoon,
+        emptyLabel: "No domains expiring soon",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{d.name}</p>
+              <p className="text-[10px] text-muted-foreground">{d.registrationExpiry ? new Date(d.registrationExpiry).toLocaleDateString() : "No expiry set"}</p>
+            </div>
+            {daysRemainingBadge(d.daysRemaining)}
+          </div>
+        ),
+      },
+      {
+        key: "backups", label: "Failed Backups", icon: DatabaseBackup,
+        tone: toneOf(dashboard.failedBackups.length, "danger"),
+        items: dashboard.failedBackups,
+        emptyLabel: "All backups completed successfully",
+        render: (b: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{b.name}</p>
+              <p className="text-[10px] text-muted-foreground">{b.lastBackupAt ? new Date(b.lastBackupAt).toLocaleString() : "Never backed up"}</p>
+            </div>
+            <Badge variant="destructive" className="capitalize text-[10px] shrink-0">{b.lastBackupStatus}</Badge>
+          </div>
+        ),
+      },
+      {
+        key: "admins", label: "Admin Users", icon: UserCog,
+        tone: "default" as const,
+        items: dashboard.adminUsers,
+        emptyLabel: "No admin users found",
+        render: (u: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{u.name}</p>
+              <p className="text-[10px] text-muted-foreground">{u.email}</p>
+            </div>
+            {u.department && <Badge variant="outline" className="text-[10px] shrink-0">{u.department}</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: "secrets", label: "Repos with Exposed Secrets", icon: LockKeyholeOpen,
+        tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),
+        items: dashboard.reposWithExposedSecrets,
+        emptyLabel: "No repositories with exposed secrets",
+        render: (r: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <p className="text-sm">{r.name}</p>
+            <p className="text-[10px] text-muted-foreground shrink-0">{r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}</p>
+          </div>
+        ),
+      },
+      {
+        key: "deps", label: "Outdated Dependencies", icon: PackageX,
+        tone: toneOf(dashboard.outdatedDependencies.length),
+        items: dashboard.outdatedDependencies,
+        emptyLabel: "All dependencies are current",
+        render: (d: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <div>
+              <p className="text-sm">{d.name}</p>
+              <p className="text-[10px] text-muted-foreground font-mono">{d.installedVersion ?? "?"} → {d.latestVersion ?? "?"}</p>
+            </div>
+            {d.endOfLife && <Badge variant="destructive" className="text-[10px] shrink-0">EOL</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: "scans", label: "Apps Not Recently Scanned", icon: ScanEye,
+        tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
+        items: dashboard.applicationsNotRecentlyScanned,
+        emptyLabel: "All applications scanned recently",
+        render: (a: any) => (
+          <div className="flex items-center justify-between gap-3 py-1.5">
+            <p className="text-sm">{a.name}</p>
+            <p className="text-[10px] text-muted-foreground shrink-0">{a.lastSecurityScanAt ? `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned"}</p>
+          </div>
+        ),
+      },
+    ];
+  }, [dashboard]);
+
+  const flagged = categories.filter(c => c.items.length > 0);
+  const clear   = categories.filter(c => c.items.length === 0);
+
+  return (
+    <div className="space-y-5 max-w-5xl">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Needs Attention</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Items requiring review or remediation</p>
+        </div>
+        {!isLoading && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant={flagged.length > 0 ? "destructive" : "outline"} className="text-xs">
+              {flagged.length} area{flagged.length !== 1 ? "s" : ""} flagged
+            </Badge>
+            <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">
+              {clear.length} clear
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+        </div>
+      ) : !dashboard ? null : (
+        <>
+          {/* Flagged cards */}
+          {flagged.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {flagged.map(cat => {
+                const Icon = cat.icon;
+                const isDanger  = cat.tone === "danger";
+                const isWarning = cat.tone === "warning";
+                return (
+                  <Card key={cat.key} className={`border ${isDanger ? "border-red-200 dark:border-red-800" : isWarning ? "border-amber-200 dark:border-amber-800" : "border-border"}`}>
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`p-1.5 rounded-md ${isDanger ? "bg-red-100 dark:bg-red-900/40" : isWarning ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted"}`}>
+                            <Icon className={`h-3.5 w-3.5 ${isDanger ? "text-red-600" : isWarning ? "text-amber-600" : "text-muted-foreground"}`} />
+                          </span>
+                          <CardTitle className="text-sm font-medium">{cat.label}</CardTitle>
+                        </div>
+                        <Badge
+                          variant={isDanger ? "destructive" : "secondary"}
+                          className="text-[10px] font-semibold shrink-0"
+                        >
+                          {cat.items.length}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-3">
+                      <div className="divide-y divide-border/60 max-h-52 overflow-y-auto">
+                        {cat.items.map((item, i) => (
+                          <div key={i}>{cat.render(item)}</div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* All-clear section */}
+          {clear.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">
+                All clear
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
+                {clear.map(cat => {
+                  const Icon = cat.icon;
+                  return (
+                    <div key={cat.key} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 leading-tight truncate">{cat.label}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {flagged.length === 0 && (
+            <div className="flex flex-col items-center py-16 text-center">
+              <CheckCircle className="h-10 w-10 text-emerald-400 mb-3" />
+              <p className="text-base font-medium">Everything looks good</p>
+              <p className="text-sm text-muted-foreground mt-1">No items require attention right now.</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── VIEW: Vulnerabilities ──────────────────────────────────────────────────────
+function VulnerabilitiesView() {
+  const { data: vulnerabilities, isLoading: vulnsLoading } = useListVulnerabilities();
+  const { data: applications }                             = useListApplications();
   const { mutateAsync: createVulnerability, isPending: isCreating } = useCreateVulnerability();
   const { mutateAsync: updateVulnerability, isPending: isUpdating } = useUpdateVulnerability();
   const { mutateAsync: deleteVulnerability, isPending: isDeleting } = useDeleteVulnerability();
   const queryClient = useQueryClient();
 
-  const [formOpen, setFormOpen]       = useState(false);
-  const [editTarget, setEditTarget]   = useState<VulnRow | null>(null);
+  const [formOpen, setFormOpen]         = useState(false);
+  const [editTarget, setEditTarget]     = useState<VulnRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VulnRow | null>(null);
-  const [form, setForm]               = useState({ ...EMPTY_FORM });
-  const [errors, setErrors]           = useState<Record<string, string>>({});
+  const [form, setForm]                 = useState({ ...EMPTY_FORM });
+  const [errors, setErrors]             = useState<Record<string, string>>({});
   const isPending = isCreating || isUpdating;
 
   const { page, setPage, totalPages, pageItems: pagedVulns, startIndex, endIndex, total } =
@@ -253,270 +554,21 @@ export default function Security() {
     }
   };
 
-  // ── Needs-Attention categories ─────────────────────────────────────────────
-  const attentionCategories = useMemo(() => {
-    if (!dashboard) return [];
-    return [
-      {
-        key: "patches", short: "Patches", icon: ServerCog,
-        items: dashboard.serversMissingPatches,
-        tone: toneOf(dashboard.serversMissingPatches.length),
-        emptyLabel: "All servers are patched.",
-        render: (s: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{s.name}</p>
-              <p className="text-xs text-muted-foreground">{s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}</p>
-            </div>
-            <Badge variant="outline" className="capitalize text-[10px]">{s.patchStatus}</Badge>
-          </div>
-        ),
-      },
-      {
-        key: "criticalVulns", short: "Critical", icon: ShieldAlert,
-        items: dashboard.applicationsWithCriticalVulnerabilities,
-        tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
-        emptyLabel: "No apps with open critical vulnerabilities.",
-        render: (a: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">{a.applicationName ?? `App #${a.applicationId}`}</p>
-            <Badge variant="destructive" className="text-[10px]">{a.criticalCount} critical</Badge>
-          </div>
-        ),
-      },
-      {
-        key: "ssl", short: "SSL", icon: KeyRound,
-        items: dashboard.sslCertificatesExpiringSoon,
-        tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
-        emptyLabel: "No SSL certs expiring soon.",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{d.name}</p>
-              <p className="text-xs text-muted-foreground">{d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : "N/A"}</p>
-            </div>
-            {daysRemainingBadge(d.daysRemaining)}
-          </div>
-        ),
-      },
-      {
-        key: "domains", short: "Domains", icon: Globe2,
-        items: dashboard.domainsExpiringSoon,
-        tone: toneOf(dashboard.domainsExpiringSoon.length),
-        emptyLabel: "No domains expiring soon.",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{d.name}</p>
-              <p className="text-xs text-muted-foreground">{d.registrationExpiry ? new Date(d.registrationExpiry).toLocaleDateString() : "N/A"}</p>
-            </div>
-            {daysRemainingBadge(d.daysRemaining)}
-          </div>
-        ),
-      },
-      {
-        key: "backups", short: "Backups", icon: DatabaseBackup,
-        items: dashboard.failedBackups,
-        tone: toneOf(dashboard.failedBackups.length, "danger"),
-        emptyLabel: "All backups completed successfully.",
-        render: (b: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{b.name}</p>
-              <p className="text-xs text-muted-foreground">{b.lastBackupAt ? new Date(b.lastBackupAt).toLocaleString() : "Never backed up"}</p>
-            </div>
-            <Badge variant="destructive" className="capitalize text-[10px]">{b.lastBackupStatus}</Badge>
-          </div>
-        ),
-      },
-      {
-        key: "admins", short: "Admins", icon: UserCog,
-        items: dashboard.adminUsers,
-        tone: "default" as const,
-        emptyLabel: "No admin users found.",
-        render: (u: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{u.name}</p>
-              <p className="text-xs text-muted-foreground">{u.email}</p>
-            </div>
-            {u.department && <Badge variant="outline" className="text-[10px]">{u.department}</Badge>}
-          </div>
-        ),
-      },
-      {
-        key: "secrets", short: "Secrets", icon: LockKeyholeOpen,
-        items: dashboard.reposWithExposedSecrets,
-        tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),
-        emptyLabel: "No repositories with exposed secrets.",
-        render: (r: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">{r.name}</p>
-            <p className="text-xs text-muted-foreground">{r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}</p>
-          </div>
-        ),
-      },
-      {
-        key: "deps", short: "Outdated", icon: PackageX,
-        items: dashboard.outdatedDependencies,
-        tone: toneOf(dashboard.outdatedDependencies.length),
-        emptyLabel: "All dependencies are current.",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{d.name}</p>
-              <p className="text-xs text-muted-foreground font-mono">{d.installedVersion ?? "?"} → {d.latestVersion ?? "?"}</p>
-            </div>
-            {d.endOfLife && <Badge variant="destructive" className="text-[10px]">EOL</Badge>}
-          </div>
-        ),
-      },
-      {
-        key: "scans", short: "Scans", icon: ScanEye,
-        items: dashboard.applicationsNotRecentlyScanned,
-        tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
-        emptyLabel: "All applications scanned recently.",
-        render: (a: any) => (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">{a.name}</p>
-            <p className="text-xs text-muted-foreground">{a.lastSecurityScanAt ? `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned"}</p>
-          </div>
-        ),
-      },
-    ];
-  }, [dashboard]);
-
-  const defaultTab = useMemo(() => {
-    const flagged = attentionCategories.find(c => c.items.length > 0 && c.tone !== "ok" && c.tone !== "default");
-    return flagged?.key ?? attentionCategories[0]?.key ?? "patches";
-  }, [attentionCategories]);
-
-  const vulnCount = vulnerabilities?.length ?? 0;
   const isResolved = form.status === "resolved" || form.status === "accepted";
+  const vulnCount  = vulnerabilities?.length ?? 0;
 
   return (
     <div className="space-y-5 max-w-5xl">
-
-      {/* ── Page header ──────────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Security</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Risk posture and vulnerability tracking</p>
+        <h1 className="text-2xl font-bold tracking-tight">Vulnerabilities</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Track and manage all recorded security findings</p>
       </div>
 
-      {/* ── Score + Severity + KPI grid ──────────────────────────────────────── */}
-      <Card id="risk-indicators">
-        <CardContent className="pt-5 pb-5">
-          {summaryLoading ? (
-            <Skeleton className="h-28 w-full" />
-          ) : summary ? (
-            <div className="flex flex-col lg:flex-row gap-6">
-
-              {/* Score ring */}
-              <div className="flex flex-col items-center gap-1 shrink-0">
-                <ScoreRing score={summary.securityScore} />
-                <p className="text-xs text-muted-foreground">Security Score</p>
-              </div>
-
-              {/* Severity bars */}
-              <div className="flex-1 min-w-0 lg:border-l lg:pl-6 space-y-2.5 justify-center flex flex-col">
-                {[
-                  { label: "Critical", count: summary.critical, bar: "bg-red-500" },
-                  { label: "High",     count: summary.high,     bar: "bg-orange-500" },
-                  { label: "Medium",   count: summary.medium,   bar: "bg-amber-500" },
-                  { label: "Low",      count: summary.low,      bar: "bg-blue-400" },
-                ].map(({ label, count, bar }) => {
-                  const total = summary.critical + summary.high + summary.medium + summary.low;
-                  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                  return (
-                    <div key={label} className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground w-14 shrink-0">{label}</span>
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${bar} rounded-full`} style={{ width: `${pct}%`, transition: "width 0.8s ease" }} />
-                      </div>
-                      <span className="text-xs font-medium w-5 text-right tabular-nums">{count}</span>
-                    </div>
-                  );
-                })}
-                <div className="flex gap-4 pt-1.5 border-t border-border/50">
-                  <span className="text-xs text-muted-foreground">Open <span className="font-semibold text-foreground">{summary.open}</span></span>
-                  <span className="text-xs text-muted-foreground">In Progress <span className="font-semibold text-amber-600">{summary.inProgress}</span></span>
-                  <span className="text-xs text-muted-foreground">Resolved <span className="font-semibold text-emerald-600">{summary.resolved}</span></span>
-                </div>
-              </div>
-
-              {/* KPI tiles — 5×2 grid */}
-              {dashLoading || !dashboard ? (
-                <div className="grid grid-cols-5 gap-2 shrink-0">
-                  {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 w-20" />)}
-                </div>
-              ) : (
-                <div className="grid grid-cols-5 gap-2 shrink-0 lg:border-l lg:pl-6">
-                  {[
-                    { icon: Layers,          label: "Production",  value: dashboard.systemsInProduction,                           tone: "default" },
-                    { icon: ServerCog,       label: "Unpatched",   value: dashboard.serversMissingPatches.length,                  tone: toneOf(dashboard.serversMissingPatches.length) },
-                    { icon: ShieldAlert,     label: "Critical",    value: dashboard.applicationsWithCriticalVulnerabilities.length, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger") },
-                    { icon: KeyRound,        label: "SSL exp.",     value: dashboard.sslCertificatesExpiringSoon.length,            tone: toneOf(dashboard.sslCertificatesExpiringSoon.length) },
-                    { icon: Globe2,          label: "Domains",     value: dashboard.domainsExpiringSoon.length,                    tone: toneOf(dashboard.domainsExpiringSoon.length) },
-                    { icon: DatabaseBackup,  label: "Backups",     value: dashboard.failedBackups.length,                          tone: toneOf(dashboard.failedBackups.length, "danger") },
-                    { icon: UserCog,         label: "Admins",      value: dashboard.adminUsers.length,                             tone: "default" },
-                    { icon: LockKeyholeOpen, label: "Secrets",     value: dashboard.reposWithExposedSecrets.length,                tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger") },
-                    { icon: PackageX,        label: "Outdated",    value: dashboard.outdatedDependencies.length,                   tone: toneOf(dashboard.outdatedDependencies.length) },
-                    { icon: ScanEye,         label: "Unscanned",   value: dashboard.applicationsNotRecentlyScanned.length,         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length) },
-                  ].map((kpi, i) => (
-                    <KpiTile key={i} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone} />
-                  ))}
-                </div>
-              )}
-
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* ── Needs Attention ──────────────────────────────────────────────────── */}
-      <Card id="needs-attention">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold">Needs Attention</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          {dashLoading ? (
-            <Skeleton className="h-24 w-full" />
-          ) : dashboard ? (
-            <Tabs defaultValue={defaultTab}>
-              <div className="overflow-x-auto -mx-1 px-1 pb-2">
-                <TabsList className="h-auto flex-nowrap gap-0.5 p-1">
-                  {attentionCategories.map(cat => {
-                    const Icon = cat.icon;
-                    return (
-                      <TabsTrigger key={cat.key} value={cat.key} className="gap-1.5 shrink-0 h-7 text-xs px-2.5">
-                        <Icon className="h-3 w-3" />
-                        {cat.short}
-                        {cat.items.length > 0 && (
-                          <Badge variant={TONE_BADGE[cat.tone]} className="ml-0.5 h-4 min-w-4 px-1 text-[9px] justify-center">
-                            {cat.items.length}
-                          </Badge>
-                        )}
-                      </TabsTrigger>
-                    );
-                  })}
-                </TabsList>
-              </div>
-              {attentionCategories.map(cat => (
-                <TabsContent key={cat.key} value={cat.key} className="mt-1">
-                  <DrillList items={cat.items} emptyLabel={cat.emptyLabel} render={cat.render} />
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* ── Vulnerability Table ───────────────────────────────────────────────── */}
-      <Card id="vulnerabilities">
+      <Card>
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold">
-              Vulnerabilities
+              All Vulnerabilities
               {vulnCount > 0 && (
                 <span className="ml-2 text-xs font-normal text-muted-foreground">{vulnCount} records</span>
               )}
@@ -600,7 +652,7 @@ export default function Security() {
               </div>
             </>
           ) : (
-            <div className="text-center py-10 px-4">
+            <div className="text-center py-12 px-4">
               <Shield className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground mb-3">No vulnerabilities recorded.</p>
               <Button size="sm" variant="outline" onClick={openCreate}>
@@ -611,26 +663,22 @@ export default function Security() {
         </CardContent>
       </Card>
 
-      {/* ── Log / Edit Sheet ──────────────────────────────────────────────────── */}
+      {/* Log / Edit Sheet */}
       <Sheet open={formOpen} onOpenChange={v => { if (!v) closeForm(); }}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader className="mb-5">
             <SheetTitle>{editTarget ? "Edit Vulnerability" : "Log Vulnerability"}</SheetTitle>
           </SheetHeader>
-
           <div className="space-y-4">
             {errors.submit && (
               <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{errors.submit}</div>
             )}
-
             <Field label="Title" required error={errors.title}>
               <Input placeholder="e.g. SQL injection in login endpoint" value={form.title} onChange={set("title")} className="h-9 text-sm" />
             </Field>
-
             <Field label="Description">
               <Textarea placeholder="Describe the vulnerability and its impact…" value={form.description} onChange={set("description")} rows={2} className="resize-none text-sm" />
             </Field>
-
             <div className="grid grid-cols-2 gap-3">
               <Field label="Severity" required error={errors.severity}>
                 <Select value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))}>
@@ -654,7 +702,6 @@ export default function Security() {
                 <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
               </Field>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <Field label="CVE ID">
                 <Input placeholder="CVE-2024-12345" value={form.cveId} onChange={set("cveId")} className="h-9 text-sm font-mono" />
@@ -676,7 +723,6 @@ export default function Security() {
                 <Input placeholder="Engineer name" value={form.assignedTo} onChange={set("assignedTo")} className="h-9 text-sm" />
               </Field>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <Field label="Vendor">
                 <Input placeholder="e.g. Microsoft" value={form.vendor} onChange={set("vendor")} className="h-9 text-sm" />
@@ -693,26 +739,21 @@ export default function Security() {
                 </Field>
               )}
             </div>
-
             <Field label="Notes">
               <Textarea placeholder="Remediation steps, additional context…" value={form.notes} onChange={set("notes")} rows={2} className="resize-none text-sm" />
             </Field>
-
             <div className="flex items-center gap-2 pt-1 border-t border-border/50">
               <Button size="sm" onClick={handleSubmit} disabled={isPending}>
                 {isPending
                   ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{editTarget ? "Saving…" : "Logging…"}</>
                   : editTarget ? "Save Changes" : "Log Vulnerability"}
               </Button>
-              <Button size="sm" variant="ghost" disabled={isPending} onClick={closeForm}>
-                Cancel
-              </Button>
+              <Button size="sm" variant="ghost" disabled={isPending} onClick={closeForm}>Cancel</Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* ── Delete confirm ────────────────────────────────────────────────────── */}
       <DeleteConfirmDialog
         open={!!deleteTarget}
         onOpenChange={v => { if (!v) setDeleteTarget(null); }}
@@ -723,4 +764,15 @@ export default function Security() {
       />
     </div>
   );
+}
+
+// ── Root: route to the right view ─────────────────────────────────────────────
+export default function Security() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const view   = params.get("view") ?? "risk-indicators";
+
+  if (view === "needs-attention")  return <NeedsAttentionView />;
+  if (view === "vulnerabilities")  return <VulnerabilitiesView />;
+  return <RiskIndicatorsView />;
 }
