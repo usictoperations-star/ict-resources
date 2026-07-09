@@ -19,5 +19,6 @@ export interface DatabaseUpdate {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }

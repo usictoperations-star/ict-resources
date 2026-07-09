@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
@@ -30,7 +31,7 @@ export const applicationsTable = pgTable("applications", {
   currentVersion: text("current_version"),
   launchDate: text("launch_date"),
   tags: text("tags"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   lastSecurityScanAt: text("last_security_scan_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

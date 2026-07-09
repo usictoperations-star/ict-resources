@@ -179,8 +179,9 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
   try {
     const body = CreateVulnerabilityBody.parse(req.body);
     const [item] = await db.insert(vulnerabilitiesTable).values(body).returning();
+    const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
-    return res.status(201).json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.status(201).json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error creating vulnerability");
     return res.status(400).json({ error: "Invalid request" });
@@ -193,7 +194,8 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
     const body = UpdateVulnerabilityBody.parse(req.body);
     const [item] = await db.update(vulnerabilitiesTable).set({ ...body, updatedAt: new Date() }).where(eq(vulnerabilitiesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
+    return res.json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error updating vulnerability");
     return res.status(400).json({ error: "Invalid request" });

@@ -19,7 +19,8 @@ export interface RepositoryInput {
   applicationId?: number;
   status: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }

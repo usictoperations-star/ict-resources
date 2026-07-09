@@ -117,7 +117,7 @@ export default function Databases() {
       encryptionEnabled: parsed.encryptionEnabled,
       status: parsed.status,
       notes: parsed.notes || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {

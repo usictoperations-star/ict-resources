@@ -18,6 +18,7 @@ export interface DomainInput {
   cloudflarEnabled?: boolean;
   status: string;
   applicationId?: number;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   notes?: string;
 }

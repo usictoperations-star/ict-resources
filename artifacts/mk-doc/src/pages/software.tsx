@@ -110,7 +110,7 @@ export default function Software() {
     const parsed = result.data;
     const payload = {
       ...parsed,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {

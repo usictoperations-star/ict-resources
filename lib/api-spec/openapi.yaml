@@ -1802,7 +1802,7 @@ components:
         tags:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         lastSecurityScanAt:
           type: string
       required: [name, category, classification, environment, status, priority, criticality]
@@ -1863,7 +1863,7 @@ components:
         tags:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         lastSecurityScanAt:
           type: string
 
@@ -2002,7 +2002,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         patchStatus:
           type: string
         lastPatchedAt:
@@ -2035,7 +2035,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         patchStatus:
           type: string
         lastPatchedAt:
@@ -2112,7 +2112,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
       required: [name, type, status]
 
     DatabaseUpdate:
@@ -2143,7 +2143,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
 
     # ── Domains ───────────────────────────────────────────────────────────
     Domain:
@@ -2208,7 +2208,7 @@ components:
         applicationId:
           type: integer
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         notes:
           type: string
       required: [name, status]
@@ -2237,7 +2237,7 @@ components:
         applicationId:
           type: integer
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         notes:
           type: string
 
@@ -2327,7 +2327,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         secretsExposed:
           type: boolean
         lastScannedAt:
@@ -2360,7 +2360,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
         secretsExposed:
           type: boolean
         lastScannedAt:
@@ -2543,7 +2543,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
       required: [title, severity, status]
 
     VulnerabilityUpdate:
@@ -2586,7 +2586,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
 
     SecuritySummary:
       type: object
@@ -2862,7 +2862,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
       required: [name, type]
 
     SoftwareUpdate:
@@ -2893,7 +2893,7 @@ components:
         notes:
           type: string
         ownerId:
-          type: integer
+          type: ["integer", "null"]
 
     # ── Documentation ─────────────────────────────────────────────────────
     Document:

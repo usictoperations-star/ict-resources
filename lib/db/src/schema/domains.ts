@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const domainsTable = pgTable("domains", {
   id: serial("id").primaryKey(),
@@ -14,7 +15,7 @@ export const domainsTable = pgTable("domains", {
   cloudflarEnabled: boolean("cloudflare_enabled").notNull().default(false),
   status: text("status").notNull().default("Active"),
   applicationId: integer("application_id"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

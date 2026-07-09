@@ -203,7 +203,7 @@ export const CreateApplicationBody = zod.object({
   "currentVersion": zod.string().optional(),
   "launchDate": zod.string().optional(),
   "tags": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().optional()
 })
 
@@ -322,7 +322,7 @@ export const UpdateApplicationBody = zod.object({
   "currentVersion": zod.string().optional(),
   "launchDate": zod.string().optional(),
   "tags": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "lastSecurityScanAt": zod.string().optional()
 })
 
@@ -508,7 +508,7 @@ export const CreateInfrastructureBody = zod.object({
   "diskGb": zod.number().optional(),
   "os": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "patchStatus": zod.string().optional(),
   "lastPatchedAt": zod.string().optional()
 })
@@ -585,7 +585,7 @@ export const UpdateInfrastructureBody = zod.object({
   "diskGb": zod.number().optional(),
   "os": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "patchStatus": zod.string().optional(),
   "lastPatchedAt": zod.string().optional()
 })
@@ -698,7 +698,7 @@ export const CreateDatabaseBody = zod.object({
   "lastBackupAt": zod.string().optional(),
   "lastBackupStatus": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const CreateDatabaseResponse = zod.object({
@@ -772,7 +772,7 @@ export const UpdateDatabaseRecordBody = zod.object({
   "lastBackupAt": zod.string().optional(),
   "lastBackupStatus": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const UpdateDatabaseRecordResponse = zod.object({
@@ -877,7 +877,7 @@ export const CreateDomainBody = zod.object({
   "cloudflarEnabled": zod.boolean().optional(),
   "status": zod.string(),
   "applicationId": zod.number().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "notes": zod.string().optional()
 })
 
@@ -946,7 +946,7 @@ export const UpdateDomainBody = zod.object({
   "cloudflarEnabled": zod.boolean().optional(),
   "status": zod.string().optional(),
   "applicationId": zod.number().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "notes": zod.string().optional()
 })
 
@@ -1066,7 +1066,7 @@ export const CreateRepositoryBody = zod.object({
   "applicationId": zod.number().optional(),
   "status": zod.string(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "secretsExposed": zod.boolean().optional(),
   "lastScannedAt": zod.string().optional()
 })
@@ -1141,7 +1141,7 @@ export const UpdateRepositoryBody = zod.object({
   "applicationId": zod.number().optional(),
   "status": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional(),
+  "ownerId": zod.number().nullish(),
   "secretsExposed": zod.boolean().optional(),
   "lastScannedAt": zod.string().optional()
 })
@@ -1376,7 +1376,7 @@ export const CreateVulnerabilityBody = zod.object({
   "resolvedAt": zod.string().optional(),
   "assignedTo": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const CreateVulnerabilityResponse = zod.object({
@@ -1433,7 +1433,7 @@ export const UpdateVulnerabilityBody = zod.object({
   "resolvedAt": zod.string().optional(),
   "assignedTo": zod.string().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const UpdateVulnerabilityResponse = zod.object({
@@ -1669,7 +1669,7 @@ export const CreateSoftwareBody = zod.object({
   "upgradeAvailable": zod.boolean().optional(),
   "applicationId": zod.number().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const CreateSoftwareResponse = zod.object({
@@ -1713,7 +1713,7 @@ export const UpdateSoftwareBody = zod.object({
   "upgradeAvailable": zod.boolean().optional(),
   "applicationId": zod.number().optional(),
   "notes": zod.string().optional(),
-  "ownerId": zod.number().optional()
+  "ownerId": zod.number().nullish()
 })
 
 export const UpdateSoftwareResponse = zod.object({

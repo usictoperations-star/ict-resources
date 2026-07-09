@@ -1,6 +1,7 @@
 import { pgTable, serial, text, real, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const databasesTable = pgTable("databases", {
   id: serial("id").primaryKey(),
@@ -16,7 +17,7 @@ export const databasesTable = pgTable("databases", {
   lastBackupAt: text("last_backup_at"),
   lastBackupStatus: text("last_backup_status").notNull().default("Unknown"),
   notes: text("notes"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),

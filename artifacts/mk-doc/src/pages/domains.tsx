@@ -127,7 +127,7 @@ export default function Domains() {
       cloudflarEnabled: form.cloudflarEnabled,
       status: form.status,
       notes: form.notes || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {

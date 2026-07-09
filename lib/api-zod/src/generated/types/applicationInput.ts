@@ -34,6 +34,7 @@ export interface ApplicationInput {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   lastSecurityScanAt?: string;
 }

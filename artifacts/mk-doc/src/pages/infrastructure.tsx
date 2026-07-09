@@ -122,7 +122,7 @@ export default function Infrastructure() {
       diskGb: parsed.diskGb,
       os: parsed.os || undefined,
       notes: parsed.notes || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {

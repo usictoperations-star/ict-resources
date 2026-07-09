@@ -19,7 +19,8 @@ export interface InfrastructureInput {
   diskGb?: number;
   os?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   patchStatus?: string;
   lastPatchedAt?: string;
 }

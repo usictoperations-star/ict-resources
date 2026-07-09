@@ -20,5 +20,6 @@ export interface DatabaseInput {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }

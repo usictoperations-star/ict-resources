@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   id: serial("id").primaryKey(),
@@ -22,7 +23,7 @@ export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   resolvedAt: text("resolved_at"),
   assignedTo: text("assigned_to"),
   notes: text("notes"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

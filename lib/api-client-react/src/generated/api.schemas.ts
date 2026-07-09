@@ -178,7 +178,8 @@ export interface ApplicationInput {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   lastSecurityScanAt?: string;
 }
 
@@ -209,7 +210,8 @@ export interface ApplicationUpdate {
   currentVersion?: string;
   launchDate?: string;
   tags?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   lastSecurityScanAt?: string;
 }
 
@@ -297,7 +299,8 @@ export interface InfrastructureInput {
   diskGb?: number;
   os?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   patchStatus?: string;
   lastPatchedAt?: string;
 }
@@ -314,7 +317,8 @@ export interface InfrastructureUpdate {
   diskGb?: number;
   os?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   patchStatus?: string;
   lastPatchedAt?: string;
 }
@@ -363,7 +367,8 @@ export interface DatabaseInput {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface DatabaseUpdate {
@@ -379,7 +384,8 @@ export interface DatabaseUpdate {
   lastBackupAt?: string;
   lastBackupStatus?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface Domain {
@@ -422,7 +428,8 @@ export interface DomainInput {
   cloudflarEnabled?: boolean;
   status: string;
   applicationId?: number;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   notes?: string;
 }
 
@@ -437,7 +444,8 @@ export interface DomainUpdate {
   cloudflarEnabled?: boolean;
   status?: string;
   applicationId?: number;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   notes?: string;
 }
 
@@ -496,7 +504,8 @@ export interface RepositoryInput {
   applicationId?: number;
   status: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }
@@ -513,7 +522,8 @@ export interface RepositoryUpdate {
   applicationId?: number;
   status?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }
@@ -631,7 +641,8 @@ export interface VulnerabilityInput {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface VulnerabilityUpdate {
@@ -653,7 +664,8 @@ export interface VulnerabilityUpdate {
   resolvedAt?: string;
   assignedTo?: string;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface SecuritySummary {
@@ -825,7 +837,8 @@ export interface SoftwareInput {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface SoftwareUpdate {
@@ -841,7 +854,8 @@ export interface SoftwareUpdate {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }
 
 export interface Document {

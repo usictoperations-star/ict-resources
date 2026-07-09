@@ -124,7 +124,7 @@ export default function Repositories() {
       openIssues: form.openIssues ? Number(form.openIssues) : undefined,
       status: form.status,
       notes: form.notes || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {

@@ -256,7 +256,7 @@ export default function Security() {
       licenseType: form.licenseType || undefined, licenseExpiration: form.licenseExpiration || undefined,
       endOfLifeDate: form.endOfLifeDate || undefined, discoveredAt: parsed.discoveredAt || undefined,
       assignedTo: parsed.assignedTo || undefined, notes: parsed.notes || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) { await updateVulnerability({ id: editTarget.id, data: payload }); }

@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const infrastructureTable = pgTable("infrastructure", {
   id: serial("id").primaryKey(),
@@ -15,7 +16,7 @@ export const infrastructureTable = pgTable("infrastructure", {
   diskGb: integer("disk_gb"),
   os: text("os"),
   notes: text("notes"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   patchStatus: text("patch_status").notNull().default("Up to Date"),
   lastPatchedAt: text("last_patched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

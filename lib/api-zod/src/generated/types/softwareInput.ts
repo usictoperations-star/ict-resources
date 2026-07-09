@@ -20,5 +20,6 @@ export interface SoftwareInput {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }

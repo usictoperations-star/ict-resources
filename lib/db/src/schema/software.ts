@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./admin";
 
 export const softwareTable = pgTable("software", {
   id: serial("id").primaryKey(),
@@ -16,7 +17,7 @@ export const softwareTable = pgTable("software", {
   upgradeAvailable: boolean("upgrade_available").notNull().default(false),
   applicationId: integer("application_id"),
   notes: text("notes"),
-  ownerId: integer("owner_id"),
+  ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

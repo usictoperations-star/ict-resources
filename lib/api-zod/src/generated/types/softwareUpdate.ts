@@ -19,5 +19,6 @@ export interface SoftwareUpdate {
   upgradeAvailable?: boolean;
   applicationId?: number;
   notes?: string;
-  ownerId?: number;
+  /** @nullable */
+  ownerId?: number | null;
 }

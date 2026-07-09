@@ -189,7 +189,7 @@ export default function Applications() {
       domain: form.domain || undefined,
       currentVersion: form.currentVersion || undefined,
       tags: form.tags || undefined,
-      ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      ownerId: form.ownerId ? Number(form.ownerId) : null,
     };
     try {
       if (editTarget) {
