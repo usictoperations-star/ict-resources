@@ -1854,6 +1854,9 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+          description: Machine-readable error code (e.g. UNAUTHENTICATED, FORBIDDEN, NOT_FOUND)
     HealthStatus:
       type: object
       properties:

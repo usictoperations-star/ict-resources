@@ -16,8 +16,10 @@ const loginRateLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  message: { error: "Too many login attempts. Please try again in 15 minutes." },
   skipSuccessfulRequests: true,
+  handler: (_req, res) => {
+    sendError(res, 429, "Too many login attempts. Please try again in 15 minutes.", "TOO_MANY_REQUESTS");
+  },
 });
 
 router.post("/auth/login", loginRateLimiter, async (req: Request, res: Response): Promise<void> => {

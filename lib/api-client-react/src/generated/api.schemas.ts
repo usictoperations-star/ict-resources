@@ -33,6 +33,8 @@ export interface UploadUrlResponse {
 
 export interface ErrorEnvelope {
   error: string;
+  /** Machine-readable error code (e.g. UNAUTHENTICATED, FORBIDDEN, NOT_FOUND) */
+  code?: string;
 }
 
 export interface HealthStatus {
