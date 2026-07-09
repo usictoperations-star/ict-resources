@@ -313,9 +313,6 @@ export default function Applications() {
                     <Input placeholder="MK Citizen Portal" value={form.name} onChange={set("name")} className="h-9" />
                     {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                   </Field>
-                  <Field label="Short Name / Code">
-                    <Input placeholder="MK-CP" value={form.shortName} onChange={set("shortName")} className="h-9" />
-                  </Field>
                 </div>
                 <Field label="Description">
                   <Textarea placeholder="Brief description of the application's purpose..." value={form.description} onChange={set("description")} rows={2} className="resize-none" />
@@ -352,14 +349,8 @@ export default function Applications() {
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Ownership</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Ministry">
-                    <Input placeholder="Ministry of Digital Affairs" value={form.ministry} onChange={set("ministry")} className="h-9" />
-                  </Field>
                   <Field label="Department">
                     <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
-                  </Field>
-                  <Field label="Business Owner">
-                    <Input placeholder="Name" value={form.businessOwner} onChange={set("businessOwner")} className="h-9" />
                   </Field>
                   <Field label="Technical Owner">
                     <Input placeholder="Name" value={form.technicalOwner} onChange={set("technicalOwner")} className="h-9" />
