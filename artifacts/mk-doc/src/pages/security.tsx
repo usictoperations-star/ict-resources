@@ -149,33 +149,80 @@ function daysRemainingBadge(days?: number | null) {
   );
 }
 
-// ── VIEW: Risk Indicators ──────────────────────────────────────────────────────
+// ── VIEW: Security Overview (default / risk-indicators) ───────────────────────
 function RiskIndicatorsView() {
-  const { data: summary, isLoading: summaryLoading } = useGetSecuritySummary();
-  const { data: dashboard, isLoading: dashLoading }  = useGetSecurityDashboard();
+  const { data: summary,         isLoading: summaryLoading } = useGetSecuritySummary();
+  const { data: dashboard,       isLoading: dashLoading }    = useGetSecurityDashboard();
+  const { data: vulnerabilities, isLoading: vulnsLoading }   = useListVulnerabilities();
+  const [, navigate] = useLocation();
+
+  // Needs Attention: top flagged areas sorted danger → warning
+  const attentionAreas = useMemo(() => {
+    if (!dashboard) return [];
+    const all = [
+      { label: "Apps with critical vulns",    count: dashboard.applicationsWithCriticalVulnerabilities.length, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"), icon: ShieldAlert },
+      { label: "Failed backups",              count: dashboard.failedBackups.length,                           tone: toneOf(dashboard.failedBackups.length, "danger"),                           icon: DatabaseBackup },
+      { label: "Repos with exposed secrets",  count: dashboard.reposWithExposedSecrets.length,                 tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),                icon: LockKeyholeOpen },
+      { label: "Servers missing patches",     count: dashboard.serversMissingPatches.length,                   tone: toneOf(dashboard.serversMissingPatches.length),                            icon: ServerCog },
+      { label: "SSL certs expiring",          count: dashboard.sslCertificatesExpiringSoon.length,             tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),                      icon: KeyRound },
+      { label: "Domains expiring",            count: dashboard.domainsExpiringSoon.length,                     tone: toneOf(dashboard.domainsExpiringSoon.length),                              icon: Globe2 },
+      { label: "Outdated dependencies",       count: dashboard.outdatedDependencies.length,                    tone: toneOf(dashboard.outdatedDependencies.length),                             icon: PackageX },
+      { label: "Apps not recently scanned",   count: dashboard.applicationsNotRecentlyScanned.length,          tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),                   icon: ScanEye },
+    ];
+    const ORDER = ["danger", "warning", "default", "ok"];
+    return all
+      .filter(a => a.count > 0)
+      .sort((a, b) => ORDER.indexOf(a.tone) - ORDER.indexOf(b.tone));
+  }, [dashboard]);
+
+  // Top vulnerabilities for summary (critical first, then high)
+  const topVulns = useMemo(() => {
+    if (!vulnerabilities) return [];
+    const SEV_ORDER = ["critical", "high", "medium", "low", "info"];
+    return [...vulnerabilities]
+      .sort((a: any, b: any) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity))
+      .slice(0, 5) as any[];
+  }, [vulnerabilities]);
+
+  const openCount     = (vulnerabilities ?? []).filter((v: any) => v.status === "open").length;
+  const criticalCount = (vulnerabilities ?? []).filter((v: any) => v.severity === "critical" && v.status !== "resolved" && v.status !== "accepted").length;
+  const highCount     = (vulnerabilities ?? []).filter((v: any) => v.severity === "high"     && v.status !== "resolved" && v.status !== "accepted").length;
+  const totalFlagged  = attentionAreas.length;
+  const dangerCount   = attentionAreas.filter(a => a.tone === "danger").length;
 
   return (
     <div className="space-y-5 max-w-5xl">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Risk Indicators</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Security posture score and key risk metrics</p>
+        <h1 className="text-2xl font-bold tracking-tight">Security</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Risk posture, operational alerts, and vulnerability status</p>
       </div>
 
-      {/* Score + Severity + KPI */}
+      {/* ── Risk Indicators ─────────────────────────────────────────────────── */}
       <Card>
-        <CardContent className="pt-6 pb-6">
+        <CardHeader className="pb-2 pt-4 px-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+              Risk Indicators
+            </CardTitle>
+            <button
+              onClick={() => navigate("/security?view=risk-indicators")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View details →
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2 pb-5">
           {summaryLoading ? (
             <Skeleton className="h-28 w-full" />
           ) : summary ? (
             <div className="flex flex-col lg:flex-row gap-6">
-
-              {/* Score ring */}
               <div className="flex flex-col items-center gap-1.5 shrink-0">
                 <ScoreRing score={summary.securityScore} />
                 <p className="text-xs text-muted-foreground">Security Score</p>
               </div>
-
-              {/* Severity bars */}
               <div className="flex-1 min-w-0 lg:border-l lg:pl-6 flex flex-col justify-center space-y-3">
                 {[
                   { label: "Critical", count: summary.critical, bar: "bg-red-500" },
@@ -201,8 +248,6 @@ function RiskIndicatorsView() {
                   <span className="text-xs text-muted-foreground">Resolved <span className="font-semibold text-emerald-600">{summary.resolved}</span></span>
                 </div>
               </div>
-
-              {/* 5×2 KPI grid */}
               {dashLoading || !dashboard ? (
                 <div className="grid grid-cols-5 gap-2 shrink-0">
                   {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 w-20" />)}
@@ -210,26 +255,168 @@ function RiskIndicatorsView() {
               ) : (
                 <div className="grid grid-cols-5 gap-2 shrink-0 lg:border-l lg:pl-6">
                   {[
-                    { icon: Layers,          label: "Production",  value: dashboard.systemsInProduction,                           tone: "default" },
-                    { icon: ServerCog,       label: "Unpatched",   value: dashboard.serversMissingPatches.length,                  tone: toneOf(dashboard.serversMissingPatches.length) },
-                    { icon: ShieldAlert,     label: "Critical",    value: dashboard.applicationsWithCriticalVulnerabilities.length, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger") },
-                    { icon: KeyRound,        label: "SSL exp.",     value: dashboard.sslCertificatesExpiringSoon.length,            tone: toneOf(dashboard.sslCertificatesExpiringSoon.length) },
-                    { icon: Globe2,          label: "Domains",     value: dashboard.domainsExpiringSoon.length,                    tone: toneOf(dashboard.domainsExpiringSoon.length) },
-                    { icon: DatabaseBackup,  label: "Backups",     value: dashboard.failedBackups.length,                          tone: toneOf(dashboard.failedBackups.length, "danger") },
-                    { icon: UserCog,         label: "Admins",      value: dashboard.adminUsers.length,                             tone: "default" },
-                    { icon: LockKeyholeOpen, label: "Secrets",     value: dashboard.reposWithExposedSecrets.length,                tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger") },
-                    { icon: PackageX,        label: "Outdated",    value: dashboard.outdatedDependencies.length,                   tone: toneOf(dashboard.outdatedDependencies.length) },
-                    { icon: ScanEye,         label: "Unscanned",   value: dashboard.applicationsNotRecentlyScanned.length,         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length) },
+                    { icon: Layers,          label: "Production", value: dashboard.systemsInProduction,                           tone: "default" },
+                    { icon: ServerCog,       label: "Unpatched",  value: dashboard.serversMissingPatches.length,                  tone: toneOf(dashboard.serversMissingPatches.length) },
+                    { icon: ShieldAlert,     label: "Critical",   value: dashboard.applicationsWithCriticalVulnerabilities.length, tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger") },
+                    { icon: KeyRound,        label: "SSL exp.",    value: dashboard.sslCertificatesExpiringSoon.length,            tone: toneOf(dashboard.sslCertificatesExpiringSoon.length) },
+                    { icon: Globe2,          label: "Domains",    value: dashboard.domainsExpiringSoon.length,                    tone: toneOf(dashboard.domainsExpiringSoon.length) },
+                    { icon: DatabaseBackup,  label: "Backups",    value: dashboard.failedBackups.length,                          tone: toneOf(dashboard.failedBackups.length, "danger") },
+                    { icon: UserCog,         label: "Admins",     value: dashboard.adminUsers.length,                             tone: "default" },
+                    { icon: LockKeyholeOpen, label: "Secrets",    value: dashboard.reposWithExposedSecrets.length,                tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger") },
+                    { icon: PackageX,        label: "Outdated",   value: dashboard.outdatedDependencies.length,                   tone: toneOf(dashboard.outdatedDependencies.length) },
+                    { icon: ScanEye,         label: "Unscanned",  value: dashboard.applicationsNotRecentlyScanned.length,         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length) },
                   ].map((kpi, i) => (
                     <KpiTile key={i} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone} />
                   ))}
                 </div>
               )}
-
             </div>
           ) : null}
         </CardContent>
       </Card>
+
+      {/* ── Bottom two summary cards ────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {/* Needs Attention summary */}
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                Needs Attention
+              </CardTitle>
+              <button
+                onClick={() => navigate("/security?view=needs-attention")}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View all →
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {dashLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+              </div>
+            ) : !dashboard ? null : attentionAreas.length === 0 ? (
+              <div className="flex items-center gap-2.5 py-4 text-emerald-600">
+                <CheckCircle className="h-4 w-4 shrink-0" />
+                <p className="text-sm">All systems clear — nothing needs attention.</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary pills */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  {dangerCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-full px-2.5 py-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                      {dangerCount} critical
+                    </span>
+                  )}
+                  {(totalFlagged - dangerCount) > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-full px-2.5 py-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      {totalFlagged - dangerCount} warning{totalFlagged - dangerCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                {/* Top areas */}
+                <div className="space-y-1">
+                  {attentionAreas.slice(0, 5).map(area => {
+                    const Icon = area.icon;
+                    const isDanger = area.tone === "danger";
+                    return (
+                      <div key={area.label} className="flex items-center gap-2.5 py-1.5">
+                        <span className={`w-0.5 h-5 rounded-full shrink-0 ${isDanger ? "bg-red-500" : "bg-amber-400"}`} />
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${isDanger ? "text-red-500" : "text-amber-500"}`} />
+                        <span className="text-sm flex-1 min-w-0 truncate">{area.label}</span>
+                        <Badge variant={isDanger ? "destructive" : "secondary"} className="text-[10px] tabular-nums shrink-0">
+                          {area.count}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                  {attentionAreas.length > 5 && (
+                    <p className="text-xs text-muted-foreground pt-1 pl-6">
+                      +{attentionAreas.length - 5} more area{attentionAreas.length - 5 !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vulnerabilities summary */}
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                Vulnerabilities
+              </CardTitle>
+              <button
+                onClick={() => navigate("/security?view=vulnerabilities")}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View all →
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {vulnsLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+              </div>
+            ) : !vulnerabilities ? null : vulnerabilities.length === 0 ? (
+              <div className="flex items-center gap-2.5 py-4 text-emerald-600">
+                <CheckCircle className="h-4 w-4 shrink-0" />
+                <p className="text-sm">No vulnerabilities recorded.</p>
+              </div>
+            ) : (
+              <>
+                {/* Counts row */}
+                <div className="flex items-center gap-4 mb-3 pb-3 border-b border-border/50">
+                  {[
+                    { label: "Open",     value: openCount,     color: "text-foreground" },
+                    { label: "Critical", value: criticalCount, color: "text-red-600" },
+                    { label: "High",     value: highCount,     color: "text-orange-500" },
+                    { label: "Total",    value: vulnerabilities.length, color: "text-muted-foreground" },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="text-center">
+                      <p className={`text-lg font-bold leading-none tabular-nums ${color}`}>{value}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Top findings */}
+                <div className="space-y-1">
+                  {topVulns.map((v: any) => (
+                    <div key={v.id} className="flex items-center gap-2.5 py-1.5">
+                      <span className={`inline-flex items-center rounded border px-1.5 py-0 text-[9px] font-semibold capitalize shrink-0 ${
+                        SEV_STYLES[v.severity] ?? SEV_STYLES.info
+                      }`}>
+                        {v.severity}
+                      </span>
+                      <span className="text-sm flex-1 min-w-0 truncate">{v.title}</span>
+                      {v.applicationName && (
+                        <span className="text-[10px] text-muted-foreground shrink-0 truncate max-w-[80px]">{v.applicationName}</span>
+                      )}
+                    </div>
+                  ))}
+                  {vulnerabilities.length > 5 && (
+                    <p className="text-xs text-muted-foreground pt-1">
+                      +{vulnerabilities.length - 5} more finding{vulnerabilities.length - 5 !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
     </div>
   );
 }
