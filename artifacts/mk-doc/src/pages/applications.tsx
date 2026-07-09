@@ -4,8 +4,7 @@ import { z } from "zod";
 import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication, useGetApplicationDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import type { LinkedAction } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,13 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { AppWindow, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const appSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -63,6 +65,36 @@ function SelectField({
         {options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
       </SelectContent>
     </Select>
+  );
+}
+
+function EnvChip({ env }: { env: string }) {
+  const map: Record<string, string> = {
+    Production: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50",
+    Staging:    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50",
+    Testing:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
+    Development:"bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${map[env] ?? "bg-muted text-muted-foreground border-border"}`}>
+      {env}
+    </span>
+  );
+}
+
+function CriticalityDot({ value }: { value?: string | null }) {
+  if (!value) return null;
+  const map: Record<string, string> = {
+    Critical: "bg-red-500",
+    High:     "bg-orange-500",
+    Medium:   "bg-amber-400",
+    Low:      "bg-emerald-500",
+  };
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${map[value] ?? "bg-muted-foreground"}`} />
+      <span className="text-xs text-muted-foreground">{value}</span>
+    </span>
   );
 }
 
@@ -243,64 +275,68 @@ export default function Applications() {
     }
   };
 
-  const statusColor = (status?: string) => {
-    if (!status) return "secondary";
-    const s = status.toLowerCase();
-    if (s === "active") return "default";
-    if (s === "testing" || s === "staging") return "secondary";
-    return "outline";
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Application Registry</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton data={(applications ?? []) as unknown as Record<string, unknown>[]} columns={APP_EXPORT_COLS} filename="applications" title="Application Registry" />
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Application
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={AppWindow}
+        iconColor="#1B56A5"
+        title="Application Registry"
+        subtitle="Master record for every digital application across ministries and departments"
+        count={applications?.length}
+        actions={
+          <>
+            <ExportButton data={(applications ?? []) as unknown as Record<string, unknown>[]} columns={APP_EXPORT_COLS} filename="applications" title="Application Registry" />
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Application</Button>
+          </>
+        }
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>All Applications ({applications?.length ?? 0})</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">All Applications</CardTitle>
+          <CardDescription>Click an application name to view its full detail page</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-24 ml-auto" />
+                </div>
+              ))}
             </div>
           ) : applications && applications.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[500px]">
+              <Table className="min-w-[620px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
                     <TableHead>Environment</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Criticality</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pagedApplications.map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell className="font-medium">
-                        <Link href={`/applications/${app.id}`} className="hover:underline text-primary">
-                          {app.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="capitalize">{app.category}</TableCell>
-                      <TableCell>{app.environment}</TableCell>
+                    <TableRow key={app.id} className="hover:bg-muted/30">
                       <TableCell>
-                        <Badge variant={statusColor(app.status)}>
-                          {app.status}
-                        </Badge>
+                        <div>
+                          <Link href={`/applications/${app.id}`} className="font-semibold hover:underline text-foreground">
+                            {app.name}
+                          </Link>
+                          {app.classification && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{app.classification}</p>
+                          )}
+                        </div>
                       </TableCell>
+                      <TableCell><EnvChip env={app.environment} /></TableCell>
+                      <TableCell><StatusBadge status={app.status} /></TableCell>
+                      <TableCell><CriticalityDot value={(app as AppRow).criticality} /></TableCell>
                       <TableCell><OwnerBadge ownerName={(app as AppRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -318,13 +354,12 @@ export default function Applications() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No applications registered yet.</p>
-              <Button variant="outline" onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-2" />
-                Register First Application
-              </Button>
-            </div>
+            <EmptyState
+              icon={AppWindow}
+              title="No applications registered"
+              description="Start by registering your first application. Track its environment, status, tech stack, and ownership in one place."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Register First Application</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>

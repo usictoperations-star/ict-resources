@@ -3,9 +3,8 @@ import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListDomains, useGetExpiringDomains, useCreateDomain, useUpdateDomain, useDeleteDomain } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -15,12 +14,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Globe, AlertTriangle, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const STATUS_OPTIONS = ["active", "inactive", "expired", "pending"];
 const SSL_STATUS_OPTIONS = ["valid", "expiring", "expired", "none"];
@@ -45,6 +47,37 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+  );
+}
+
+function daysUntil(dateStr?: string | null): number | null {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function ExpiryCell({ dateStr }: { dateStr?: string | null }) {
+  if (!dateStr) return <span className="text-muted-foreground text-xs">—</span>;
+  const days = daysUntil(dateStr);
+  const label = new Date(dateStr).toLocaleDateString();
+  if (days === null) return <span className="text-xs">{label}</span>;
+  let daysClass = "text-muted-foreground";
+  if (days <= 14) daysClass = "text-red-600 dark:text-red-400 font-medium";
+  else if (days <= 30) daysClass = "text-amber-600 dark:text-amber-400";
+  return (
+    <div>
+      <p className="text-xs">{label}</p>
+      <p className={`text-xs ${daysClass}`}>{days < 0 ? "Expired" : `${days}d left`}</p>
+    </div>
+  );
+}
+
+function CloudflareChip({ enabled }: { enabled: boolean }) {
+  if (!enabled) return <span className="text-muted-foreground text-xs">—</span>;
+  return (
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50">
+      CF
+    </span>
   );
 }
 
@@ -160,71 +193,111 @@ export default function Domains() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Domain & SSL Management</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton data={(domains ?? []) as unknown as Record<string, unknown>[]} columns={DOMAIN_EXPORT_COLS} filename="domains" title="Domain & SSL Management" />
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Domain</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Globe}
+        iconColor="#0891B2"
+        title="Domains & SSL"
+        subtitle="Monitor domain renewals and SSL certificate health across all registered domains"
+        count={domains?.length}
+        actions={
+          <>
+            <ExportButton data={(domains ?? []) as unknown as Record<string, unknown>[]} columns={DOMAIN_EXPORT_COLS} filename="domains" title="Domain & SSL Management" />
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Domain</Button>
+          </>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1 border-destructive/50 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center text-destructive">
-              <AlertCircle className="w-5 h-5 mr-2" />Expiring Soon
+        {/* Expiring Soon card */}
+        <Card className="md:col-span-1 border-amber-200/70 dark:border-amber-800/50 bg-amber-50/40 dark:bg-amber-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4" />
+              Expiring Soon
             </CardTitle>
+            <CardDescription>Domains with SSL expiring within 30 days</CardDescription>
           </CardHeader>
           <CardContent>
             {expiringLoading ? (
-              <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+              <div className="space-y-3">
+                {[1, 2].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
             ) : expiringDomains && expiringDomains.length > 0 ? (
-              <div className="space-y-4">
-                {expiringDomains.map(domain => (
-                  <div key={domain.id} className="flex flex-col gap-1 text-sm border-b pb-2 last:border-0">
-                    <div className="font-semibold">{domain.name}</div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>{domain.sslExpiry ? `SSL expires: ${new Date(domain.sslExpiry).toLocaleDateString()}` : 'No SSL info'}</span>
-                      <Badge variant="destructive" className="text-[10px] h-4">Action Needed</Badge>
+              <div className="space-y-3">
+                {expiringDomains.map(domain => {
+                  const days = daysUntil(domain.sslExpiry);
+                  const urgent = days !== null && days <= 7;
+                  return (
+                    <div key={domain.id} className="rounded-lg border bg-background/70 p-3 space-y-1">
+                      <p className="text-sm font-semibold truncate">{domain.name}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {domain.sslExpiry ? new Date(domain.sslExpiry).toLocaleDateString() : "No SSL date"}
+                        </span>
+                        {days !== null && (
+                          <span className={`text-xs font-semibold rounded-full px-2 py-0.5 ${urgent ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"}`}>
+                            {days <= 0 ? "Expired" : `${days}d left`}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No domains expiring soon.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">All SSL certificates are healthy.</p>
             )}
           </CardContent>
         </Card>
 
+        {/* Main table card */}
         <Card className="md:col-span-2">
-          <CardHeader><CardTitle>All Domains ({domains?.length ?? 0})</CardTitle></CardHeader>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">All Domains</CardTitle>
+            <CardDescription>Domain registration and SSL certificate status</CardDescription>
+          </CardHeader>
           <CardContent>
             {domainsLoading ? (
-              <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-16 rounded-full ml-auto" />
+                  </div>
+                ))}
+              </div>
             ) : domains && domains.length > 0 ? (
               <div className="overflow-x-auto -mx-2">
-                <Table className="min-w-[580px]">
+                <Table className="min-w-[560px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
+                      <TableHead>Domain</TableHead>
                       <TableHead>Registrar</TableHead>
                       <TableHead>Reg. Expiry</TableHead>
                       <TableHead>SSL Status</TableHead>
-                      <TableHead>Cloudflare</TableHead>
+                      <TableHead className="text-center">CF</TableHead>
                       <TableHead>Owner</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pagedDomains.map((domain) => (
-                      <TableRow key={domain.id}>
-                        <TableCell className="font-medium">{domain.name}</TableCell>
-                        <TableCell>{domain.registrar || 'N/A'}</TableCell>
-                        <TableCell>{domain.registrationExpiry ? new Date(domain.registrationExpiry).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableRow key={domain.id} className="hover:bg-muted/30">
                         <TableCell>
-                          <Badge variant={domain.sslStatus === 'valid' ? 'default' : 'destructive'}>{domain.sslStatus}</Badge>
+                          <div>
+                            <p className="font-semibold text-sm">{domain.name}</p>
+                            {(domain as DomainRow).dnsProvider && (
+                              <p className="text-xs text-muted-foreground mt-0.5">{(domain as DomainRow).dnsProvider}</p>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell>{domain.cloudflarEnabled ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>
+                          <span className="text-xs">{domain.registrar || "—"}</span>
+                        </TableCell>
+                        <TableCell><ExpiryCell dateStr={(domain as DomainRow).registrationExpiry} /></TableCell>
+                        <TableCell><StatusBadge status={domain.sslStatus} /></TableCell>
+                        <TableCell className="text-center"><CloudflareChip enabled={(domain as DomainRow).cloudflarEnabled} /></TableCell>
                         <TableCell><OwnerBadge ownerName={(domain as DomainRow).ownerName} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
@@ -242,10 +315,12 @@ export default function Domains() {
                 </Table>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-sm text-muted-foreground mb-4">No domains found.</p>
-                <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Domain</Button>
-              </div>
+              <EmptyState
+                icon={Globe}
+                title="No domains registered"
+                description="Add your first domain to track registration renewals and SSL certificate health."
+                action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Domain</Button>}
+              />
             )}
             <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
           </CardContent>

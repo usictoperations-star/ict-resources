@@ -3,9 +3,8 @@ import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListRepositories, useCreateRepository, useUpdateRepository, useDeleteRepository } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -14,12 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { GitBranch, GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const VISIBILITY_OPTIONS = ["public", "private", "internal"];
 const STATUS_OPTIONS = ["active", "archived", "inactive"];
@@ -47,6 +49,37 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+  );
+}
+
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
+  JavaScript: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800/50",
+  Python:     "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50",
+  Java:       "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50",
+  PHP:        "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50",
+  Go:         "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/50",
+  Rust:       "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50",
+  "C#":       "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/50",
+};
+
+function LangChip({ lang }: { lang?: string | null }) {
+  if (!lang) return <span className="text-muted-foreground text-xs">—</span>;
+  const cls = LANG_COLORS[lang] ?? "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${cls}`}>
+      {lang}
+    </span>
+  );
+}
+
+function CountBadge({ icon: Icon, count, activeColor }: { icon: React.ElementType; count: number; activeColor: string }) {
+  const hasItems = count > 0;
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-medium ${hasItems ? activeColor : "text-muted-foreground"}`}>
+      <Icon className="h-3.5 w-3.5" />
+      {count}
+    </span>
   );
 }
 
@@ -156,22 +189,40 @@ export default function Repositories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Repository Management</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton data={(repositories ?? []) as unknown as Record<string, unknown>[]} columns={REPO_EXPORT_COLS} filename="repositories" title="Repository Management" />
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Repository</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={GitBranch}
+        iconColor="#7C3AED"
+        title="Repository Management"
+        subtitle="Source code repositories, version control, and open pull request tracking"
+        count={repositories?.length}
+        actions={
+          <>
+            <ExportButton data={(repositories ?? []) as unknown as Record<string, unknown>[]} columns={REPO_EXPORT_COLS} filename="repositories" title="Repository Management" />
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Repository</Button>
+          </>
+        }
+      />
 
       <Card>
-        <CardHeader><CardTitle>Source Code Repositories ({repositories?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Source Code Repositories</CardTitle>
+          <CardDescription>GitHub, GitLab, and other VCS repositories</CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-4 w-12 ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : repositories && repositories.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[620px]">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -186,21 +237,40 @@ export default function Repositories() {
                 </TableHeader>
                 <TableBody>
                   {pagedRepositories.map((repo) => (
-                    <TableRow key={repo.id}>
-                      <TableCell className="font-medium">
-                        {repo.url ? (
-                          <a href={repo.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{repo.name}</a>
-                        ) : repo.name}
-                      </TableCell>
-                      <TableCell>{repo.language ? <Badge variant="outline">{repo.language}</Badge> : 'N/A'}</TableCell>
-                      <TableCell className="capitalize">{repo.visibility}</TableCell>
+                    <TableRow key={repo.id} className="hover:bg-muted/30">
                       <TableCell>
-                        <div className="flex items-center text-muted-foreground"><GitPullRequest className="w-4 h-4 mr-1" />{repo.openPullRequests}</div>
+                        <div>
+                          {repo.url ? (
+                            <a href={repo.url} target="_blank" rel="noreferrer" className="font-semibold hover:underline text-foreground">
+                              {repo.name}
+                            </a>
+                          ) : (
+                            <span className="font-semibold">{repo.name}</span>
+                          )}
+                          {(repo as RepoRow).defaultBranch && (
+                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                              <GitBranch className="h-3 w-3" />{(repo as RepoRow).defaultBranch}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell><LangChip lang={(repo as RepoRow).language} /></TableCell>
+                      <TableCell><StatusBadge status={repo.visibility} /></TableCell>
+                      <TableCell>
+                        <CountBadge
+                          icon={GitPullRequest}
+                          count={(repo as RepoRow).openPullRequests ?? 0}
+                          activeColor="text-violet-600 dark:text-violet-400"
+                        />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center text-muted-foreground"><CircleDot className="w-4 h-4 mr-1" />{repo.openIssues}</div>
+                        <CountBadge
+                          icon={CircleDot}
+                          count={(repo as RepoRow).openIssues ?? 0}
+                          activeColor="text-amber-600 dark:text-amber-400"
+                        />
                       </TableCell>
-                      <TableCell><Badge variant={repo.status === 'active' ? 'default' : 'secondary'}>{repo.status}</Badge></TableCell>
+                      <TableCell><StatusBadge status={repo.status} /></TableCell>
                       <TableCell><OwnerBadge ownerName={(repo as RepoRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -218,10 +288,12 @@ export default function Repositories() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No repositories found.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Repository</Button>
-            </div>
+            <EmptyState
+              icon={GitBranch}
+              title="No repositories found"
+              description="Connect your first repository to track its language, open PRs, issues, and visibility status."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Repository</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>

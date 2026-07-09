@@ -5,7 +5,7 @@ import { CreateDatabaseBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord, useDeleteDatabaseRecord, useGetDatabaseDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Database, ShieldCheck, ShieldOff, Lock, LockOpen, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const TYPE_OPTIONS = ["PostgreSQL", "MySQL", "MariaDB", "MSSQL", "Oracle", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "deprecated"];
@@ -49,6 +51,22 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+  );
+}
+
+function DbTypeChip({ type }: { type: string }) {
+  const colors: Record<string, string> = {
+    PostgreSQL:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
+    MySQL:         "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50",
+    MariaDB:       "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50",
+    Redis:         "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/50",
+    MongoDB:       "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50",
+    Elasticsearch: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800/50",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium border ${colors[type] ?? "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700"}`}>
+      {type}
+    </span>
   );
 }
 
@@ -152,31 +170,49 @@ export default function Databases() {
     }
   };
 
-  const statusColor = (s: string) => s === "active" ? "default" : s === "maintenance" ? "secondary" : "outline";
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Database Management</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton data={(databases ?? []) as unknown as Record<string, unknown>[]} columns={DB_EXPORT_COLS} filename="databases" title="Database Management" />
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Database</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Database}
+        iconColor="#059669"
+        title="Database Management"
+        subtitle="Monitored databases across all environments — backup and encryption at a glance"
+        count={databases?.length}
+        actions={
+          <>
+            <ExportButton data={(databases ?? []) as unknown as Record<string, unknown>[]} columns={DB_EXPORT_COLS} filename="databases" title="Database Management" />
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Database</Button>
+          </>
+        }
+      />
 
       <Card>
-        <CardHeader><CardTitle>Databases ({databases?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">All Databases</CardTitle>
+          <CardDescription>PostgreSQL, MySQL, Redis, and other data stores</CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-5 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-16 rounded-full ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : databases && databases.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[550px]">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Server</TableHead>
+                    <TableHead className="text-center">Backup</TableHead>
+                    <TableHead className="text-center">Encrypted</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead className="w-16"></TableHead>
@@ -184,11 +220,32 @@ export default function Databases() {
                 </TableHeader>
                 <TableBody>
                   {pagedDatabases.map((db) => (
-                    <TableRow key={db.id}>
-                      <TableCell className="font-medium">{db.name}</TableCell>
-                      <TableCell>{db.type}</TableCell>
-                      <TableCell>{db.server || 'N/A'}</TableCell>
-                      <TableCell><Badge variant={statusColor(db.status)}>{db.status}</Badge></TableCell>
+                    <TableRow key={db.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div>
+                          <p className="font-semibold">{db.name}</p>
+                          {(db as DbRow).version && (
+                            <p className="text-xs text-muted-foreground mt-0.5">v{(db as DbRow).version}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell><DbTypeChip type={db.type} /></TableCell>
+                      <TableCell>
+                        {db.server
+                          ? <span className="font-mono text-xs">{db.server}</span>
+                          : <span className="text-muted-foreground text-xs">—</span>}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {(db as DbRow).backupEnabled
+                          ? <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                          : <ShieldOff className="h-4 w-4 text-red-500 mx-auto" />}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {(db as DbRow).encryptionEnabled
+                          ? <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                          : <LockOpen className="h-4 w-4 text-muted-foreground/50 mx-auto" />}
+                      </TableCell>
+                      <TableCell><StatusBadge status={db.status} /></TableCell>
                       <TableCell><OwnerBadge ownerName={(db as DbRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -206,10 +263,12 @@ export default function Databases() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No databases found.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Database</Button>
-            </div>
+            <EmptyState
+              icon={Database}
+              title="No databases found"
+              description="Register your first database to track its type, backup status, encryption, and hosting server."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Database</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>

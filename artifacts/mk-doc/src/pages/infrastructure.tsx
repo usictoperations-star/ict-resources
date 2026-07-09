@@ -5,7 +5,7 @@ import { CreateInfrastructureBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { useListInfrastructure, useCreateInfrastructure, useUpdateInfrastructure, useDeleteInfrastructure, useGetInfrastructureDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Server, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const TYPE_OPTIONS = ["VPS", "Bare Metal", "Docker", "VM", "Container", "Load Balancer", "Database Server", "CDN", "Other"];
 const STATUS_OPTIONS = ["active", "inactive", "maintenance", "decommissioned"];
@@ -53,6 +55,23 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
   );
+}
+
+function TypeChip({ type }: { type: string }) {
+  return (
+    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700">
+      {type}
+    </span>
+  );
+}
+
+function SpecsLine({ cpu, ram, disk }: { cpu?: number | null; ram?: number | null; disk?: number | null }) {
+  const parts: string[] = [];
+  if (cpu) parts.push(`${cpu} CPU`);
+  if (ram) parts.push(`${ram} GB RAM`);
+  if (disk) parts.push(`${disk} GB disk`);
+  if (!parts.length) return null;
+  return <span className="text-xs text-muted-foreground">{parts.join(" · ")}</span>;
 }
 
 const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "" };
@@ -159,30 +178,47 @@ export default function Infrastructure() {
     }
   };
 
-  const statusColor = (s: string) => s === "active" ? "default" : s === "maintenance" ? "secondary" : "outline";
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Infrastructure Management</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton data={(infra ?? []) as unknown as Record<string, unknown>[]} columns={INFRA_EXPORT_COLS} filename="infrastructure" title="Infrastructure Management" />
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Server</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Server}
+        iconColor="#7C3AED"
+        title="Infrastructure Management"
+        subtitle="Servers, VPS, containers, and cloud resources across all environments"
+        count={infra?.length}
+        actions={
+          <>
+            <ExportButton data={(infra ?? []) as unknown as Record<string, unknown>[]} columns={INFRA_EXPORT_COLS} filename="infrastructure" title="Infrastructure Management" />
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Server</Button>
+          </>
+        }
+      />
 
       <Card>
-        <CardHeader><CardTitle>Servers & Resources ({infra?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Servers & Resources</CardTitle>
+          <CardDescription>All registered infrastructure nodes and cloud resources</CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-5 w-16 rounded-md" />
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-4 w-28 ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : infra && infra.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[550px]">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Specs</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Owner</TableHead>
@@ -191,11 +227,27 @@ export default function Infrastructure() {
                 </TableHeader>
                 <TableBody>
                   {pagedInfra.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.type}</TableCell>
-                      <TableCell className="font-mono text-sm">{item.ipAddress || 'N/A'}</TableCell>
-                      <TableCell><Badge variant={statusColor(item.status)}>{item.status}</Badge></TableCell>
+                    <TableRow key={item.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div>
+                          <p className="font-semibold">{item.name}</p>
+                          {((item as InfraRow).provider || (item as InfraRow).os) && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {[(item as InfraRow).provider, (item as InfraRow).os].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell><TypeChip type={item.type} /></TableCell>
+                      <TableCell>
+                        <SpecsLine cpu={(item as InfraRow).cpuCores} ram={(item as InfraRow).ramGb} disk={(item as InfraRow).diskGb} />
+                      </TableCell>
+                      <TableCell>
+                        {item.ipAddress
+                          ? <span className="font-mono text-xs">{item.ipAddress}</span>
+                          : <span className="text-muted-foreground text-xs">—</span>}
+                      </TableCell>
+                      <TableCell><StatusBadge status={item.status} /></TableCell>
                       <TableCell><OwnerBadge ownerName={(item as InfraRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -213,10 +265,12 @@ export default function Infrastructure() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No infrastructure records found.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Server</Button>
-            </div>
+            <EmptyState
+              icon={Server}
+              title="No infrastructure recorded"
+              description="Add your first server, VPS, or container to start tracking your infrastructure inventory."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Server</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>

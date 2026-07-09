@@ -2,9 +2,8 @@ import React, { useRef, useState } from "react";
 import { z } from "zod";
 import { useListDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -14,12 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileText, ExternalLink, Plus, Loader2, Pencil, Trash2, UploadCloud, Link2, CheckCircle2 } from "lucide-react";
+import { BookOpen, FileText, ExternalLink, FolderOpen, Plus, Loader2, Pencil, Trash2, UploadCloud, Link2, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import type { UppyFile, UploadResult } from "@uppy/core";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 const TYPE_OPTIONS = ["PRD", "TRD", "SOP", "ERD", "API", "Architecture", "Runbook", "Guide", "Policy", "Other"];
 
@@ -44,6 +45,28 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+  );
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  PRD:          "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
+  TRD:          "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50",
+  SOP:          "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50",
+  ERD:          "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50",
+  API:          "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/50",
+  Architecture: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50",
+  Runbook:      "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/50",
+  Guide:        "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/50",
+  Policy:       "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700",
+  Other:        "bg-muted text-muted-foreground border-border",
+};
+
+function DocTypeBadge({ type }: { type: string }) {
+  const cls = TYPE_COLORS[type] ?? TYPE_COLORS["Other"];
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${cls}`}>
+      {type}
+    </span>
   );
 }
 
@@ -187,46 +210,76 @@ export default function Documentation() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Documentation Center</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Document</Button>
-      </div>
+      <PageHeader
+        icon={BookOpen}
+        iconColor="#1B56A5"
+        title="Documentation Center"
+        subtitle="PRDs, TRDs, SOPs, runbooks, and technical documents — all in one place"
+        count={documents?.length}
+        actions={
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Document</Button>
+        }
+      />
 
       <Card>
-        <CardHeader><CardTitle>Document Repository ({documents?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Document Repository</CardTitle>
+          <CardDescription>Click a document title to open it — files, Google Drive, and SharePoint links all supported</CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-4 w-24 ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : documents && documents.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[600px]">
+              <Table className="min-w-[620px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Application</TableHead>
-                    <TableHead>Version</TableHead>
+                    <TableHead>Author</TableHead>
                     <TableHead>Updated</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pagedDocuments.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {doc.url ? (
-                            <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center text-primary hover:underline">
-                              {doc.title} <ExternalLink className="h-3 w-3 ml-1" />
-                            </a>
-                          ) : doc.title}
+                    <TableRow key={doc.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div className="flex items-start gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground/50 mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            {doc.url ? (
+                              <a href={doc.url} target="_blank" rel="noreferrer" className="font-semibold hover:underline text-foreground flex items-center gap-1">
+                                {doc.title} <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                              </a>
+                            ) : (
+                              <span className="font-semibold">{doc.title}</span>
+                            )}
+                            {(doc as DocRow).version && (
+                              <p className="text-xs text-muted-foreground mt-0.5">{(doc as DocRow).version}</p>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell><Badge variant="outline">{doc.type}</Badge></TableCell>
-                      <TableCell>{doc.applicationName || 'Global'}</TableCell>
-                      <TableCell>{doc.version || 'v1.0'}</TableCell>
-                      <TableCell>{new Date(doc.updatedAt).toLocaleDateString()}</TableCell>
+                      <TableCell><DocTypeBadge type={doc.type} /></TableCell>
+                      <TableCell>
+                        <span className="text-xs">{(doc as DocRow).applicationName || "Global"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{(doc as DocRow).author || "—"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{new Date(doc.updatedAt).toLocaleDateString()}</span>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(doc as DocRow)}>
@@ -243,10 +296,12 @@ export default function Documentation() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No documents found.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Document</Button>
-            </div>
+            <EmptyState
+              icon={FolderOpen}
+              title="No documents yet"
+              description="Upload files, paste Google Drive or SharePoint links, or write inline content to build your knowledge base."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First Document</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
@@ -306,30 +361,15 @@ export default function Documentation() {
                     )}
                   </TabsContent>
                   <TabsContent value="gdrive" className="space-y-1">
-                    <Input
-                      placeholder="Paste Google Drive share link..."
-                      value={form.url}
-                      onChange={set("url")}
-                      className="h-9"
-                    />
+                    <Input placeholder="Paste Google Drive share link..." value={form.url} onChange={set("url")} className="h-9" />
                     <p className="text-xs text-muted-foreground">Paste a shareable link from Google Drive (set access to "Anyone with the link").</p>
                   </TabsContent>
                   <TabsContent value="sharepoint" className="space-y-1">
-                    <Input
-                      placeholder="Paste SharePoint link..."
-                      value={form.url}
-                      onChange={set("url")}
-                      className="h-9"
-                    />
+                    <Input placeholder="Paste SharePoint link..." value={form.url} onChange={set("url")} className="h-9" />
                     <p className="text-xs text-muted-foreground">Paste a shared link from SharePoint or OneDrive.</p>
                   </TabsContent>
                   <TabsContent value="link" className="space-y-1">
-                    <Input
-                      placeholder="https://confluence.org/..."
-                      value={form.url}
-                      onChange={set("url")}
-                      className="h-9"
-                    />
+                    <Input placeholder="https://confluence.org/..." value={form.url} onChange={set("url")} className="h-9" />
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Link2 className="h-3 w-3" /> Any other external URL.</p>
                   </TabsContent>
                 </Tabs>

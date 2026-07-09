@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useListReleases, useCreateRelease, useUpdateRelease, useDeleteRelease } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -14,10 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Rocket, CheckCircle2, Clock, RotateCcw, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 const ENV_OPTIONS = ["Production", "Staging", "Testing", "Development"];
 const STATUS_OPTIONS = ["pending", "in_progress", "successful", "failed", "rolled_back"];
@@ -50,6 +52,44 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+  );
+}
+
+function ApprovedBadge({ approved }: { approved: boolean }) {
+  if (approved) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50">
+        <CheckCircle2 className="h-3 w-3" /> Approved
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50">
+      <Clock className="h-3 w-3" /> Pending
+    </span>
+  );
+}
+
+function RollbackChip({ available }: { available: boolean }) {
+  if (!available) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700">
+      <RotateCcw className="h-3 w-3" /> Rollback
+    </span>
+  );
+}
+
+function EnvChip({ env }: { env: string }) {
+  const map: Record<string, string> = {
+    Production: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50",
+    Staging:    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50",
+    Testing:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
+    Development:"bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${map[env] ?? "bg-muted text-muted-foreground border-border"}`}>
+      {env}
+    </span>
   );
 }
 
@@ -153,49 +193,75 @@ export default function Releases() {
     }
   };
 
-  const statusVariant = (s: string) => s === "successful" ? "default" : s === "failed" ? "destructive" : "secondary";
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Release Management</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Release</Button>
-      </div>
+      <PageHeader
+        icon={Rocket}
+        iconColor="#1B56A5"
+        title="Release Management"
+        subtitle="Deployment history with approval workflow and rollback tracking"
+        count={releases?.length}
+        actions={
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Release</Button>
+        }
+      />
 
       <Card>
-        <CardHeader><CardTitle>Recent Releases ({releases?.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Recent Releases</CardTitle>
+          <CardDescription>All deployment events across all applications and environments</CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : releases && releases.length > 0 ? (
             <div className="overflow-x-auto -mx-6">
-              <Table className="min-w-[680px]">
+              <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Application</TableHead>
-                    <TableHead>Version</TableHead>
                     <TableHead>Environment</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Released By</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Approved</TableHead>
+                    <TableHead></TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pagedReleases.map((release) => (
-                    <TableRow key={release.id}>
-                      <TableCell className="font-medium">{release.applicationName || `App #${release.applicationId}`}</TableCell>
-                      <TableCell className="font-mono text-xs">{release.version}</TableCell>
-                      <TableCell>{release.environment}</TableCell>
-                      <TableCell>{release.releaseDate ? new Date(release.releaseDate).toLocaleString() : 'N/A'}</TableCell>
-                      <TableCell><Badge variant={statusVariant(release.status)}>{release.status}</Badge></TableCell>
+                    <TableRow key={release.id} className="hover:bg-muted/30">
                       <TableCell>
-                        {release.approved ? (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-200 dark:border-green-900 dark:text-green-400">Yes</Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-200 dark:border-yellow-900 dark:text-yellow-400">Pending</Badge>
-                        )}
+                        <div>
+                          <p className="font-semibold">{release.applicationName || `App #${release.applicationId}`}</p>
+                          <p className="text-xs text-muted-foreground font-mono mt-0.5">{release.version}</p>
+                        </div>
                       </TableCell>
+                      <TableCell><EnvChip env={release.environment} /></TableCell>
+                      <TableCell>
+                        {release.releaseDate ? (
+                          <div>
+                            <p className="text-xs">{new Date(release.releaseDate).toLocaleDateString()}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(release.releaseDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                          </div>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{release.releasedBy || "—"}</span>
+                      </TableCell>
+                      <TableCell><StatusBadge status={release.status} /></TableCell>
+                      <TableCell><ApprovedBadge approved={(release as ReleaseRow).approved} /></TableCell>
+                      <TableCell><RollbackChip available={(release as ReleaseRow).rollbackAvailable} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(release as ReleaseRow)}>
@@ -212,10 +278,12 @@ export default function Releases() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground mb-4">No releases found.</p>
-              <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log First Release</Button>
-            </div>
+            <EmptyState
+              icon={Rocket}
+              title="No releases logged"
+              description="Log your first deployment to start tracking release history, approvals, and rollback availability."
+              action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Log First Release</Button>}
+            />
           )}
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
         </CardContent>
