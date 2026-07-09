@@ -2,6 +2,7 @@ import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
+import { applicationsTable } from "./applications";
 
 export const softwareTable = pgTable("software", {
   id: serial("id").primaryKey(),
@@ -15,7 +16,7 @@ export const softwareTable = pgTable("software", {
   endOfLife: boolean("end_of_life").notNull().default(false),
   endOfLifeDate: text("end_of_life_date"),
   upgradeAvailable: boolean("upgrade_available").notNull().default(false),
-  applicationId: integer("application_id"),
+  applicationId: integer("application_id").references(() => applicationsTable.id, { onDelete: "set null" }),
   notes: text("notes"),
   ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),

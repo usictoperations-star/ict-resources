@@ -14,12 +14,14 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid Expo push token format" });
     }
 
+    const userId = req.session.userId ?? null;
+
     await db
       .insert(pushTokensTable)
-      .values({ token: body.token, updatedAt: new Date() })
+      .values({ token: body.token, userId, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: pushTokensTable.token,
-        set: { updatedAt: new Date() },
+        set: { updatedAt: new Date(), userId },
       });
 
     return res.status(204).send();

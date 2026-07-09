@@ -3129,6 +3129,10 @@ components:
           type: ["string", "null"]
         tags:
           type: ["string", "null"]
+        ownerId:
+          type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -3157,6 +3161,8 @@ components:
           type: string
         tags:
           type: string
+        ownerId:
+          type: integer
       required: [title, type]
 
     DocumentUpdate:
@@ -3178,6 +3184,8 @@ components:
           type: string
         tags:
           type: string
+        ownerId:
+          type: integer
 
     # ── Reports ───────────────────────────────────────────────────────────
     InventoryReport:

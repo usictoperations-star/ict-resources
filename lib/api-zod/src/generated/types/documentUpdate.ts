@@ -15,4 +15,5 @@ export interface DocumentUpdate {
   version?: string;
   author?: string;
   tags?: string;
+  ownerId?: number;
 }

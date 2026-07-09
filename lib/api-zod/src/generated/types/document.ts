@@ -24,6 +24,10 @@ export interface Document {
   author?: string | null;
   /** @nullable */
   tags?: string | null;
+  /** @nullable */
+  ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */

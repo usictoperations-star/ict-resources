@@ -1,10 +1,11 @@
 import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { applicationsTable } from "./applications";
 
 export const releasesTable = pgTable("releases", {
   id: serial("id").primaryKey(),
-  applicationId: integer("application_id").notNull(),
+  applicationId: integer("application_id").notNull().references(() => applicationsTable.id, { onDelete: "cascade" }),
   version: text("version").notNull(),
   environment: text("environment").notNull().default("Production"),
   status: text("status").notNull().default("Deployed"),

@@ -1965,6 +1965,8 @@ export const ListDocumentsResponseItem = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -1986,7 +1988,8 @@ export const CreateDocumentBody = zod.object({
   "applicationId": zod.number().optional(),
   "version": zod.string().optional(),
   "author": zod.string().optional(),
-  "tags": zod.string().optional()
+  "tags": zod.string().optional(),
+  "ownerId": zod.number().optional()
 })
 
 export const CreateDocumentResponse = zod.object({
@@ -2000,6 +2003,8 @@ export const CreateDocumentResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2024,6 +2029,8 @@ export const GetDocumentResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2045,7 +2052,8 @@ export const UpdateDocumentBody = zod.object({
   "applicationId": zod.number().optional(),
   "version": zod.string().optional(),
   "author": zod.string().optional(),
-  "tags": zod.string().optional()
+  "tags": zod.string().optional(),
+  "ownerId": zod.number().optional()
 })
 
 export const UpdateDocumentResponse = zod.object({
@@ -2059,6 +2067,8 @@ export const UpdateDocumentResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2093,6 +2103,8 @@ export const RestoreDocumentResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2349,6 +2361,8 @@ export const ListDeletedRecordsResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2597,6 +2611,8 @@ export const GlobalSearchResponse = zod.object({
   "version": zod.string().nullish(),
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()

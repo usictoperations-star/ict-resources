@@ -122,10 +122,14 @@ router.post("/users", async (req: Request, res: Response) => {
     const body = CreateUserBody.parse(req.body);
     const { password, ...rest } = body as typeof body & { password?: string };
 
-    const values: typeof usersTable.$inferInsert = { ...rest };
-    if (password) {
-      values.passwordHash = await bcrypt.hash(password, 12);
+    if (!password) {
+      return res.status(400).json({ error: "Password is required when creating a user" });
     }
+
+    const values: typeof usersTable.$inferInsert = {
+      ...rest,
+      passwordHash: await bcrypt.hash(password, 12),
+    };
 
     const [item] = await db.insert(usersTable).values(values).returning();
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "User", entityId: item.id, entityName: item.name, userName: "System" });

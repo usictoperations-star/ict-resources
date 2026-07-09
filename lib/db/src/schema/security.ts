@@ -2,6 +2,7 @@ import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
+import { applicationsTable } from "./applications";
 
 export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   id: serial("id").primaryKey(),
@@ -9,7 +10,7 @@ export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   description: text("description"),
   severity: text("severity").notNull().default("Medium"),
   status: text("status").notNull().default("Open"),
-  applicationId: integer("application_id"),
+  applicationId: integer("application_id").references(() => applicationsTable.id, { onDelete: "set null" }),
   cveId: text("cve_id"),
   affectedComponent: text("affected_component"),
   version: text("version"),

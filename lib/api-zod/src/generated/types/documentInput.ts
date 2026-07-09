@@ -16,4 +16,5 @@ export interface DocumentInput {
   version?: string;
   author?: string;
   tags?: string;
+  ownerId?: number;
 }

@@ -2,6 +2,7 @@ import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
+import { applicationsTable } from "./applications";
 
 export const repositoriesTable = pgTable("repositories", {
   id: serial("id").primaryKey(),
@@ -13,7 +14,7 @@ export const repositoriesTable = pgTable("repositories", {
   openPullRequests: integer("open_pull_requests").notNull().default(0),
   openIssues: integer("open_issues").notNull().default(0),
   lastCommitAt: text("last_commit_at"),
-  applicationId: integer("application_id"),
+  applicationId: integer("application_id").references(() => applicationsTable.id, { onDelete: "set null" }),
   status: text("status").notNull().default("Active"),
   notes: text("notes"),
   ownerId: integer("owner_id").references(() => usersTable.id),

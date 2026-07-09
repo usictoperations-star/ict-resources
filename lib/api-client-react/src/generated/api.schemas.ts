@@ -896,6 +896,10 @@ export interface Document {
   author?: string | null;
   /** @nullable */
   tags?: string | null;
+  /** @nullable */
+  ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */
@@ -912,6 +916,7 @@ export interface DocumentInput {
   version?: string;
   author?: string;
   tags?: string;
+  ownerId?: number;
 }
 
 export interface DocumentUpdate {
@@ -923,6 +928,7 @@ export interface DocumentUpdate {
   version?: string;
   author?: string;
   tags?: string;
+  ownerId?: number;
 }
 
 export type InventoryReportApplicationsByCategoryItem = {
