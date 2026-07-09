@@ -48,11 +48,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(createSessionMiddleware());
 
-// Require application/json Content-Type on POST and PATCH requests.
-// Missing or non-JSON Content-Type returns 415 — storage upload routes (multipart)
-// are explicitly exempted.
+// Require application/json Content-Type on POST and PATCH requests that
+// send a body. No-body requests (Content-Length: 0 or absent, no Transfer-Encoding)
+// are allowed through — e.g. POST /auth/logout sends no body.
+// Storage upload routes (multipart/form-data) are explicitly exempted.
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === "POST" || req.method === "PATCH") {
+    const cl = req.headers["content-length"];
+    const te = req.headers["transfer-encoding"];
+    const hasBody = te !== undefined || (cl !== undefined && parseInt(cl, 10) > 0);
+    if (!hasBody) return next();
     const ct = (req.headers["content-type"] ?? "").toLowerCase();
     if (req.path.startsWith("/api/storage") && ct.includes("multipart/form-data")) {
       return next();
