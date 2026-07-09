@@ -87,7 +87,7 @@ router.get("/dashboard", async (req: Request, res: Response) => {
       .map(d => ({ id: d.id, name: d.name, lastBackupStatus: d.lastBackupStatus, lastBackupAt: d.lastBackupAt }));
 
     const adminUsers = users
-      .filter(u => u.role === "admin")
+      .filter(u => Array.isArray(u.roles) ? u.roles.includes("admin") : false)
       .map(u => ({ id: u.id, name: u.name, email: u.email, department: u.department }));
 
     const reposWithExposedSecrets = repos

@@ -14,7 +14,7 @@ async function seedAdmin() {
       const hash = await bcrypt.hash(ADMIN_PASSWORD, 12);
       await db.update(usersTable).set({
         passwordHash: hash,
-        role: "admin",
+        roles: ["admin"],
         status: "Active",
       }).where(eq(usersTable.id, existing.id));
       console.log(`Updated existing user ${ADMIN_EMAIL} with password hash and admin role.`);
@@ -28,7 +28,7 @@ async function seedAdmin() {
   await db.insert(usersTable).values({
     name: ADMIN_NAME,
     email: ADMIN_EMAIL,
-    role: "admin",
+    roles: ["admin"],
     status: "Active",
     passwordHash: hash,
   });
