@@ -201,18 +201,10 @@ function RiskIndicatorsView() {
       {/* ── Risk Indicators ─────────────────────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
-              Risk Indicators
-            </CardTitle>
-            <button
-              onClick={() => navigate("/security?view=risk-indicators")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              View details →
-            </button>
-          </div>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+            Risk Indicators
+          </CardTitle>
         </CardHeader>
         <CardContent className="pt-2 pb-5">
           {summaryLoading ? (

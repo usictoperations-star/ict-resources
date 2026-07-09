@@ -3,7 +3,7 @@ import { Link, useLocation, useSearch } from "wouter";
 import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
-  BarChart, Settings, Menu, AlertTriangle, Table2,
+  BarChart, Settings, Menu, Table2,
   LogOut, User, ChevronDown, UserCircle, ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,6 @@ const NAV_ITEMS = [
 ];
 
 const SECURITY_SUB_ITEMS = [
-  { view: "risk-indicators", label: "Risk Indicators", icon: AlertTriangle },
   { view: "needs-attention", label: "Needs Attention", icon: ShieldAlert },
   { view: "vulnerabilities", label: "Vulnerabilities", icon: Table2 },
 ];
