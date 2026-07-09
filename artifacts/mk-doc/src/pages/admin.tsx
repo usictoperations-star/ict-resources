@@ -35,6 +35,13 @@ function generatePassword(): string {
 const ROLE_OPTIONS = ["admin", "editor", "analyst", "viewer"] as const;
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
+const ROLE_LABELS: Record<string, string> = {
+  admin:   "Admin",
+  editor:  "Editor",
+  analyst: "Audit & Inspection",
+  viewer:  "Viewer",
+};
+
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   admin:   "Full access including user management and deletes",
   editor:  "Create and edit everything, no user management",
@@ -103,7 +110,7 @@ function RolesCheckboxGroup({ value, onChange, error }: { value: string[]; onCha
               id={`role-${role}`}
             />
             <div>
-              <span className="text-sm font-medium capitalize">{role}</span>
+              <span className="text-sm font-medium">{ROLE_LABELS[role] ?? role}</span>
               <p className="text-[10px] text-muted-foreground leading-tight">{ROLE_DESCRIPTIONS[role]}</p>
             </div>
           </label>
@@ -454,7 +461,7 @@ export default function Admin() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {ROLE_OPTIONS.map(role => (
           <div key={role} className={`rounded-lg border px-3 py-2.5 ${ROLE_BADGE[role] ?? ""}`}>
-            <p className="text-xs font-semibold capitalize mb-0.5">{role}</p>
+            <p className="text-xs font-semibold mb-0.5">{ROLE_LABELS[role] ?? role}</p>
             <p className="text-[10px] leading-snug opacity-80">{ROLE_DESCRIPTIONS[role]}</p>
           </div>
         ))}

@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 const ROLE_BADGE: Record<string, { label: string; class: string }> = {
   admin:   { label: "Admin",   class: "bg-red-500/20 text-red-200 border-red-400/30" },
   editor:  { label: "Editor",  class: "bg-blue-400/20 text-blue-200 border-blue-300/30" },
-  analyst: { label: "Analyst", class: "bg-amber-400/20 text-amber-200 border-amber-300/30" },
+  analyst: { label: "Audit & Inspection", class: "bg-amber-400/20 text-amber-200 border-amber-300/30" },
   viewer:  { label: "Viewer",  class: "bg-white/10 text-blue-200 border-white/20" },
 };
 
