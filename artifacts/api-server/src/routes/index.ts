@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import dashboardRouter from "./dashboard";
@@ -20,8 +21,13 @@ import pushTokensRouter from "./push-tokens";
 
 const router: IRouter = Router();
 
+// Public routes — no auth required
 router.use(healthRouter);
 router.use(authRouter);
+
+// All routes below this line require a valid session
+router.use(requireAuth);
+
 router.use("/dashboard", dashboardRouter);
 router.use("/applications", applicationsRouter);
 router.use("/infrastructure", infrastructureRouter);
@@ -33,10 +39,12 @@ router.use("/security", securityRouter);
 router.use("/software", softwareRouter);
 router.use("/documentation", documentationRouter);
 router.use("/reports", reportsRouter);
-router.use("/admin", adminRouter);
 router.use("/search", searchRouter);
 router.use("/teams", teamsRouter);
 router.use("/push-tokens", pushTokensRouter);
 router.use(storageRouter);
+
+// Admin routes require admin role in addition to being authenticated
+router.use("/admin", requireRole("admin"), adminRouter);
 
 export default router;
