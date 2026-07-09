@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { uniqueSuffix } from "./helpers";
+import { uniqueSuffix, findRowAcrossPages } from "./helpers";
 
 test.describe("Applications - create and edit", () => {
   test("creates a new application and then edits it", async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe("Applications - create and edit", () => {
     await createDialog.getByRole("button", { name: "Register Application" }).click();
     await expect(createDialog).toBeHidden();
 
-    const row = page.getByRole("row", { name: new RegExp(name) });
+    const row = await findRowAcrossPages(page, new RegExp(name));
     await expect(row).toBeVisible();
 
     await row.getByRole("button").first().click();
@@ -39,7 +39,7 @@ test.describe("Applications - create and edit", () => {
     await editDialog.getByRole("button", { name: "Save Changes" }).click();
     await expect(editDialog).toBeHidden();
 
-    const updatedRow = page.getByRole("row", { name: new RegExp(updatedName) });
+    const updatedRow = await findRowAcrossPages(page, new RegExp(updatedName));
     await expect(updatedRow).toBeVisible();
 
     await updatedRow.getByRole("button").last().click();

@@ -8,7 +8,7 @@ test.describe("Security - create and edit vulnerability", () => {
     const updatedTitle = `E2E Vuln ${suffix} Updated`;
 
     await page.goto("/security");
-    await expect(page.getByRole("heading", { name: "Security Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
 
     await page.getByRole("button", { name: "Log Vulnerability" }).click();
     const createDialog = page.getByRole("dialog");
