@@ -2,11 +2,11 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { cache, DASHBOARD_TTL_MS } from "../lib/cache";
+import { logAudit } from "../lib/audit";
 import { db } from "@workspace/db";
 import {
   vulnerabilitiesTable,
   applicationsTable,
-  auditLogsTable,
   infrastructureTable,
   domainsTable,
   databasesTable,
@@ -189,7 +189,7 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
     const body = CreateVulnerabilityBody.parse(req.body);
     const [item] = await db.insert(vulnerabilitiesTable).values(body).returning();
     const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
+    await logAudit(req, "CREATE", "Vulnerability", item.id, item.title);
     return res.status(201).json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating vulnerability");
@@ -205,7 +205,7 @@ router.post("/vulnerabilities/:id/restore", async (req: Request, res: Response) 
       .where(eq(vulnerabilitiesTable.id, id))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
+    await logAudit(req, "RESTORE", "Vulnerability", item.id, item.title);
     return res.json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error restoring vulnerability");
@@ -235,7 +235,7 @@ router.delete("/vulnerabilities/:id", async (req: Request, res: Response) => {
       .where(and(eq(vulnerabilitiesTable.id, id), isNull(vulnerabilitiesTable.deletedAt)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
+    await logAudit(req, "DELETE", "Vulnerability", item.id, item.title);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting vulnerability");

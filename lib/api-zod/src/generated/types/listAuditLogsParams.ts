@@ -8,6 +8,18 @@
 
 export type ListAuditLogsParams = {
 /**
+ * Filter by user ID
+ */
+userId?: number;
+/**
+ * Filter by action (CREATE, UPDATE, DELETE, RESTORE)
+ */
+action?: string;
+/**
+ * Filter by entity type
+ */
+entityType?: string;
+/**
  * @maximum 500
  */
 limit?: number;

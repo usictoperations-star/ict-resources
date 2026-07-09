@@ -1636,6 +1636,21 @@ paths:
       tags: [admin]
       summary: List audit log entries
       parameters:
+        - name: userId
+          in: query
+          schema:
+            type: integer
+          description: Filter by user ID
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Filter by action (CREATE, UPDATE, DELETE, RESTORE)
+        - name: entityType
+          in: query
+          schema:
+            type: string
+          description: Filter by entity type
         - name: limit
           in: query
           schema:
@@ -3539,6 +3554,8 @@ components:
         userName:
           type: ["string", "null"]
         changes:
+          type: ["string", "null"]
+        ipAddress:
           type: ["string", "null"]
         createdAt:
           type: string

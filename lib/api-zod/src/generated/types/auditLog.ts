@@ -20,5 +20,7 @@ export interface AuditLog {
   userName?: string | null;
   /** @nullable */
   changes?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
   createdAt: string;
 }

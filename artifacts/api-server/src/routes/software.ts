@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
-import { softwareTable, auditLogsTable, usersTable } from "@workspace/db";
+import { softwareTable, usersTable } from "@workspace/db";
 import { CreateSoftwareBody, UpdateSoftwareBody } from "@workspace/api-zod";
 import { eq, and, isNull, count } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
@@ -45,7 +46,7 @@ router.post("/", async (req: Request, res: Response) => {
     const body = CreateSoftwareBody.parse(req.body);
     const [item] = await db.insert(softwareTable).values(body).returning();
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Software", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "CREATE", "Software", item.id, item.name);
     return res.status(201).json({ ...item, ownerName, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating software");
@@ -62,7 +63,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Software", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "RESTORE", "Software", item.id, item.name);
     return res.json({ ...item, ownerName, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error restoring software");
@@ -92,7 +93,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .where(and(eq(softwareTable.id, id), isNull(softwareTable.deletedAt)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Software", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "DELETE", "Software", item.id, item.name);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting software");

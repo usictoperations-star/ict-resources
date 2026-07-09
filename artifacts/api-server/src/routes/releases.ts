@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
-import { releasesTable, applicationsTable, auditLogsTable } from "@workspace/db";
+import { releasesTable, applicationsTable } from "@workspace/db";
 import { CreateReleaseBody, UpdateReleaseBody } from "@workspace/api-zod";
 import { eq, and, isNull, isNotNull, gte, count } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 function fmt(r: typeof releasesTable.$inferSelect, applicationName: string | null = null) {
   return {
@@ -44,7 +45,7 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const body = CreateReleaseBody.parse(req.body);
     const [item] = await db.insert(releasesTable).values(body).returning();
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Release", entityId: item.id, entityName: `v${item.version}`, userName: "System" });
+    await logAudit(req, "CREATE", "Release", item.id, `v${item.version}`);
     return res.status(201).json(fmt(item, null));
   } catch (err) {
     req.log.error({ err }, "Error creating release");
@@ -64,7 +65,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
     const [app] = item.applicationId
       ? await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId))
       : [undefined];
-    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Release", entityId: item.id, entityName: `v${item.version}`, userName: "System" });
+    await logAudit(req, "RESTORE", "Release", item.id, `v${item.version}`);
     return res.json(fmt(item, app?.name ?? null));
   } catch (err) {
     req.log.error({ err }, "Error restoring release");
@@ -111,7 +112,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .where(and(eq(releasesTable.id, id), isNull(releasesTable.deletedAt)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Release", entityId: item.id, entityName: `v${item.version}`, userName: "System" });
+    await logAudit(req, "DELETE", "Release", item.id, `v${item.version}`);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting release");

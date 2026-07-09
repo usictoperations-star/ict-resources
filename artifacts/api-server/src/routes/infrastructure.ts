@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
-import { infrastructureTable, auditLogsTable, usersTable, applicationsTable } from "@workspace/db";
+import { infrastructureTable, usersTable, applicationsTable } from "@workspace/db";
 import { CreateInfrastructureBody, UpdateInfrastructureBody } from "@workspace/api-zod";
 import { eq, and, isNull, isNotNull, gte, count } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.post("/", async (req: Request, res: Response) => {
     const body = CreateInfrastructureBody.parse(req.body);
     const [item] = await db.insert(infrastructureTable).values(body).returning();
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Infrastructure", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "CREATE", "Infrastructure", item.id, item.name);
     return res.status(201).json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error creating infrastructure");
@@ -68,7 +69,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .returning();
     if (!item) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Infrastructure", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "RESTORE", "Infrastructure", item.id, item.name);
     return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error restoring infrastructure");
@@ -131,7 +132,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .where(and(eq(infrastructureTable.id, id), isNull(infrastructureTable.deletedAt)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Infrastructure", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "DELETE", "Infrastructure", item.id, item.name);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting infrastructure");

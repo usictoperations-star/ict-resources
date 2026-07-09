@@ -1055,6 +1055,8 @@ export interface AuditLog {
   userName?: string | null;
   /** @nullable */
   changes?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
   createdAt: string;
 }
 
@@ -1240,6 +1242,18 @@ offset?: number;
 };
 
 export type ListAuditLogsParams = {
+/**
+ * Filter by user ID
+ */
+userId?: number;
+/**
+ * Filter by action (CREATE, UPDATE, DELETE, RESTORE)
+ */
+action?: string;
+/**
+ * Filter by entity type
+ */
+entityType?: string;
 /**
  * @maximum 500
  */

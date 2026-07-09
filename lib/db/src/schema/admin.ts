@@ -32,6 +32,7 @@ export const auditLogsTable = pgTable("audit_logs", {
   userId: integer("user_id"),
   userName: text("user_name"),
   changes: text("changes"),
+  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("audit_logs_user_id_idx").on(table.userId),

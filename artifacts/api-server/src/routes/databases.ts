@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
-import { databasesTable, auditLogsTable, usersTable, applicationsTable } from "@workspace/db";
+import { databasesTable, usersTable, applicationsTable } from "@workspace/db";
 import { CreateDatabaseBody, UpdateDatabaseRecordBody } from "@workspace/api-zod";
 import { eq, and, isNull, isNotNull, gte, count } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.post("/", async (req: Request, res: Response) => {
     const body = CreateDatabaseBody.parse(req.body);
     const [item] = await db.insert(databasesTable).values(body).returning();
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Database", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "CREATE", "Database", item.id, item.name);
     return res.status(201).json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error creating database");
@@ -64,7 +65,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .returning();
     if (!item) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
     const ownerName = await resolveOwnerName(item.ownerId);
-    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Database", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "RESTORE", "Database", item.id, item.name);
     return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error restoring database");
@@ -127,7 +128,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .where(and(eq(databasesTable.id, id), isNull(databasesTable.deletedAt)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Database", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "DELETE", "Database", item.id, item.name);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting database");

@@ -2568,6 +2568,9 @@ export const listAuditLogsQueryLimitMax = 500;
 export const listAuditLogsQueryOffsetDefault = 0;
 
 export const ListAuditLogsQueryParams = zod.object({
+  "userId": zod.coerce.number().optional().describe('Filter by user ID'),
+  "action": zod.coerce.string().optional().describe('Filter by action (CREATE, UPDATE, DELETE, RESTORE)'),
+  "entityType": zod.coerce.string().optional().describe('Filter by entity type'),
   "limit": zod.coerce.number().max(listAuditLogsQueryLimitMax).default(listAuditLogsQueryLimitDefault),
   "offset": zod.coerce.number().default(listAuditLogsQueryOffsetDefault)
 })
@@ -2582,6 +2585,7 @@ export const ListAuditLogsResponse = zod.object({
   "userId": zod.number().nullish(),
   "userName": zod.string().nullish(),
   "changes": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
   "createdAt": zod.string()
 })),
   "total": zod.number()

@@ -5,7 +5,8 @@ import { parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable, domainsTable, repositoriesTable, releasesTable, vulnerabilitiesTable, softwareTable, documentsTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
-import { eq, isNull, isNotNull, count } from "drizzle-orm";
+import { eq, isNull, isNotNull, count, and } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 import { sql } from "drizzle-orm";
 const router = Router();
 
@@ -133,7 +134,7 @@ router.post("/users", async (req: Request, res: Response) => {
     };
 
     const [item] = await db.insert(usersTable).values(values).returning();
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "User", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "CREATE", "User", item.id, item.name);
     return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error creating user");
@@ -154,7 +155,7 @@ router.patch("/users/:id", async (req: Request, res: Response) => {
 
     const [item] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    await db.insert(auditLogsTable).values({ action: "UPDATE", entityType: "User", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "UPDATE", "User", item.id, item.name);
     return res.json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error updating user");
@@ -177,9 +178,16 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
 router.get("/audit-logs", async (req: Request, res: Response) => {
   try {
     const { limit, offset } = parsePagination(req);
+    const { userId, action, entityType } = req.query as Record<string, string>;
+    const conditions = [];
+    if (userId) conditions.push(eq(auditLogsTable.userId, parseInt(userId)));
+    if (action) conditions.push(eq(auditLogsTable.action, action));
+    if (entityType) conditions.push(eq(auditLogsTable.entityType, entityType));
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
     const [[{ total }], logs] = await Promise.all([
-      db.select({ total: count() }).from(auditLogsTable),
+      db.select({ total: count() }).from(auditLogsTable).where(where),
       db.select().from(auditLogsTable)
+        .where(where)
         .orderBy(sql`${auditLogsTable.createdAt} DESC`)
         .limit(limit)
         .offset(offset),

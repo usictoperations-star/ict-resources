@@ -6,6 +6,7 @@ import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable,
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
 import { eq, ilike, and, count, isNull, isNotNull, gte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -277,12 +278,5 @@ router.delete("/:id", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
-
-async function logAudit(req: Request, action: string, entityType: string, entityId: number, entityName: string) {
-  const { auditLogsTable: at } = await import("@workspace/db");
-  try {
-    await db.insert(at).values({ action, entityType, entityId, entityName, userName: "System" });
-  } catch {}
-}
 
 export default router;

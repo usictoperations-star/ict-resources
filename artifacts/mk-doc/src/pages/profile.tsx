@@ -48,10 +48,11 @@ export default function Profile() {
   const [pw, setPw] = useState({ newPassword: "", confirm: "" });
   const [pwErrors, setPwErrors] = useState<Record<string, string>>({});
 
-  const { data: allLogsPage } = useListAuditLogs({ limit: 200 });
-  const myLogs = (allLogsPage?.data ?? [])
-    .filter(l => l.userName === user?.name)
-    .slice(0, 20);
+  const { data: myLogsPage } = useListAuditLogs(
+    { userId: user?.id, limit: 20 },
+    { query: { enabled: !!user?.id, queryKey: ["/api/admin/audit-logs", user?.id] } },
+  );
+  const myLogs = myLogsPage?.data ?? [];
 
   useEffect(() => {
     if (user) {
