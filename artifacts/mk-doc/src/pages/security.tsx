@@ -235,6 +235,25 @@ function RiskIndicatorsView() {
 }
 
 // ── VIEW: Needs Attention ──────────────────────────────────────────────────────
+const TONE_ACCENT: Record<string, string> = {
+  danger:  "bg-red-500",
+  warning: "bg-amber-400",
+  default: "bg-blue-400",
+  ok:      "bg-emerald-400",
+};
+const TONE_ICON_CLASS: Record<string, string> = {
+  danger:  "text-red-500",
+  warning: "text-amber-500",
+  default: "text-blue-400",
+  ok:      "text-emerald-500",
+};
+const TONE_LABEL: Record<string, string> = {
+  danger:  "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+  warning: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+  default: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-300",
+  ok:      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+};
+
 function NeedsAttentionView() {
   const { data: dashboard, isLoading } = useGetSecurityDashboard();
 
@@ -242,230 +261,244 @@ function NeedsAttentionView() {
     if (!dashboard) return [];
     return [
       {
-        key: "criticalVulns", label: "Apps with Critical Vulnerabilities", icon: ShieldAlert,
+        key: "criticalVulns",
+        label: "Apps with Critical Vulnerabilities",
+        icon: ShieldAlert,
         tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
         items: dashboard.applicationsWithCriticalVulnerabilities,
-        emptyLabel: "No apps with open critical vulnerabilities",
-        render: (a: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <span className="text-sm">{a.applicationName ?? `App #${a.applicationId}`}</span>
-            <Badge variant="destructive" className="text-[10px] shrink-0">{a.criticalCount} critical</Badge>
-          </div>
-        ),
+        renderItem: (a: any) => ({
+          primary:   a.applicationName ?? `App #${a.applicationId}`,
+          secondary: null,
+          badge:     <Badge variant="destructive" className="text-[10px]">{a.criticalCount} critical</Badge>,
+        }),
       },
       {
-        key: "patches", label: "Servers Missing Patches", icon: ServerCog,
-        tone: toneOf(dashboard.serversMissingPatches.length),
-        items: dashboard.serversMissingPatches,
-        emptyLabel: "All servers are patched",
-        render: (s: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{s.name}</p>
-              <p className="text-[10px] text-muted-foreground">{s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}</p>
-            </div>
-            <Badge variant="outline" className="capitalize text-[10px] shrink-0">{s.patchStatus}</Badge>
-          </div>
-        ),
-      },
-      {
-        key: "ssl", label: "SSL Certificates Expiring Soon", icon: KeyRound,
-        tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
-        items: dashboard.sslCertificatesExpiringSoon,
-        emptyLabel: "No SSL certificates expiring soon",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{d.name}</p>
-              <p className="text-[10px] text-muted-foreground">{d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : "No expiry set"}</p>
-            </div>
-            {daysRemainingBadge(d.daysRemaining)}
-          </div>
-        ),
-      },
-      {
-        key: "domains", label: "Domains Expiring Soon", icon: Globe2,
-        tone: toneOf(dashboard.domainsExpiringSoon.length),
-        items: dashboard.domainsExpiringSoon,
-        emptyLabel: "No domains expiring soon",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{d.name}</p>
-              <p className="text-[10px] text-muted-foreground">{d.registrationExpiry ? new Date(d.registrationExpiry).toLocaleDateString() : "No expiry set"}</p>
-            </div>
-            {daysRemainingBadge(d.daysRemaining)}
-          </div>
-        ),
-      },
-      {
-        key: "backups", label: "Failed Backups", icon: DatabaseBackup,
+        key: "backups",
+        label: "Failed Backups",
+        icon: DatabaseBackup,
         tone: toneOf(dashboard.failedBackups.length, "danger"),
         items: dashboard.failedBackups,
-        emptyLabel: "All backups completed successfully",
-        render: (b: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{b.name}</p>
-              <p className="text-[10px] text-muted-foreground">{b.lastBackupAt ? new Date(b.lastBackupAt).toLocaleString() : "Never backed up"}</p>
-            </div>
-            <Badge variant="destructive" className="capitalize text-[10px] shrink-0">{b.lastBackupStatus}</Badge>
-          </div>
-        ),
+        renderItem: (b: any) => ({
+          primary:   b.name,
+          secondary: b.lastBackupAt ? `Last attempt ${new Date(b.lastBackupAt).toLocaleString()}` : "Never backed up",
+          badge:     <Badge variant="destructive" className="capitalize text-[10px]">{b.lastBackupStatus}</Badge>,
+        }),
       },
       {
-        key: "admins", label: "Admin Users", icon: UserCog,
-        tone: "default" as const,
-        items: dashboard.adminUsers,
-        emptyLabel: "No admin users found",
-        render: (u: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{u.name}</p>
-              <p className="text-[10px] text-muted-foreground">{u.email}</p>
-            </div>
-            {u.department && <Badge variant="outline" className="text-[10px] shrink-0">{u.department}</Badge>}
-          </div>
-        ),
-      },
-      {
-        key: "secrets", label: "Repos with Exposed Secrets", icon: LockKeyholeOpen,
+        key: "secrets",
+        label: "Repos with Exposed Secrets",
+        icon: LockKeyholeOpen,
         tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),
         items: dashboard.reposWithExposedSecrets,
-        emptyLabel: "No repositories with exposed secrets",
-        render: (r: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <p className="text-sm">{r.name}</p>
-            <p className="text-[10px] text-muted-foreground shrink-0">{r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}</p>
-          </div>
-        ),
+        renderItem: (r: any) => ({
+          primary:   r.name,
+          secondary: r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned",
+          badge:     null,
+        }),
       },
       {
-        key: "deps", label: "Outdated Dependencies", icon: PackageX,
+        key: "patches",
+        label: "Servers Missing Patches",
+        icon: ServerCog,
+        tone: toneOf(dashboard.serversMissingPatches.length),
+        items: dashboard.serversMissingPatches,
+        renderItem: (s: any) => ({
+          primary:   s.name,
+          secondary: s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched",
+          badge:     <Badge variant="outline" className="capitalize text-[10px]">{s.patchStatus}</Badge>,
+        }),
+      },
+      {
+        key: "ssl",
+        label: "SSL Certificates Expiring Soon",
+        icon: KeyRound,
+        tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
+        items: dashboard.sslCertificatesExpiringSoon,
+        renderItem: (d: any) => ({
+          primary:   d.name,
+          secondary: d.sslExpiry ? `Expires ${new Date(d.sslExpiry).toLocaleDateString()}` : "No expiry set",
+          badge:     daysRemainingBadge(d.daysRemaining),
+        }),
+      },
+      {
+        key: "domains",
+        label: "Domains Expiring Soon",
+        icon: Globe2,
+        tone: toneOf(dashboard.domainsExpiringSoon.length),
+        items: dashboard.domainsExpiringSoon,
+        renderItem: (d: any) => ({
+          primary:   d.name,
+          secondary: d.registrationExpiry ? `Expires ${new Date(d.registrationExpiry).toLocaleDateString()}` : "No expiry set",
+          badge:     daysRemainingBadge(d.daysRemaining),
+        }),
+      },
+      {
+        key: "deps",
+        label: "Outdated Dependencies",
+        icon: PackageX,
         tone: toneOf(dashboard.outdatedDependencies.length),
         items: dashboard.outdatedDependencies,
-        emptyLabel: "All dependencies are current",
-        render: (d: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm">{d.name}</p>
-              <p className="text-[10px] text-muted-foreground font-mono">{d.installedVersion ?? "?"} → {d.latestVersion ?? "?"}</p>
-            </div>
-            {d.endOfLife && <Badge variant="destructive" className="text-[10px] shrink-0">EOL</Badge>}
-          </div>
-        ),
+        renderItem: (d: any) => ({
+          primary:   d.name,
+          secondary: `${d.installedVersion ?? "?"} → ${d.latestVersion ?? "?"}`,
+          badge:     d.endOfLife ? <Badge variant="destructive" className="text-[10px]">EOL</Badge> : null,
+        }),
       },
       {
-        key: "scans", label: "Apps Not Recently Scanned", icon: ScanEye,
+        key: "scans",
+        label: "Apps Not Recently Scanned",
+        icon: ScanEye,
         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
         items: dashboard.applicationsNotRecentlyScanned,
-        emptyLabel: "All applications scanned recently",
-        render: (a: any) => (
-          <div className="flex items-center justify-between gap-3 py-1.5">
-            <p className="text-sm">{a.name}</p>
-            <p className="text-[10px] text-muted-foreground shrink-0">{a.lastSecurityScanAt ? `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned"}</p>
-          </div>
-        ),
+        renderItem: (a: any) => ({
+          primary:   a.name,
+          secondary: a.lastSecurityScanAt ? `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned",
+          badge:     null,
+        }),
+      },
+      {
+        key: "admins",
+        label: "Admin Users",
+        icon: UserCog,
+        tone: "default" as const,
+        items: dashboard.adminUsers,
+        renderItem: (u: any) => ({
+          primary:   u.name,
+          secondary: u.email,
+          badge:     u.department ? <Badge variant="outline" className="text-[10px]">{u.department}</Badge> : null,
+        }),
       },
     ];
   }, [dashboard]);
 
-  const flagged = categories.filter(c => c.items.length > 0);
-  const clear   = categories.filter(c => c.items.length === 0);
+  const TONE_ORDER = ["danger", "warning", "default", "ok"];
+  const sorted  = useMemo(
+    () => [...categories].sort((a, b) => TONE_ORDER.indexOf(a.tone) - TONE_ORDER.indexOf(b.tone)),
+    [categories],
+  );
+  const flagged = sorted.filter(c => c.items.length > 0 && c.tone !== "ok");
+  const clear   = sorted.filter(c => c.items.length === 0);
+  const danger  = flagged.filter(c => c.tone === "danger").length;
+  const warning = flagged.filter(c => c.tone === "warning").length;
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5 max-w-3xl">
+
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Needs Attention</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Items requiring review or remediation</p>
         </div>
-        {!isLoading && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Badge variant={flagged.length > 0 ? "destructive" : "outline"} className="text-xs">
-              {flagged.length} area{flagged.length !== 1 ? "s" : ""} flagged
-            </Badge>
-            <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">
-              {clear.length} clear
-            </Badge>
-          </div>
-        )}
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
-        </div>
-      ) : !dashboard ? null : (
-        <>
-          {/* Flagged cards */}
-          {flagged.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {flagged.map(cat => {
-                const Icon = cat.icon;
-                const isDanger  = cat.tone === "danger";
-                const isWarning = cat.tone === "warning";
-                return (
-                  <Card key={cat.key} className={`border ${isDanger ? "border-red-200 dark:border-red-800" : isWarning ? "border-amber-200 dark:border-amber-800" : "border-border"}`}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`p-1.5 rounded-md ${isDanger ? "bg-red-100 dark:bg-red-900/40" : isWarning ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted"}`}>
-                            <Icon className={`h-3.5 w-3.5 ${isDanger ? "text-red-600" : isWarning ? "text-amber-600" : "text-muted-foreground"}`} />
-                          </span>
-                          <CardTitle className="text-sm font-medium">{cat.label}</CardTitle>
-                        </div>
-                        <Badge
-                          variant={isDanger ? "destructive" : "secondary"}
-                          className="text-[10px] font-semibold shrink-0"
-                        >
-                          {cat.items.length}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-3">
-                      <div className="divide-y divide-border/60 max-h-52 overflow-y-auto">
-                        {cat.items.map((item, i) => (
-                          <div key={i}>{cat.render(item)}</div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+      {/* Summary strip */}
+      {!isLoading && dashboard && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {danger > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-full px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              {danger} critical area{danger !== 1 ? "s" : ""}
+            </span>
           )}
-
-          {/* All-clear section */}
-          {clear.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">
-                All clear
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
-                {clear.map(cat => {
-                  const Icon = cat.icon;
-                  return (
-                    <div key={cat.key} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 leading-tight truncate">{cat.label}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          {warning > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-full px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              {warning} warning{warning !== 1 ? "s" : ""}
+            </span>
           )}
-
           {flagged.length === 0 && (
-            <div className="flex flex-col items-center py-16 text-center">
-              <CheckCircle className="h-10 w-10 text-emerald-400 mb-3" />
-              <p className="text-base font-medium">Everything looks good</p>
-              <p className="text-sm text-muted-foreground mt-1">No items require attention right now.</p>
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-full px-3 py-1">
+              <CheckCircle className="h-3 w-3" />
+              All systems clear
+            </span>
           )}
-        </>
+          <span className="text-xs text-muted-foreground">
+            {clear.length} of {categories.length} areas clear
+          </span>
+        </div>
+      )}
+
+      {/* Body */}
+      {isLoading ? (
+        <Card>
+          <CardContent className="py-4 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+          </CardContent>
+        </Card>
+      ) : !dashboard ? null : flagged.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <CheckCircle className="h-10 w-10 text-emerald-400 mb-3" />
+            <p className="text-base font-medium">Everything looks good</p>
+            <p className="text-sm text-muted-foreground mt-1">No items require attention right now.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {flagged.map((cat, catIdx) => {
+              const Icon = cat.icon;
+              const isLast = catIdx === flagged.length - 1;
+              return (
+                <div key={cat.key} className={`${!isLast ? "border-b border-border/60" : ""}`}>
+                  {/* Category header row */}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-muted/30">
+                    <span className={`w-0.5 self-stretch rounded-full shrink-0 ${TONE_ACCENT[cat.tone]}`} />
+                    <span className={`p-1.5 rounded-md ${TONE_LABEL[cat.tone]}`}>
+                      <Icon className={`h-3.5 w-3.5 ${TONE_ICON_CLASS[cat.tone]}`} />
+                    </span>
+                    <span className="text-sm font-semibold flex-1 min-w-0">{cat.label}</span>
+                    <Badge
+                      variant={cat.tone === "danger" ? "destructive" : "secondary"}
+                      className="shrink-0 text-[10px] font-semibold tabular-nums"
+                    >
+                      {cat.items.length}
+                    </Badge>
+                  </div>
+
+                  {/* Item rows */}
+                  <div className="divide-y divide-border/40">
+                    {cat.items.map((item: any, i: number) => {
+                      const { primary, secondary, badge } = cat.renderItem(item);
+                      return (
+                        <div key={i} className="flex items-center gap-3 pl-10 pr-4 py-2.5 hover:bg-muted/20 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm leading-snug truncate">{primary}</p>
+                            {secondary && (
+                              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{secondary}</p>
+                            )}
+                          </div>
+                          {badge && <div className="shrink-0">{badge}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All-clear footer */}
+      {!isLoading && dashboard && clear.length > 0 && (
+        <div>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium mb-2 px-0.5">
+            All clear
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {clear.map(cat => {
+              const Icon = cat.icon;
+              return (
+                <span key={cat.key} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/50 rounded-full px-2.5 py-1 border border-border/50">
+                  <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
+                  {cat.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );
