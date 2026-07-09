@@ -3461,6 +3461,7 @@ components:
           type: string
         role:
           type: string
+          enum: [admin, editor, analyst, viewer]
         phone:
           type: ["string", "null"]
         department:
@@ -3481,6 +3482,7 @@ components:
           type: string
         role:
           type: string
+          enum: [admin, editor, analyst, viewer]
         phone:
           type: ["string", "null"]
         department:
@@ -3504,6 +3506,7 @@ components:
           minLength: 1
         role:
           type: string
+          enum: [admin, editor, analyst, viewer]
         phone:
           type: string
         department:
@@ -3521,6 +3524,7 @@ components:
           type: string
         role:
           type: string
+          enum: [admin, editor, analyst, viewer]
         phone:
           type: string
         department:

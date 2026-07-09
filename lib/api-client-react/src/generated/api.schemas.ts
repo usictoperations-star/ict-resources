@@ -994,11 +994,21 @@ export interface LoginInput {
   password: string;
 }
 
+export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
+
+
+export const AuthUserRole = {
+  admin: 'admin',
+  editor: 'editor',
+  analyst: 'analyst',
+  viewer: 'viewer',
+} as const;
+
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: AuthUserRole;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
@@ -1006,11 +1016,21 @@ export interface AuthUser {
   status: string;
 }
 
+export type UserRole = typeof UserRole[keyof typeof UserRole];
+
+
+export const UserRole = {
+  admin: 'admin',
+  editor: 'editor',
+  analyst: 'analyst',
+  viewer: 'viewer',
+} as const;
+
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
@@ -1021,21 +1041,41 @@ export interface User {
   createdAt: string;
 }
 
+export type UserInputRole = typeof UserInputRole[keyof typeof UserInputRole];
+
+
+export const UserInputRole = {
+  admin: 'admin',
+  editor: 'editor',
+  analyst: 'analyst',
+  viewer: 'viewer',
+} as const;
+
 export interface UserInput {
   /** @minLength 1 */
   name: string;
   /** @minLength 1 */
   email: string;
-  role: string;
+  role: UserInputRole;
   phone?: string;
   department?: string;
   status: string;
 }
 
+export type UserUpdateRole = typeof UserUpdateRole[keyof typeof UserUpdateRole];
+
+
+export const UserUpdateRole = {
+  admin: 'admin',
+  editor: 'editor',
+  analyst: 'analyst',
+  viewer: 'viewer',
+} as const;
+
 export interface UserUpdate {
   name?: string;
   email?: string;
-  role?: string;
+  role?: UserUpdateRole;
   phone?: string;
   department?: string;
   status?: string;

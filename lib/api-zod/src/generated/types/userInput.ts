@@ -5,13 +5,14 @@
  * MK Digital Operations Center API
  * OpenAPI spec version: 1.0.0
  */
+import type { UserInputRole } from './userInputRole';
 
 export interface UserInput {
   /** @minLength 1 */
   name: string;
   /** @minLength 1 */
   email: string;
-  role: string;
+  role: UserInputRole;
   phone?: string;
   department?: string;
   status: string;

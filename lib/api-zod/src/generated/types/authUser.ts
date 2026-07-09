@@ -5,12 +5,13 @@
  * MK Digital Operations Center API
  * OpenAPI spec version: 1.0.0
  */
+import type { AuthUserRole } from './authUserRole';
 
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: AuthUserRole;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

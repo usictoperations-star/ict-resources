@@ -5,11 +5,12 @@
  * MK Digital Operations Center API
  * OpenAPI spec version: 1.0.0
  */
+import type { UserUpdateRole } from './userUpdateRole';
 
 export interface UserUpdate {
   name?: string;
   email?: string;
-  role?: string;
+  role?: UserUpdateRole;
   phone?: string;
   department?: string;
   status?: string;
