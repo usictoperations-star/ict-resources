@@ -1,3 +1,4 @@
+import "./session";
 import type { Request } from "express";
 import { db } from "@workspace/db";
 import { auditLogsTable } from "@workspace/db";
@@ -17,11 +18,13 @@ export async function logAudit(
 ): Promise<void> {
   try {
     const ipAddress = getClientIp(req);
+    const userId = (req.session as any).userId as number | null ?? null;
     await db.insert(auditLogsTable).values({
       action,
       entityType,
       entityId,
       entityName,
+      userId,
       userName: "System",
       ipAddress,
     });

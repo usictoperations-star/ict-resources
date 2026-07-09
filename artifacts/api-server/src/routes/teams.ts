@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
-import { teamsTable, auditLogsTable } from "@workspace/db";
+import { teamsTable } from "@workspace/db";
 import { CreateTeamBody, UpdateTeamBody } from "@workspace/api-zod";
 import { eq, count } from "drizzle-orm";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const body = CreateTeamBody.parse(req.body);
     const [item] = await db.insert(teamsTable).values(body).returning();
-    await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Team", entityId: item.id, entityName: item.name, userName: "System" });
+    await logAudit(req, "CREATE", "Team", item.id, item.name);
     return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error creating team");
