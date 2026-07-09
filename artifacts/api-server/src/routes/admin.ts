@@ -6,8 +6,6 @@ import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastr
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
 import { eq, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { z } from "zod/v4";
-
 const router = Router();
 
 router.get("/deleted-records", async (req: Request, res: Response) => {

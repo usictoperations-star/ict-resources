@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import {
   vulnerabilitiesTable,
@@ -183,7 +184,7 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
 
 router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateVulnerabilityBody.parse(req.body);
     const [item] = await db.update(vulnerabilitiesTable).set({ ...body, updatedAt: new Date() }).where(eq(vulnerabilitiesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -196,7 +197,7 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
 
 router.delete("/vulnerabilities/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.delete(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();

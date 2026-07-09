@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { releasesTable, applicationsTable, auditLogsTable } from "@workspace/db";
 import { CreateReleaseBody, UpdateReleaseBody } from "@workspace/api-zod";
@@ -47,7 +48,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.select().from(releasesTable).where(eq(releasesTable.id, id));
     if (!item) return res.status(404).json({ error: "Not found" });
     const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId));
@@ -60,7 +61,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateReleaseBody.parse(req.body);
     const [item] = await db.update(releasesTable).set({ ...body, updatedAt: new Date() }).where(eq(releasesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -73,7 +74,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.delete(releasesTable).where(eq(releasesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();

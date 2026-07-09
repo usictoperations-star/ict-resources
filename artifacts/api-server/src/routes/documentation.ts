@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { documentsTable, applicationsTable, auditLogsTable } from "@workspace/db";
 import { CreateDocumentBody, UpdateDocumentBody } from "@workspace/api-zod";
@@ -47,7 +48,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.select().from(documentsTable).where(eq(documentsTable.id, id));
     if (!item) return res.status(404).json({ error: "Not found" });
     const appName = item.applicationId ? (await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId)))[0]?.name ?? null : null;
@@ -60,7 +61,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateDocumentBody.parse(req.body);
     const [item] = await db.update(documentsTable).set({ ...body, updatedAt: new Date() }).where(eq(documentsTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -73,7 +74,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.delete(documentsTable).where(eq(documentsTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();

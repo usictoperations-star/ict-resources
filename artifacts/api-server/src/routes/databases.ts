@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { databasesTable, auditLogsTable } from "@workspace/db";
 import { CreateDatabaseBody, UpdateDatabaseRecordBody } from "@workspace/api-zod";
@@ -38,7 +39,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.post("/:id/restore", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [item] = await db.update(databasesTable)
       .set({ deletedAt: null, updatedAt: new Date() })
@@ -55,7 +56,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.select().from(databasesTable).where(and(eq(databasesTable.id, id), isNull(databasesTable.deletedAt)));
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.json(fmt(item));
@@ -67,7 +68,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateDatabaseRecordBody.parse(req.body);
     const [item] = await db.update(databasesTable)
       .set({ ...body, updatedAt: new Date() })
@@ -83,7 +84,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.update(databasesTable)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(databasesTable.id, id), isNull(databasesTable.deletedAt)))

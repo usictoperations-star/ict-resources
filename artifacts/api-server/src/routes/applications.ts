@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable } from "@workspace/db";
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
@@ -90,7 +91,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.post("/:id/restore", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [app] = await db.update(applicationsTable)
       .set({ deletedAt: null, updatedAt: new Date() })
@@ -107,7 +108,7 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
 
 router.get("/:id/dependents", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [app] = await db.select({ id: applicationsTable.id }).from(applicationsTable).where(eq(applicationsTable.id, id));
     if (!app) return res.status(404).json({ error: "Not found" });
 
@@ -144,7 +145,7 @@ router.get("/:id/dependents", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [app] = await db.select().from(applicationsTable).where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
     if (!app) return res.status(404).json({ error: "Not found" });
     return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: app.deletedAt ? app.deletedAt.toISOString() : null });
@@ -156,7 +157,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateApplicationBody.parse(req.body);
     const [app] = await db.update(applicationsTable)
       .set({ ...body, updatedAt: new Date() })
@@ -173,7 +174,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [app] = await db.update(applicationsTable)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))

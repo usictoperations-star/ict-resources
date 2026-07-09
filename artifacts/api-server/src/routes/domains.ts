@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { domainsTable, auditLogsTable } from "@workspace/db";
 import { CreateDomainBody, UpdateDomainBody } from "@workspace/api-zod";
@@ -49,7 +50,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.get("/:id/history", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const entries = await db
       .select()
       .from(auditLogsTable)
@@ -74,7 +75,7 @@ router.get("/:id/history", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.select().from(domainsTable).where(eq(domainsTable.id, id));
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.json({ ...item, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
@@ -86,7 +87,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateDomainBody.parse(req.body);
     const [item] = await db.update(domainsTable).set({ ...body, updatedAt: new Date() }).where(eq(domainsTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -99,7 +100,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.delete(domainsTable).where(eq(domainsTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();

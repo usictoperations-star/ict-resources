@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
 import { softwareTable, auditLogsTable } from "@workspace/db";
 import { CreateSoftwareBody, UpdateSoftwareBody } from "@workspace/api-zod";
@@ -37,7 +38,7 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const body = UpdateSoftwareBody.parse(req.body);
     const [item] = await db.update(softwareTable).set({ ...body, updatedAt: new Date() }).where(eq(softwareTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -50,7 +51,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseIdParam(req);
     const [item] = await db.delete(softwareTable).where(eq(softwareTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();
