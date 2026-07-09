@@ -433,10 +433,19 @@ const TONE_LABEL: Record<string, string> = {
   ok:      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
 };
 
-// Shared row wrapper used by all item renderers
+// Shared row wrapper — used by list-layout categories
 function AttentionRow({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 pl-10 pr-4 py-2.5 hover:bg-muted/20 transition-colors min-h-[44px]">
+      {children}
+    </div>
+  );
+}
+
+// Card wrapper — used by grid-layout categories
+function AttentionCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`flex flex-col justify-between rounded-lg border border-border/50 bg-card hover:bg-muted/20 transition-colors p-3 min-h-[76px] ${className ?? ""}`}>
       {children}
     </div>
   );
@@ -455,19 +464,20 @@ function NeedsAttentionView() {
         icon: ShieldAlert,
         tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
         items: dashboard.applicationsWithCriticalVulnerabilities,
+        useGrid: true,
         renderItem: (a: any) => (
-          <AttentionRow>
-            <div className="flex-1 min-w-0">
+          <AttentionCard>
+            <div className="min-w-0">
               <p className="text-sm font-medium leading-snug truncate">
                 {a.applicationName ?? `App #${a.applicationId}`}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Application</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Application</p>
             </div>
-            <div className="flex flex-col items-end shrink-0">
-              <span className="text-xl font-bold text-red-600 tabular-nums leading-none">{a.criticalCount}</span>
-              <span className="text-[9px] font-semibold text-red-400 uppercase tracking-wide mt-0.5">critical</span>
+            <div className="flex items-end justify-between mt-2">
+              <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wide">critical vulns</span>
+              <span className="text-2xl font-bold text-red-600 tabular-nums leading-none">{a.criticalCount}</span>
             </div>
-          </AttentionRow>
+          </AttentionCard>
         ),
       },
       // ── Failed Backups ────────────────────────────────────────────────────
@@ -534,6 +544,7 @@ function NeedsAttentionView() {
         icon: KeyRound,
         tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
         items: dashboard.sslCertificatesExpiringSoon,
+        useGrid: true,
         renderItem: (d: any) => {
           const days = d.daysRemaining as number | null;
           const overdue  = days != null && days < 0;
@@ -543,24 +554,24 @@ function NeedsAttentionView() {
                     : urgent ? "text-orange-500 dark:text-orange-400"
                     : "text-amber-500 dark:text-amber-400";
           return (
-            <AttentionRow>
-              <div className="flex-1 min-w-0">
+            <AttentionCard>
+              <div className="min-w-0">
                 <p className="text-sm font-medium leading-snug truncate">{d.name}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   {d.sslExpiry ? `Expires ${new Date(d.sslExpiry).toLocaleDateString()}` : "No expiry set"}
                 </p>
               </div>
-              {days != null ? (
-                <div className="flex flex-col items-end shrink-0">
-                  <span className={`text-xl font-bold tabular-nums leading-none ${col}`}>{Math.abs(days)}</span>
-                  <span className={`text-[9px] font-semibold uppercase tracking-wide mt-0.5 ${col}`}>
-                    {overdue ? "days over" : "days left"}
-                  </span>
-                </div>
-              ) : (
-                <Badge variant="outline" className="text-[10px] shrink-0">No expiry</Badge>
-              )}
-            </AttentionRow>
+              <div className="flex items-end justify-between mt-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${col}`}>
+                  {overdue ? "days over" : "days left"}
+                </span>
+                {days != null ? (
+                  <span className={`text-2xl font-bold tabular-nums leading-none ${col}`}>{Math.abs(days)}</span>
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">N/A</Badge>
+                )}
+              </div>
+            </AttentionCard>
           );
         },
       },
@@ -605,28 +616,29 @@ function NeedsAttentionView() {
         icon: PackageX,
         tone: toneOf(dashboard.outdatedDependencies.length),
         items: dashboard.outdatedDependencies,
+        useGrid: true,
         renderItem: (d: any) => (
-          <AttentionRow>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+          <AttentionCard>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
                 <p className="text-sm font-medium leading-snug truncate">{d.name}</p>
                 {d.endOfLife && (
-                  <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-wide bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-1.5 py-0.5 rounded">
+                  <span className="shrink-0 inline-flex items-center text-[9px] font-bold uppercase tracking-wide bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-1.5 py-0.5 rounded">
                     EOL
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-1">
-                <code className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono">
-                  {d.installedVersion ?? "unknown"}
-                </code>
-                <span className="text-muted-foreground text-[10px]">→</span>
-                <code className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-mono">
-                  {d.latestVersion ?? "unknown"}
-                </code>
-              </div>
             </div>
-          </AttentionRow>
+            <div className="flex items-center gap-1.5 mt-2">
+              <code className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono truncate">
+                {d.installedVersion ?? "?"}
+              </code>
+              <span className="text-muted-foreground text-[10px] shrink-0">→</span>
+              <code className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-mono truncate">
+                {d.latestVersion ?? "?"}
+              </code>
+            </div>
+          </AttentionCard>
         ),
       },
       // ── Not Recently Scanned ──────────────────────────────────────────────
@@ -636,6 +648,7 @@ function NeedsAttentionView() {
         icon: ScanEye,
         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
         items: dashboard.applicationsNotRecentlyScanned,
+        useGrid: true,
         renderItem: (a: any) => {
           const daysSince = a.lastSecurityScanAt
             ? Math.floor((Date.now() - new Date(a.lastSecurityScanAt).getTime()) / 86_400_000)
@@ -644,27 +657,24 @@ function NeedsAttentionView() {
           const critical = !never && daysSince! > 90;
           const col = never || critical ? "text-red-600 dark:text-red-400" : "text-amber-500 dark:text-amber-400";
           return (
-            <AttentionRow>
-              <div className="flex-1 min-w-0">
+            <AttentionCard>
+              <div className="min-w-0">
                 <p className="text-sm font-medium leading-snug truncate">{a.name}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {never
-                    ? "Never scanned"
-                    : `Last scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}`}
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {never ? "Never scanned" : `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}`}
                 </p>
               </div>
-              {never ? (
-                <div className="flex flex-col items-end shrink-0">
-                  <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Never</span>
-                  <span className="text-[9px] text-red-400 dark:text-red-500 mt-0.5">scanned</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-end shrink-0">
-                  <span className={`text-xl font-bold tabular-nums leading-none ${col}`}>{daysSince}</span>
-                  <span className={`text-[9px] font-semibold uppercase tracking-wide mt-0.5 ${col}`}>days ago</span>
-                </div>
-              )}
-            </AttentionRow>
+              <div className="flex items-end justify-between mt-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${col}`}>
+                  {never ? "not scanned" : "days ago"}
+                </span>
+                {never ? (
+                  <span className="text-sm font-bold text-red-600 dark:text-red-400">Never</span>
+                ) : (
+                  <span className={`text-2xl font-bold tabular-nums leading-none ${col}`}>{daysSince}</span>
+                )}
+              </div>
+            </AttentionCard>
           );
         },
       },
@@ -773,12 +783,20 @@ function NeedsAttentionView() {
                       {cat.items.length}
                     </Badge>
                   </div>
-                  {/* Item rows — each renderItem returns full JSX */}
-                  <div className="divide-y divide-border/40">
-                    {cat.items.map((item: any, i: number) => (
-                      <div key={i}>{cat.renderItem(item)}</div>
-                    ))}
-                  </div>
+                  {/* Item rows — grid or list depending on category */}
+                  {(cat as any).useGrid ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3">
+                      {cat.items.map((item: any, i: number) => (
+                        <div key={i}>{cat.renderItem(item)}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border/40">
+                      {cat.items.map((item: any, i: number) => (
+                        <div key={i}>{cat.renderItem(item)}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
