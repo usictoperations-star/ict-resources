@@ -1,0 +1,30 @@
+# CODEOWNERS
+# Each line is a pattern followed by one or more owners.
+# The last matching pattern takes the highest precedence.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all files require review from the tech lead
+*                          @tech-lead
+
+# OpenAPI spec — requires API architect review
+lib/api-spec/              @tech-lead @api-architect
+
+# Generated files — auto-approved (no human review needed)
+lib/api-client-react/src/generated/  @tech-lead
+lib/api-zod/src/generated/           @tech-lead
+
+# Database schema — requires DBA or senior engineer review
+lib/db/src/schema/         @tech-lead @db-admin
+
+# Security-sensitive files
+artifacts/api-server/src/middlewares/  @tech-lead @security-team
+artifacts/api-server/src/lib/session.ts @tech-lead @security-team
+SECURITY.md                            @security-team
+
+# CI/CD — requires DevOps review
+.github/workflows/         @tech-lead @devops-team
+
+# Documentation
+docs/                      @tech-lead
+README.md                  @tech-lead
+CONTRIBUTING.md            @tech-lead

@@ -1,55 +1,93 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
-dist
-tmp
-out-tsc
+# ── Compiled Output ───────────────────────────────────────────────────────────
+dist/
+tmp/
+out-tsc/
+build/
 *.tsbuildinfo
-.expo
-.expo-shared
 
-# playwright
-test-results
-playwright-report
-blob-report
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Environment & Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+coverage/
+/test-results/
+/playwright-report/
+/blob-report/
 playwright/.cache
+*.lcov
 
-# dependencies
-node_modules
+# ── Expo / React Native ───────────────────────────────────────────────────────
+.expo/
+.expo-shared/
+expo-env.d.ts
 
-# IDEs and editors
-/.idea
+# ── OS Generated ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDEs & Editors ────────────────────────────────────────────────────────────
+/.idea/
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
+*.swp
+*.swo
+*~
 
-# IDE - VSCode
+# ── VSCode ────────────────────────────────────────────────────────────────────
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# misc
-/.sass-cache
+# ── Drizzle / DB ─────────────────────────────────────────────────────────────
+# Keep migration files but ignore local DB artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+/.sass-cache/
 /connect.lock
-/coverage
 /libpeerconnection.log
-npm-debug.log
-yarn-error.log
 testem.log
-/typings
+/typings/
+*.tgz
+*.zip
+.cache/
 
-# System Files
-.DS_Store
-Thumbs.db
-
+# ── Replit Platform ───────────────────────────────────────────────────────────
+.local/
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
-
-# Replit
-.cache/
-.local/
