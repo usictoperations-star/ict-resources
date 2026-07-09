@@ -5,7 +5,7 @@ import { applicationsTable } from "./applications";
 
 export const releasesTable = pgTable("releases", {
   id: serial("id").primaryKey(),
-  applicationId: integer("application_id").notNull().references(() => applicationsTable.id, { onDelete: "cascade" }),
+  applicationId: integer("application_id").references(() => applicationsTable.id, { onDelete: "set null" }),
   version: text("version").notNull(),
   environment: text("environment").notNull().default("Production"),
   status: text("status").notNull().default("Deployed"),

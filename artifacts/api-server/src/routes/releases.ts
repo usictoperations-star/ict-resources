@@ -58,7 +58,9 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .where(and(eq(releasesTable.id, id), isNotNull(releasesTable.deletedAt), gte(releasesTable.deletedAt, cutoff)))
       .returning();
     if (!item) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
-    const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId));
+    const [app] = item.applicationId
+      ? await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId))
+      : [undefined];
     await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Release", entityId: item.id, entityName: `v${item.version}`, userName: "System" });
     return res.json(fmt(item, app?.name ?? null));
   } catch (err) {
@@ -72,7 +74,9 @@ router.get("/:id", async (req: Request, res: Response) => {
     const id = parseIdParam(req);
     const [item] = await db.select().from(releasesTable).where(and(eq(releasesTable.id, id), isNull(releasesTable.deletedAt)));
     if (!item) return res.status(404).json({ error: "Not found" });
-    const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId));
+    const [app] = item.applicationId
+      ? await db.select().from(applicationsTable).where(eq(applicationsTable.id, item.applicationId))
+      : [undefined];
     return res.json(fmt(item, app?.name ?? null));
   } catch (err) {
     req.log.error({ err }, "Error fetching release");
