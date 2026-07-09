@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { CreateDatabaseBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
-import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord, useDeleteDatabaseRecord } from "@workspace/api-client-react";
+import { useListDatabases, useCreateDatabase, useUpdateDatabaseRecord, useDeleteDatabaseRecord, useGetDatabaseDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -71,6 +71,11 @@ export default function Databases() {
   const isPending = isCreating || isUpdating;
   const { page, setPage, totalPages, pageItems: pagedDatabases, startIndex, endIndex, total } = usePagination(databases, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const { data: dependents, isLoading: isLoadingDependents } = useGetDatabaseDependents(
+    deleteTarget?.id ?? 0,
+    { query: { enabled: !!deleteTarget, queryKey: ["/api/databases", deleteTarget?.id, "dependents"] } }
+  );
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -259,9 +264,12 @@ export default function Databases() {
         open={!!deleteTarget}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
         entityName="database"
+        entityKind="database"
         itemLabel={deleteTarget?.name ?? ""}
         isPending={isDeleting}
         onConfirm={handleDelete}
+        dependents={dependents}
+        isLoadingDependents={isLoadingDependents}
       />
     </div>
   );

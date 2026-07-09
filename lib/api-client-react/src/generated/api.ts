@@ -31,6 +31,7 @@ import type {
   AuditLog,
   AuthUser,
   DashboardStats,
+  DatabaseDependents,
   DatabaseInput,
   DatabaseRecord,
   DatabaseUpdate,
@@ -45,6 +46,7 @@ import type {
   ErrorEnvelope,
   GlobalSearchParams,
   HealthStatus,
+  InfrastructureDependents,
   InfrastructureInput,
   InfrastructureItem,
   InfrastructureUpdate,
@@ -1464,6 +1466,83 @@ export const useCreateInfrastructure = <TError = ErrorType<unknown>,
       return useMutation(getCreateInfrastructureMutationOptions(options));
     }
 
+export const getGetInfrastructureDependentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/infrastructure/${id}/dependents`
+}
+
+/**
+ * @summary Get counts of applications dependent on this infrastructure item
+ */
+export const getInfrastructureDependents = async (id: number, options?: RequestInit): Promise<InfrastructureDependents> => {
+
+  return customFetch<InfrastructureDependents>(getGetInfrastructureDependentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInfrastructureDependentsQueryKey = (id: number,) => {
+    return [
+    `/api/infrastructure/${id}/dependents`
+    ] as const;
+    }
+
+
+export const getGetInfrastructureDependentsQueryOptions = <TData = Awaited<ReturnType<typeof getInfrastructureDependents>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInfrastructureDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInfrastructureDependentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInfrastructureDependents>>> = ({ signal }) => getInfrastructureDependents(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInfrastructureDependents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInfrastructureDependentsQueryResult = NonNullable<Awaited<ReturnType<typeof getInfrastructureDependents>>>
+export type GetInfrastructureDependentsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get counts of applications dependent on this infrastructure item
+ */
+
+export function useGetInfrastructureDependents<TData = Awaited<ReturnType<typeof getInfrastructureDependents>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInfrastructureDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInfrastructureDependentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetInfrastructureUrl = (id: number,) => {
 
 
@@ -1898,6 +1977,83 @@ export const useCreateDatabase = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateDatabaseMutationOptions(options));
     }
+
+export const getGetDatabaseDependentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/databases/${id}/dependents`
+}
+
+/**
+ * @summary Get counts of applications dependent on this database record
+ */
+export const getDatabaseDependents = async (id: number, options?: RequestInit): Promise<DatabaseDependents> => {
+
+  return customFetch<DatabaseDependents>(getGetDatabaseDependentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDatabaseDependentsQueryKey = (id: number,) => {
+    return [
+    `/api/databases/${id}/dependents`
+    ] as const;
+    }
+
+
+export const getGetDatabaseDependentsQueryOptions = <TData = Awaited<ReturnType<typeof getDatabaseDependents>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDatabaseDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDatabaseDependentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDatabaseDependents>>> = ({ signal }) => getDatabaseDependents(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDatabaseDependents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDatabaseDependentsQueryResult = NonNullable<Awaited<ReturnType<typeof getDatabaseDependents>>>
+export type GetDatabaseDependentsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get counts of applications dependent on this database record
+ */
+
+export function useGetDatabaseDependents<TData = Awaited<ReturnType<typeof getDatabaseDependents>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDatabaseDependents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDatabaseDependentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetDatabaseRecordUrl = (id: number,) => {
 

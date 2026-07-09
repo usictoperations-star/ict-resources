@@ -252,6 +252,16 @@ export interface ApplicationDependents {
   total: number;
 }
 
+export interface InfrastructureDependents {
+  applications: number;
+  total: number;
+}
+
+export interface DatabaseDependents {
+  applications: number;
+  total: number;
+}
+
 export interface InfrastructureItem {
   id: number;
   name: string;

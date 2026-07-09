@@ -2,9 +2,9 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
-import { databasesTable, auditLogsTable, usersTable } from "@workspace/db";
+import { databasesTable, auditLogsTable, usersTable, applicationsTable } from "@workspace/db";
 import { CreateDatabaseBody, UpdateDatabaseRecordBody } from "@workspace/api-zod";
-import { eq, and, isNull, isNotNull, gte } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, gte, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -63,6 +63,20 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
     return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error restoring database");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/:id/dependents", async (req: Request, res: Response) => {
+  try {
+    const id = parseIdParam(req);
+    const [item] = await db.select({ id: databasesTable.id }).from(databasesTable).where(and(eq(databasesTable.id, id), isNull(databasesTable.deletedAt)));
+    if (!item) return res.status(404).json({ error: "Not found" });
+    const [appsResult] = await db.select({ n: count() }).from(applicationsTable).where(and(eq(applicationsTable.databaseId, id), isNull(applicationsTable.deletedAt)));
+    const applications = appsResult?.n ?? 0;
+    return res.json({ applications, total: applications });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching database dependents");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

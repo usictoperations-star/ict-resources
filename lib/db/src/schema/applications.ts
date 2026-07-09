@@ -2,6 +2,8 @@ import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
+import { infrastructureTable } from "./infrastructure";
+import { databasesTable } from "./databases";
 
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
@@ -26,6 +28,8 @@ export const applicationsTable = pgTable("applications", {
   language: text("language"),
   database: text("database"),
   serverName: text("server_name"),
+  infrastructureId: integer("infrastructure_id").references(() => infrastructureTable.id),
+  databaseId: integer("database_id").references(() => databasesTable.id),
   hostingProvider: text("hosting_provider"),
   domain: text("domain"),
   currentVersion: text("current_version"),

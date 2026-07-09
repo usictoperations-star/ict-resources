@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { CreateInfrastructureBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
-import { useListInfrastructure, useCreateInfrastructure, useUpdateInfrastructure, useDeleteInfrastructure } from "@workspace/api-client-react";
+import { useListInfrastructure, useCreateInfrastructure, useUpdateInfrastructure, useDeleteInfrastructure, useGetInfrastructureDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -74,6 +74,11 @@ export default function Infrastructure() {
   const isPending = isCreating || isUpdating;
   const { page, setPage, totalPages, pageItems: pagedInfra, startIndex, endIndex, total } = usePagination(infra, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const { data: dependents, isLoading: isLoadingDependents } = useGetInfrastructureDependents(
+    deleteTarget?.id ?? 0,
+    { query: { enabled: !!deleteTarget, queryKey: ["/api/infrastructure", deleteTarget?.id, "dependents"] } }
+  );
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -265,9 +270,12 @@ export default function Infrastructure() {
         open={!!deleteTarget}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
         entityName="server"
+        entityKind="server"
         itemLabel={deleteTarget?.name ?? ""}
         isPending={isDeleting}
         onConfirm={handleDelete}
+        dependents={dependents}
+        isLoadingDependents={isLoadingDependents}
       />
     </div>
   );

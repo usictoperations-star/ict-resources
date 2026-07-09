@@ -537,6 +537,19 @@ export const CreateInfrastructureResponse = zod.object({
 
 
 /**
+ * @summary Get counts of applications dependent on this infrastructure item
+ */
+export const GetInfrastructureDependentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetInfrastructureDependentsResponse = zod.object({
+  "applications": zod.number(),
+  "total": zod.number()
+})
+
+
+/**
  * @summary Get infrastructure item
  */
 export const GetInfrastructureParams = zod.object({
@@ -720,6 +733,19 @@ export const CreateDatabaseResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get counts of applications dependent on this database record
+ */
+export const GetDatabaseDependentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetDatabaseDependentsResponse = zod.object({
+  "applications": zod.number(),
+  "total": zod.number()
 })
 
 

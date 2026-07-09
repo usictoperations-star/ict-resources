@@ -365,6 +365,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/InfrastructureItem"
 
+  /infrastructure/{id}/dependents:
+    get:
+      operationId: getInfrastructureDependents
+      tags: [infrastructure]
+      summary: Get counts of applications dependent on this infrastructure item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dependent record counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureDependents"
+        "404":
+          description: Not found
+
   /infrastructure/{id}:
     get:
       operationId: getInfrastructure
@@ -473,6 +494,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DatabaseRecord"
+
+  /databases/{id}/dependents:
+    get:
+      operationId: getDatabaseDependents
+      tags: [databases]
+      summary: Get counts of applications dependent on this database record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dependent record counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseDependents"
+        "404":
+          description: Not found
 
   /databases/{id}:
     get:
@@ -1930,6 +1972,24 @@ components:
         total:
           type: integer
       required: [releases, documents, vulnerabilities, software, repositories, domains, total]
+
+    InfrastructureDependents:
+      type: object
+      properties:
+        applications:
+          type: integer
+        total:
+          type: integer
+      required: [applications, total]
+
+    DatabaseDependents:
+      type: object
+      properties:
+        applications:
+          type: integer
+        total:
+          type: integer
+      required: [applications, total]
 
     # ── Infrastructure ────────────────────────────────────────────────────
     InfrastructureItem:
