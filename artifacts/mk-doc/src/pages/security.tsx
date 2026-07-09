@@ -433,119 +433,259 @@ const TONE_LABEL: Record<string, string> = {
   ok:      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
 };
 
+// Shared row wrapper used by all item renderers
+function AttentionRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 pl-10 pr-4 py-2.5 hover:bg-muted/20 transition-colors min-h-[44px]">
+      {children}
+    </div>
+  );
+}
+
 function NeedsAttentionView() {
   const { data: dashboard, isLoading } = useGetSecurityDashboard();
 
   const categories = useMemo(() => {
     if (!dashboard) return [];
     return [
+      // ── Critical Vulnerabilities ──────────────────────────────────────────
       {
         key: "criticalVulns",
         label: "Apps with Critical Vulnerabilities",
         icon: ShieldAlert,
         tone: toneOf(dashboard.applicationsWithCriticalVulnerabilities.length, "danger"),
         items: dashboard.applicationsWithCriticalVulnerabilities,
-        renderItem: (a: any) => ({
-          primary:   a.applicationName ?? `App #${a.applicationId}`,
-          secondary: null,
-          badge:     <Badge variant="destructive" className="text-[10px]">{a.criticalCount} critical</Badge>,
-        }),
+        renderItem: (a: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-snug truncate">
+                {a.applicationName ?? `App #${a.applicationId}`}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Application</p>
+            </div>
+            <div className="flex flex-col items-end shrink-0">
+              <span className="text-xl font-bold text-red-600 tabular-nums leading-none">{a.criticalCount}</span>
+              <span className="text-[9px] font-semibold text-red-400 uppercase tracking-wide mt-0.5">critical</span>
+            </div>
+          </AttentionRow>
+        ),
       },
+      // ── Failed Backups ────────────────────────────────────────────────────
       {
         key: "backups",
         label: "Failed Backups",
         icon: DatabaseBackup,
         tone: toneOf(dashboard.failedBackups.length, "danger"),
         items: dashboard.failedBackups,
-        renderItem: (b: any) => ({
-          primary:   b.name,
-          secondary: b.lastBackupAt ? `Last attempt ${new Date(b.lastBackupAt).toLocaleString()}` : "Never backed up",
-          badge:     <Badge variant="destructive" className="capitalize text-[10px]">{b.lastBackupStatus}</Badge>,
-        }),
+        renderItem: (b: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-snug truncate">{b.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {b.lastBackupAt ? `Last attempt ${new Date(b.lastBackupAt).toLocaleString()}` : "Never backed up"}
+              </p>
+            </div>
+            <Badge variant="destructive" className="capitalize text-[10px] shrink-0">{b.lastBackupStatus}</Badge>
+          </AttentionRow>
+        ),
       },
+      // ── Exposed Secrets ───────────────────────────────────────────────────
       {
         key: "secrets",
         label: "Repos with Exposed Secrets",
         icon: LockKeyholeOpen,
         tone: toneOf(dashboard.reposWithExposedSecrets.length, "danger"),
         items: dashboard.reposWithExposedSecrets,
-        renderItem: (r: any) => ({
-          primary:   r.name,
-          secondary: r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned",
-          badge:     null,
-        }),
+        renderItem: (r: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-snug truncate">{r.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {r.lastScannedAt ? `Scanned ${new Date(r.lastScannedAt).toLocaleDateString()}` : "Never scanned"}
+              </p>
+            </div>
+            <Badge variant="destructive" className="text-[10px] shrink-0">Exposed</Badge>
+          </AttentionRow>
+        ),
       },
+      // ── Missing Patches ───────────────────────────────────────────────────
       {
         key: "patches",
         label: "Servers Missing Patches",
         icon: ServerCog,
         tone: toneOf(dashboard.serversMissingPatches.length),
         items: dashboard.serversMissingPatches,
-        renderItem: (s: any) => ({
-          primary:   s.name,
-          secondary: s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched",
-          badge:     <Badge variant="outline" className="capitalize text-[10px]">{s.patchStatus}</Badge>,
-        }),
+        renderItem: (s: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-snug truncate">{s.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {s.lastPatchedAt ? `Last patched ${new Date(s.lastPatchedAt).toLocaleDateString()}` : "Never patched"}
+              </p>
+            </div>
+            <Badge variant="outline" className="capitalize text-[10px] shrink-0">{s.patchStatus}</Badge>
+          </AttentionRow>
+        ),
       },
+      // ── SSL Expiry ────────────────────────────────────────────────────────
       {
         key: "ssl",
         label: "SSL Certificates Expiring Soon",
         icon: KeyRound,
         tone: toneOf(dashboard.sslCertificatesExpiringSoon.length),
         items: dashboard.sslCertificatesExpiringSoon,
-        renderItem: (d: any) => ({
-          primary:   d.name,
-          secondary: d.sslExpiry ? `Expires ${new Date(d.sslExpiry).toLocaleDateString()}` : "No expiry set",
-          badge:     daysRemainingBadge(d.daysRemaining),
-        }),
+        renderItem: (d: any) => {
+          const days = d.daysRemaining as number | null;
+          const overdue  = days != null && days < 0;
+          const critical = days != null && !overdue && days <= 7;
+          const urgent   = days != null && !overdue && !critical && days <= 14;
+          const col = overdue || critical ? "text-red-600 dark:text-red-400"
+                    : urgent ? "text-orange-500 dark:text-orange-400"
+                    : "text-amber-500 dark:text-amber-400";
+          return (
+            <AttentionRow>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-snug truncate">{d.name}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {d.sslExpiry ? `Expires ${new Date(d.sslExpiry).toLocaleDateString()}` : "No expiry set"}
+                </p>
+              </div>
+              {days != null ? (
+                <div className="flex flex-col items-end shrink-0">
+                  <span className={`text-xl font-bold tabular-nums leading-none ${col}`}>{Math.abs(days)}</span>
+                  <span className={`text-[9px] font-semibold uppercase tracking-wide mt-0.5 ${col}`}>
+                    {overdue ? "days over" : "days left"}
+                  </span>
+                </div>
+              ) : (
+                <Badge variant="outline" className="text-[10px] shrink-0">No expiry</Badge>
+              )}
+            </AttentionRow>
+          );
+        },
       },
+      // ── Domains Expiring ──────────────────────────────────────────────────
       {
         key: "domains",
         label: "Domains Expiring Soon",
         icon: Globe2,
         tone: toneOf(dashboard.domainsExpiringSoon.length),
         items: dashboard.domainsExpiringSoon,
-        renderItem: (d: any) => ({
-          primary:   d.name,
-          secondary: d.registrationExpiry ? `Expires ${new Date(d.registrationExpiry).toLocaleDateString()}` : "No expiry set",
-          badge:     daysRemainingBadge(d.daysRemaining),
-        }),
+        renderItem: (d: any) => {
+          const days = d.daysRemaining as number | null;
+          const overdue = days != null && days < 0;
+          const urgent  = days != null && !overdue && days <= 7;
+          const col = overdue || urgent ? "text-red-600 dark:text-red-400" : "text-amber-500 dark:text-amber-400";
+          return (
+            <AttentionRow>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-snug truncate">{d.name}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {d.registrationExpiry ? `Expires ${new Date(d.registrationExpiry).toLocaleDateString()}` : "No expiry set"}
+                </p>
+              </div>
+              {days != null ? (
+                <div className="flex flex-col items-end shrink-0">
+                  <span className={`text-xl font-bold tabular-nums leading-none ${col}`}>{Math.abs(days)}</span>
+                  <span className={`text-[9px] font-semibold uppercase tracking-wide mt-0.5 ${col}`}>
+                    {overdue ? "days over" : "days left"}
+                  </span>
+                </div>
+              ) : (
+                <Badge variant="outline" className="text-[10px] shrink-0">No expiry</Badge>
+              )}
+            </AttentionRow>
+          );
+        },
       },
+      // ── Outdated Dependencies ─────────────────────────────────────────────
       {
         key: "deps",
         label: "Outdated Dependencies",
         icon: PackageX,
         tone: toneOf(dashboard.outdatedDependencies.length),
         items: dashboard.outdatedDependencies,
-        renderItem: (d: any) => ({
-          primary:   d.name,
-          secondary: `${d.installedVersion ?? "?"} → ${d.latestVersion ?? "?"}`,
-          badge:     d.endOfLife ? <Badge variant="destructive" className="text-[10px]">EOL</Badge> : null,
-        }),
+        renderItem: (d: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-medium leading-snug truncate">{d.name}</p>
+                {d.endOfLife && (
+                  <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-wide bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-1.5 py-0.5 rounded">
+                    EOL
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <code className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono">
+                  {d.installedVersion ?? "unknown"}
+                </code>
+                <span className="text-muted-foreground text-[10px]">→</span>
+                <code className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-mono">
+                  {d.latestVersion ?? "unknown"}
+                </code>
+              </div>
+            </div>
+          </AttentionRow>
+        ),
       },
+      // ── Not Recently Scanned ──────────────────────────────────────────────
       {
         key: "scans",
         label: "Apps Not Recently Scanned",
         icon: ScanEye,
         tone: toneOf(dashboard.applicationsNotRecentlyScanned.length),
         items: dashboard.applicationsNotRecentlyScanned,
-        renderItem: (a: any) => ({
-          primary:   a.name,
-          secondary: a.lastSecurityScanAt ? `Scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}` : "Never scanned",
-          badge:     null,
-        }),
+        renderItem: (a: any) => {
+          const daysSince = a.lastSecurityScanAt
+            ? Math.floor((Date.now() - new Date(a.lastSecurityScanAt).getTime()) / 86_400_000)
+            : null;
+          const never    = daysSince === null;
+          const critical = !never && daysSince! > 90;
+          const col = never || critical ? "text-red-600 dark:text-red-400" : "text-amber-500 dark:text-amber-400";
+          return (
+            <AttentionRow>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-snug truncate">{a.name}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {never
+                    ? "Never scanned"
+                    : `Last scanned ${new Date(a.lastSecurityScanAt).toLocaleDateString()}`}
+                </p>
+              </div>
+              {never ? (
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Never</span>
+                  <span className="text-[9px] text-red-400 dark:text-red-500 mt-0.5">scanned</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-end shrink-0">
+                  <span className={`text-xl font-bold tabular-nums leading-none ${col}`}>{daysSince}</span>
+                  <span className={`text-[9px] font-semibold uppercase tracking-wide mt-0.5 ${col}`}>days ago</span>
+                </div>
+              )}
+            </AttentionRow>
+          );
+        },
       },
+      // ── Admin Users ───────────────────────────────────────────────────────
       {
         key: "admins",
         label: "Admin Users",
         icon: UserCog,
         tone: "default" as const,
         items: dashboard.adminUsers,
-        renderItem: (u: any) => ({
-          primary:   u.name,
-          secondary: u.email,
-          badge:     u.department ? <Badge variant="outline" className="text-[10px]">{u.department}</Badge> : null,
-        }),
+        renderItem: (u: any) => (
+          <AttentionRow>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-snug truncate">{u.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{u.email}</p>
+            </div>
+            {u.department && (
+              <Badge variant="outline" className="text-[10px] shrink-0">{u.department}</Badge>
+            )}
+          </AttentionRow>
+        ),
       },
     ];
   }, [dashboard]);
@@ -564,11 +704,9 @@ function NeedsAttentionView() {
     <div className="space-y-5 max-w-3xl">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Needs Attention</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Items requiring review or remediation</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Needs Attention</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Items requiring review or remediation</p>
       </div>
 
       {/* Summary strip */}
@@ -621,7 +759,7 @@ function NeedsAttentionView() {
               const isLast = catIdx === flagged.length - 1;
               return (
                 <div key={cat.key} className={`${!isLast ? "border-b border-border/60" : ""}`}>
-                  {/* Category header row */}
+                  {/* Category header */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-muted/30">
                     <span className={`w-0.5 self-stretch rounded-full shrink-0 ${TONE_ACCENT[cat.tone]}`} />
                     <span className={`p-1.5 rounded-md ${TONE_LABEL[cat.tone]}`}>
@@ -635,23 +773,11 @@ function NeedsAttentionView() {
                       {cat.items.length}
                     </Badge>
                   </div>
-
-                  {/* Item rows */}
+                  {/* Item rows — each renderItem returns full JSX */}
                   <div className="divide-y divide-border/40">
-                    {cat.items.map((item: any, i: number) => {
-                      const { primary, secondary, badge } = cat.renderItem(item);
-                      return (
-                        <div key={i} className="flex items-center gap-3 pl-10 pr-4 py-2.5 hover:bg-muted/20 transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm leading-snug truncate">{primary}</p>
-                            {secondary && (
-                              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{secondary}</p>
-                            )}
-                          </div>
-                          {badge && <div className="shrink-0">{badge}</div>}
-                        </div>
-                      );
-                    })}
+                    {cat.items.map((item: any, i: number) => (
+                      <div key={i}>{cat.renderItem(item)}</div>
+                    ))}
                   </div>
                 </div>
               );
@@ -667,15 +793,12 @@ function NeedsAttentionView() {
             All clear
           </p>
           <div className="flex flex-wrap gap-2">
-            {clear.map(cat => {
-              const Icon = cat.icon;
-              return (
-                <span key={cat.key} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/50 rounded-full px-2.5 py-1 border border-border/50">
-                  <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
-                  {cat.label}
-                </span>
-              );
-            })}
+            {clear.map(cat => (
+              <span key={cat.key} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/50 rounded-full px-2.5 py-1 border border-border/50">
+                <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
+                {cat.label}
+              </span>
+            ))}
           </div>
         </div>
       )}
