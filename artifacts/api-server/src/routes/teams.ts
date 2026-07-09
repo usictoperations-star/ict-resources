@@ -6,6 +6,7 @@ import { teamsTable } from "@workspace/db";
 import { CreateTeamBody, UpdateTeamBody } from "@workspace/api-zod";
 import { eq, count } from "drizzle-orm";
 import { logAudit } from "../lib/audit";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/", async (req: Request, res: Response) => {
     return res.json({ data: results.map(t => ({ ...t, createdAt: t.createdAt.toISOString(), updatedAt: t.updatedAt.toISOString() })), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing teams");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -31,7 +32,7 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error creating team");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -40,11 +41,11 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const id = parseIdParam(req);
     const body = UpdateTeamBody.parse(req.body);
     const [item] = await db.update(teamsTable).set({ ...body, updatedAt: new Date() }).where(eq(teamsTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     return res.json({ ...item, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error updating team");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -52,11 +53,11 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
     const [item] = await db.delete(teamsTable).where(eq(teamsTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting team");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

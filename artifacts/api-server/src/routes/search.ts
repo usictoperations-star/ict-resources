@@ -6,6 +6,7 @@ import {
   domainsTable, repositoriesTable, documentsTable
 } from "@workspace/db";
 import { ilike, or, and, isNull } from "drizzle-orm";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -41,7 +42,7 @@ router.get("/", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error searching");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

@@ -20,6 +20,8 @@ export interface RepositoryUpdate {
   notes?: string;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   secretsExposed?: boolean;
   lastScannedAt?: string;
 }

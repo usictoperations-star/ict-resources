@@ -29,6 +29,8 @@ export interface Repository {
   ownerId?: number | null;
   /** @nullable */
   ownerName?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   secretsExposed: boolean;
   /** @nullable */
   lastScannedAt?: string | null;

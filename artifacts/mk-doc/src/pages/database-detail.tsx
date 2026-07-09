@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, Database, Server, Shield, Settings } from "lucide-react";
 import { OwnerBadge } from "@/components/owner-badge";
+import { TeamBadge } from "@/components/team-badge";
 
 function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
   if (value === null || value === undefined || value === "") return null;
@@ -136,6 +137,10 @@ export default function DatabaseDetail() {
         <div>
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
           <dd><OwnerBadge ownerName={db.ownerName} /></dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Team</dt>
+          <dd><TeamBadge teamId={db.teamId} /></dd>
         </div>
       </Section>
 

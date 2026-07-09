@@ -20,6 +20,7 @@ import { PackageSearch, ArrowUpCircle, AlertOctagon, Plus, Loader2, Pencil, Tras
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -96,9 +97,9 @@ function EolCell({ endOfLife, endOfLifeDate }: { endOfLife: boolean; endOfLifeDa
   return <span className="text-xs text-emerald-600 dark:text-emerald-400">Supported</span>;
 }
 
-const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", ownerId: "" };
+const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", ownerId: "", teamId: "" };
 
-type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const SOFTWARE_EXPORT_COLS = [
   { key: "name", label: "Name" },
@@ -162,6 +163,7 @@ export default function Software() {
       applicationId: s.applicationId?.toString() ?? "",
       notes: s.notes ?? "",
       ownerId: s.ownerId?.toString() ?? "",
+      teamId: s.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -178,6 +180,7 @@ export default function Software() {
     const payload = {
       ...parsed,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -335,6 +338,9 @@ export default function Software() {
                 </Field>
                 <Field label="Owner">
                   <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <div className="flex gap-6">

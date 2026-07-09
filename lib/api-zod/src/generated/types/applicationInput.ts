@@ -36,5 +36,7 @@ export interface ApplicationInput {
   tags?: string;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   lastSecurityScanAt?: string;
 }

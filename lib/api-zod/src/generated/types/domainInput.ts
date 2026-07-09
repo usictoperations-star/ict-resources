@@ -20,5 +20,7 @@ export interface DomainInput {
   applicationId?: number;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   notes?: string;
 }

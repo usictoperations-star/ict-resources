@@ -2040,6 +2040,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         lastSecurityScanAt:
           type: ["string", "null"]
         createdAt:
@@ -2118,6 +2120,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
         lastSecurityScanAt:
           type: string
       required: [name, category, classification, environment, status, priority, criticality]
@@ -2178,6 +2182,8 @@ components:
         tags:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
         lastSecurityScanAt:
           type: string
@@ -2296,6 +2302,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         patchStatus:
           type: string
         lastPatchedAt:
@@ -2336,6 +2344,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
         patchStatus:
           type: string
         lastPatchedAt:
@@ -2368,6 +2378,8 @@ components:
         notes:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
         patchStatus:
           type: string
@@ -2408,6 +2420,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2446,6 +2460,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
       required: [name, type, status]
 
     DatabaseUpdate:
@@ -2476,6 +2492,8 @@ components:
         notes:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
 
     # ── Domains ───────────────────────────────────────────────────────────
@@ -2508,6 +2526,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         notes:
           type: ["string", "null"]
         createdAt:
@@ -2544,6 +2564,8 @@ components:
           type: integer
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
         notes:
           type: string
       required: [name, status]
@@ -2572,6 +2594,8 @@ components:
         applicationId:
           type: integer
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
         notes:
           type: string
@@ -2625,6 +2649,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         secretsExposed:
           type: boolean
         lastScannedAt:
@@ -2665,6 +2691,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
         secretsExposed:
           type: boolean
         lastScannedAt:
@@ -2697,6 +2725,8 @@ components:
         notes:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
         secretsExposed:
           type: boolean
@@ -2835,6 +2865,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2885,6 +2917,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
       required: [title, severity, status]
 
     VulnerabilityUpdate:
@@ -2927,6 +2961,8 @@ components:
         notes:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
 
     SecuritySummary:
@@ -3173,6 +3209,8 @@ components:
           type: ["integer", "null"]
         ownerName:
           type: ["string", "null"]
+        teamId:
+          type: ["integer", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -3211,6 +3249,8 @@ components:
           type: string
         ownerId:
           type: ["integer", "null"]
+        teamId:
+          type: ["integer", "null"]
       required: [name, type]
 
     SoftwareUpdate:
@@ -3241,6 +3281,8 @@ components:
         notes:
           type: string
         ownerId:
+          type: ["integer", "null"]
+        teamId:
           type: ["integer", "null"]
 
     # ── Documentation ─────────────────────────────────────────────────────

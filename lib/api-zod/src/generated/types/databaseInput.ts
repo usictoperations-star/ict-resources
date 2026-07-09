@@ -22,4 +22,6 @@ export interface DatabaseInput {
   notes?: string;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
 }

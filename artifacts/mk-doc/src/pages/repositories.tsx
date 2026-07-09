@@ -17,6 +17,7 @@ import { GitBranch, GitPullRequest, CircleDot, Plus, Loader2, Pencil, Trash2 } f
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -83,9 +84,9 @@ function CountBadge({ icon: Icon, count, activeColor }: { icon: React.ElementTyp
   );
 }
 
-const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "", ownerId: "" };
+const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "", ownerId: "", teamId: "" };
 
-type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const REPO_EXPORT_COLS = [
   { key: "name", label: "Repository" },
@@ -144,6 +145,7 @@ export default function Repositories() {
       openIssues: repo.openIssues?.toString() ?? "0",
       status: repo.status ?? "active", notes: repo.notes ?? "",
       ownerId: repo.ownerId?.toString() ?? "",
+      teamId: repo.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -177,6 +179,7 @@ export default function Repositories() {
       status: form.status,
       notes: form.notes || undefined,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -344,6 +347,9 @@ export default function Repositories() {
                 </Field>
                 <Field label="Owner">
                   <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <Field label="Notes">

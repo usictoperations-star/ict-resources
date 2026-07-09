@@ -20,6 +20,8 @@ export interface InfrastructureUpdate {
   notes?: string;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   patchStatus?: string;
   lastPatchedAt?: string;
 }

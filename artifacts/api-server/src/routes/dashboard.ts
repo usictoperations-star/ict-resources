@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { applicationsTable, infrastructureTable, databasesTable, domainsTable, repositoriesTable, vulnerabilitiesTable, releasesTable, auditLogsTable } from "@workspace/db";
 import { sql, gt, isNull } from "drizzle-orm";
 import { cache, DASHBOARD_TTL_MS } from "../lib/cache";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -84,7 +85,7 @@ router.get("/stats", async (req: Request, res: Response) => {
     return res.json({ ...result, cachedAt });
   } catch (err) {
     req.log.error({ err }, "Error fetching dashboard stats");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -140,7 +141,7 @@ router.get("/alerts", async (req: Request, res: Response) => {
     return res.json(sliced);
   } catch (err) {
     req.log.error({ err }, "Error fetching alerts");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -167,7 +168,7 @@ router.get("/activity", async (req: Request, res: Response) => {
     return res.json(activity);
   } catch (err) {
     req.log.error({ err }, "Error fetching activity");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -215,7 +216,7 @@ router.get("/activity-chart", async (req: Request, res: Response) => {
     return res.json(points);
   } catch (err) {
     req.log.error({ err }, "Error fetching activity chart");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

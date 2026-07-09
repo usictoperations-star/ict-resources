@@ -19,6 +19,7 @@ import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -103,10 +104,10 @@ const EMPTY_FORM = {
   environment: "", status: "Active", priority: "Medium", criticality: "Medium",
   ministry: "", department: "", businessOwner: "", technicalOwner: "",
   frontend: "", backend: "", framework: "", language: "", database: "",
-  serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", ownerId: ""
+  serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", ownerId: "", teamId: ""
 };
 
-type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null; ownerName?: string | null };
+type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const APP_EXPORT_COLS = [
   { key: "name", label: "Name" },
@@ -218,6 +219,7 @@ export default function Applications() {
       currentVersion: app.currentVersion ?? "",
       tags: app.tags ?? "",
       ownerId: app.ownerId?.toString() ?? "",
+      teamId: app.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -265,6 +267,7 @@ export default function Applications() {
       currentVersion: form.currentVersion || undefined,
       tags: form.tags || undefined,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -438,6 +441,9 @@ export default function Applications() {
                   </Field>
                   <Field label="Owner">
                     <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                  </Field>
+                  <Field label="Team">
+                    <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                   </Field>
                 </div>
               </section>

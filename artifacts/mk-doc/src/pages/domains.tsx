@@ -18,6 +18,7 @@ import { Globe, AlertTriangle, Plus, Loader2, Pencil, Trash2 } from "lucide-reac
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -81,9 +82,9 @@ function CloudflareChip({ enabled }: { enabled: boolean }) {
   );
 }
 
-const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", ownerId: "" };
+const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", ownerId: "", teamId: "" };
 
-type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const DOMAIN_EXPORT_COLS = [
   { key: "name", label: "Domain" },
@@ -147,6 +148,7 @@ export default function Domains() {
       cloudflarEnabled: d.cloudflarEnabled ?? false, status: d.status ?? "active",
       notes: d.notes ?? "",
       ownerId: d.ownerId?.toString() ?? "",
+      teamId: d.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -181,6 +183,7 @@ export default function Domains() {
       status: form.status,
       notes: form.notes || undefined,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -369,6 +372,9 @@ export default function Domains() {
                 </Field>
                 <Field label="Owner">
                   <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

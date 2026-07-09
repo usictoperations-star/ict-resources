@@ -19,6 +19,7 @@ import { Server, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -74,9 +75,9 @@ function SpecsLine({ cpu, ram, disk }: { cpu?: number | null; ram?: number | nul
   return <span className="text-xs text-muted-foreground">{parts.join(" · ")}</span>;
 }
 
-const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "" };
+const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "", teamId: "" };
 
-type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const INFRA_EXPORT_COLS = [
   { key: "name", label: "Name" },
@@ -142,6 +143,7 @@ export default function Infrastructure() {
       ramGb: item.ramGb?.toString() ?? "", diskGb: item.diskGb?.toString() ?? "",
       os: item.os ?? "", notes: item.notes ?? "",
       ownerId: item.ownerId?.toString() ?? "",
+      teamId: item.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -168,6 +170,7 @@ export default function Infrastructure() {
       os: parsed.os || undefined,
       notes: parsed.notes || undefined,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -328,6 +331,9 @@ export default function Infrastructure() {
                 </Field>
                 <Field label="Owner">
                   <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <Field label="Notes">

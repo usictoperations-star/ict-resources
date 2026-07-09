@@ -12,6 +12,7 @@ import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,7 @@ type VulnRow = {
   affectedComponent?: string | null; version?: string | null; vendor?: string | null;
   category?: string | null; discoveredAt?: string | null; resolvedAt?: string | null;
   assignedTo?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null;
+  teamId?: number | null;
 };
 
 const VULN_EXPORT_COLS = [
@@ -71,7 +73,7 @@ const EMPTY_FORM = {
   title: "", description: "", severity: "medium", status: "open",
   applicationId: "", cveId: "", affectedComponent: "",
   version: "", vendor: "", category: "",
-  discoveredAt: "", resolvedAt: "", assignedTo: "", notes: "", ownerId: "",
+  discoveredAt: "", resolvedAt: "", assignedTo: "", notes: "", ownerId: "", teamId: "",
 };
 
 // ── Style helpers ──────────────────────────────────────────────────────────────
@@ -893,6 +895,7 @@ function VulnerabilitiesView() {
       resolvedAt:   v.resolvedAt   ? v.resolvedAt.substring(0, 10)   : "",
       assignedTo: v.assignedTo ?? "", notes: v.notes ?? "",
       ownerId: v.ownerId?.toString() ?? "",
+      teamId: v.teamId?.toString() ?? "",
     });
     setErrors({}); setFormOpen(true);
   };
@@ -926,6 +929,7 @@ function VulnerabilitiesView() {
       assignedTo:        p.assignedTo        || undefined,
       notes:             p.notes             || undefined,
       ownerId:           form.ownerId ? Number(form.ownerId) : null,
+      teamId:            form.teamId  ? Number(form.teamId)  : null,
     };
     try {
       if (editTarget) await updateVulnerability({ id: editTarget.id, data: payload });
@@ -1083,6 +1087,9 @@ function VulnerabilitiesView() {
               </Field>
               <Field label="Owner">
                 <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+              </Field>
+              <Field label="Team">
+                <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">

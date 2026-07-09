@@ -16,6 +16,7 @@ import {
 } from "@workspace/db";
 import { CreateVulnerabilityBody, UpdateVulnerabilityBody } from "@workspace/api-zod";
 import { eq, and, isNull, count } from "drizzle-orm";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -128,7 +129,7 @@ router.get("/dashboard", async (req: Request, res: Response) => {
     return res.json({ ...result, cachedAt });
   } catch (err) {
     req.log.error({ err }, "Error fetching security dashboard");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -146,7 +147,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     return res.json({ securityScore, critical, high, medium, low, open, inProgress, resolved });
   } catch (err) {
     req.log.error({ err }, "Error fetching security summary");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -180,7 +181,7 @@ router.get("/vulnerabilities", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error listing vulnerabilities");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -193,7 +194,7 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
     return res.status(201).json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating vulnerability");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -204,12 +205,12 @@ router.post("/vulnerabilities/:id/restore", async (req: Request, res: Response) 
       .set({ deletedAt: null, updatedAt: new Date() })
       .where(eq(vulnerabilitiesTable.id, id))
       .returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     await logAudit(req, "RESTORE", "Vulnerability", item.id, item.title);
     return res.json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error restoring vulnerability");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -218,12 +219,12 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
     const id = parseIdParam(req);
     const body = UpdateVulnerabilityBody.parse(req.body);
     const [item] = await db.update(vulnerabilitiesTable).set({ ...body, updatedAt: new Date() }).where(eq(vulnerabilitiesTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
     return res.json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: item.deletedAt ? item.deletedAt.toISOString() : null });
   } catch (err) {
     req.log.error({ err }, "Error updating vulnerability");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -234,12 +235,12 @@ router.delete("/vulnerabilities/:id", async (req: Request, res: Response) => {
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(vulnerabilitiesTable.id, id), isNull(vulnerabilitiesTable.deletedAt)))
       .returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     await logAudit(req, "DELETE", "Vulnerability", item.id, item.title);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting vulnerability");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

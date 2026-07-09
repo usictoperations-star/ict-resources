@@ -6,6 +6,7 @@ import { domainsTable, usersTable, auditLogsTable } from "@workspace/db";
 import { CreateDomainBody, UpdateDomainBody } from "@workspace/api-zod";
 import { eq, desc, isNull, isNotNull, and, gte, count } from "drizzle-orm";
 import { logAudit } from "../lib/audit";
+import { sendError } from "../lib/errors";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
@@ -43,7 +44,7 @@ router.get("/expiring", async (req: Request, res: Response) => {
     return res.json(expiring.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)));
   } catch (err) {
     req.log.error({ err }, "Error fetching expiring domains");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -62,7 +63,7 @@ router.get("/", async (req: Request, res: Response) => {
     return res.json({ data: results.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing domains");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -75,7 +76,7 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(201).json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error creating domain");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -87,13 +88,13 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .set({ deletedAt: null, updatedAt: new Date() })
       .where(and(eq(domainsTable.id, id), isNotNull(domainsTable.deletedAt), gte(domainsTable.deletedAt, cutoff)))
       .returning();
-    if (!item) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
+    if (!item) return sendError(res, 404, "Not found or outside the 30-day restore window");
     const ownerName = await resolveOwnerName(item.ownerId);
     await logAudit(req, "RESTORE", "Domain", item.id, item.name);
     return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error restoring domain");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -118,7 +119,7 @@ router.get("/:id/history", async (req: Request, res: Response) => {
     );
   } catch (err) {
     req.log.error({ err }, "Error fetching domain history");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -130,11 +131,11 @@ router.get("/:id", async (req: Request, res: Response) => {
       .from(domainsTable)
       .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
       .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)));
-    if (!result) return res.status(404).json({ error: "Not found" });
+    if (!result) return sendError(res, 404, "Not found");
     return res.json(fmt(result.domain, result.ownerName ?? null));
   } catch (err) {
     req.log.error({ err }, "Error fetching domain");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -146,12 +147,12 @@ router.patch("/:id", async (req: Request, res: Response) => {
       .set({ ...body, updatedAt: new Date() })
       .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)))
       .returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     const ownerName = await resolveOwnerName(item.ownerId);
     return res.json(fmt(item, ownerName));
   } catch (err) {
     req.log.error({ err }, "Error updating domain");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -162,12 +163,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(domainsTable.id, id), isNull(domainsTable.deletedAt)))
       .returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     await logAudit(req, "DELETE", "Domain", item.id, item.name);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting domain");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

@@ -31,6 +31,8 @@ export interface SoftwareItem {
   ownerId?: number | null;
   /** @nullable */
   ownerName?: string | null;
+  /** @nullable */
+  teamId?: number | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */

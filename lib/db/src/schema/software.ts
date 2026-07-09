@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
 import { applicationsTable } from "./applications";
+import { teamsTable } from "./teams";
 
 export const softwareTable = pgTable("software", {
   id: serial("id").primaryKey(),
@@ -19,6 +20,7 @@ export const softwareTable = pgTable("software", {
   applicationId: integer("application_id").references(() => applicationsTable.id, { onDelete: "set null" }),
   notes: text("notes"),
   ownerId: integer("owner_id").references(() => usersTable.id),
+  teamId: integer("team_id").references(() => teamsTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),

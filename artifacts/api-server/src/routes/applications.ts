@@ -7,6 +7,7 @@ import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod
 import { eq, ilike, and, count, isNull, isNotNull, gte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { logAudit } from "../lib/audit";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -57,7 +58,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching application summary");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -93,7 +94,7 @@ router.get("/", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error listing applications");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -106,7 +107,7 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(201).json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating application");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -118,13 +119,13 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .set({ deletedAt: null, updatedAt: new Date() })
       .where(and(eq(applicationsTable.id, id), isNotNull(applicationsTable.deletedAt), gte(applicationsTable.deletedAt, cutoff)))
       .returning();
-    if (!app) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
+    if (!app) return sendError(res, 404, "Not found or outside the 30-day restore window");
     const ownerName = await resolveOwnerName(app.ownerId);
     await logAudit(req, "RESTORE", "Application", app.id, app.name);
     return res.json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error restoring application");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -132,7 +133,7 @@ router.get("/:id/dependents", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
     const [app] = await db.select({ id: applicationsTable.id }).from(applicationsTable).where(eq(applicationsTable.id, id));
-    if (!app) return res.status(404).json({ error: "Not found" });
+    if (!app) return sendError(res, 404, "Not found");
 
     const [[relCount], [docCount], [vulnCount], [swCount], [repoCount], [domCount]] = await Promise.all([
       db.select({ n: count() }).from(releasesTable).where(eq(releasesTable.applicationId, id)),
@@ -161,7 +162,7 @@ router.get("/:id/dependents", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching application dependents");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -173,12 +174,12 @@ router.get("/:id", async (req: Request, res: Response) => {
       .from(applicationsTable)
       .leftJoin(usersTable, eq(applicationsTable.ownerId, usersTable.id))
       .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
-    if (!result) return res.status(404).json({ error: "Not found" });
+    if (!result) return sendError(res, 404, "Not found");
     const { app, ownerName } = result;
     return res.json({ ...app, ownerName: ownerName ?? null, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: app.deletedAt ? app.deletedAt.toISOString() : null });
   } catch (err) {
     req.log.error({ err }, "Error fetching application");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -190,13 +191,13 @@ router.patch("/:id", async (req: Request, res: Response) => {
       .set({ ...body, updatedAt: new Date() })
       .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))
       .returning();
-    if (!app) return res.status(404).json({ error: "Not found" });
+    if (!app) return sendError(res, 404, "Not found");
     const ownerName = await resolveOwnerName(app.ownerId);
     await logAudit(req, "UPDATE", "Application", app.id, app.name);
     return res.json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error updating application");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -208,20 +209,20 @@ router.delete("/:id", async (req: Request, res: Response) => {
     const reassignTo = reassignToRaw ? parseInt(reassignToRaw as string, 10) : null;
 
     if (cascade && reassignTo !== null) {
-      return res.status(400).json({ error: "Cannot specify both cascade and reassignTo" });
+      return sendError(res, 400, "Cannot specify both cascade and reassignTo");
     }
 
     const [app] = await db.select({ id: applicationsTable.id, name: applicationsTable.name })
       .from(applicationsTable)
       .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
-    if (!app) return res.status(404).json({ error: "Not found" });
+    if (!app) return sendError(res, 404, "Not found");
 
     if (reassignTo !== null && isNaN(reassignTo)) {
-      return res.status(400).json({ error: "Invalid reassignTo value" });
+      return sendError(res, 400, "Invalid reassignTo value");
     }
 
     if (reassignTo !== null && reassignTo === id) {
-      return res.status(400).json({ error: "Cannot reassign linked records to the same application being deleted" });
+      return sendError(res, 400, "Cannot reassign linked records to the same application being deleted");
     }
 
     const [[relCount], [docCount], [vulnCount], [swCount], [repoCount], [domCount]] = await Promise.all([
@@ -246,7 +247,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
         .from(applicationsTable)
         .where(and(eq(applicationsTable.id, reassignTo), isNull(applicationsTable.deletedAt)));
       if (!targetApp) {
-        return res.status(400).json({ error: "Target application not found or has been deleted" });
+        return sendError(res, 400, "Target application not found or has been deleted");
       }
       await Promise.all([
         db.update(releasesTable).set({ applicationId: reassignTo }).where(eq(releasesTable.applicationId, id)),
@@ -275,7 +276,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting application");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

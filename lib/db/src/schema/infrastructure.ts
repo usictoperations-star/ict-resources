@@ -2,6 +2,7 @@ import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./admin";
+import { teamsTable } from "./teams";
 
 export const infrastructureTable = pgTable("infrastructure", {
   id: serial("id").primaryKey(),
@@ -17,6 +18,7 @@ export const infrastructureTable = pgTable("infrastructure", {
   os: text("os"),
   notes: text("notes"),
   ownerId: integer("owner_id").references(() => usersTable.id),
+  teamId: integer("team_id").references(() => teamsTable.id, { onDelete: "set null" }),
   patchStatus: text("patch_status").notNull().default("Up to Date"),
   lastPatchedAt: text("last_patched_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

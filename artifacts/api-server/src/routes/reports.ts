@@ -6,6 +6,7 @@ import {
   repositoriesTable, softwareTable, vulnerabilitiesTable
 } from "@workspace/db";
 import { isNull } from "drizzle-orm";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -47,7 +48,7 @@ router.get("/inventory", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error generating inventory report");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -90,7 +91,7 @@ router.get("/security", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error generating security report");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -121,7 +122,7 @@ router.get("/renewals", async (req: Request, res: Response) => {
     return res.json(items.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry));
   } catch (err) {
     req.log.error({ err }, "Error generating renewal report");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

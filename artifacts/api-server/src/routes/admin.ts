@@ -8,6 +8,7 @@ import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
 import { eq, isNull, isNotNull, count, and } from "drizzle-orm";
 import { logAudit } from "../lib/audit";
 import { sql } from "drizzle-orm";
+import { sendError } from "../lib/errors";
 const router = Router();
 
 router.get("/deleted-records", async (req: Request, res: Response) => {
@@ -94,7 +95,7 @@ router.get("/deleted-records", async (req: Request, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Error listing deleted records");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -115,7 +116,7 @@ router.get("/users", async (req: Request, res: Response) => {
     return res.json(results.map(u => ({ ...u, createdAt: u.createdAt.toISOString() })));
   } catch (err) {
     req.log.error({ err }, "Error listing users");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -125,7 +126,7 @@ router.post("/users", async (req: Request, res: Response) => {
     const { password, ...rest } = body as typeof body & { password?: string };
 
     if (!password) {
-      return res.status(400).json({ error: "Password is required when creating a user" });
+      return sendError(res, 400, "Password is required when creating a user");
     }
 
     const values: typeof usersTable.$inferInsert = {
@@ -138,7 +139,7 @@ router.post("/users", async (req: Request, res: Response) => {
     return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error creating user");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -154,12 +155,12 @@ router.patch("/users/:id", async (req: Request, res: Response) => {
     }
 
     const [item] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     await logAudit(req, "UPDATE", "User", item.id, item.name);
     return res.json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error updating user");
-    return res.status(400).json({ error: "Invalid request" });
+    return sendError(res, 400, "Invalid request");
   }
 });
 
@@ -167,11 +168,11 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const [item] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return sendError(res, 404, "Not found");
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting user");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 
@@ -195,7 +196,7 @@ router.get("/audit-logs", async (req: Request, res: Response) => {
     return res.json({ data: logs.map(l => ({ ...l, createdAt: l.createdAt.toISOString() })), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing audit logs");
-    return res.status(500).json({ error: "Internal server error" });
+    return sendError(res, 500, "Internal server error");
   }
 });
 

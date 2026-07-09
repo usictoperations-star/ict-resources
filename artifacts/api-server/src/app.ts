@@ -47,6 +47,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(createSessionMiddleware());
 
+// Require application/json Content-Type on POST and PATCH requests
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method === "POST" || req.method === "PATCH") {
+    const ct = req.headers["content-type"] ?? "";
+    if (ct && !ct.includes("application/json") && !ct.includes("multipart/form-data") && !ct.includes("application/x-www-form-urlencoded")) {
+      res.status(415).json({ error: "Content-Type must be application/json", code: "UNSUPPORTED_MEDIA_TYPE" });
+      return;
+    }
+  }
+  next();
+});
+
 app.use("/api", router);
 
 // Global error handler — catches any error passed to next(err) or thrown in async handlers

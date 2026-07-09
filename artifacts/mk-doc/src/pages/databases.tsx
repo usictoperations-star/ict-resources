@@ -20,6 +20,7 @@ import { Database, ShieldCheck, ShieldOff, Lock, LockOpen, Plus, Loader2, Pencil
 import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
+import { TeamSelectField } from "@/components/team-select-field";
 import { TablePagination } from "@/components/table-pagination";
 
 import { PageHeader } from "@/components/page-header";
@@ -70,9 +71,9 @@ function DbTypeChip({ type }: { type: string }) {
   );
 }
 
-const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", ownerId: "" };
+const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", ownerId: "", teamId: "" };
 
-type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
+type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null; teamId?: number | null };
 
 const DB_EXPORT_COLS = [
   { key: "name", label: "Name" },
@@ -136,6 +137,7 @@ export default function Databases() {
       encryptionEnabled: db.encryptionEnabled ?? false, status: db.status ?? "active",
       notes: db.notes ?? "",
       ownerId: db.ownerId?.toString() ?? "",
+      teamId: db.teamId?.toString() ?? "",
     });
     setErrors({});
     setOpen(true);
@@ -160,6 +162,7 @@ export default function Databases() {
       status: parsed.status,
       notes: parsed.notes || undefined,
       ownerId: form.ownerId ? Number(form.ownerId) : null,
+      teamId: form.teamId ? Number(form.teamId) : null,
     };
     try {
       if (editTarget) {
@@ -315,6 +318,9 @@ export default function Databases() {
                 </Field>
                 <Field label="Owner">
                   <OwnerSelectField value={form.ownerId} onValueChange={v => setForm(f => ({ ...f, ownerId: v }))} />
+                </Field>
+                <Field label="Team">
+                  <TeamSelectField value={form.teamId} onValueChange={v => setForm(f => ({ ...f, teamId: v }))} />
                 </Field>
               </div>
               <div className="flex gap-6">

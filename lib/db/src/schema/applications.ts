@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./admin";
 import { infrastructureTable } from "./infrastructure";
 import { databasesTable } from "./databases";
+import { teamsTable } from "./teams";
 
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
@@ -36,6 +37,7 @@ export const applicationsTable = pgTable("applications", {
   launchDate: text("launch_date"),
   tags: text("tags"),
   ownerId: integer("owner_id").references(() => usersTable.id),
+  teamId: integer("team_id").references(() => teamsTable.id, { onDelete: "set null" }),
   lastSecurityScanAt: text("last_security_scan_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

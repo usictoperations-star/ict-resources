@@ -21,6 +21,8 @@ export interface InfrastructureInput {
   notes?: string;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   patchStatus?: string;
   lastPatchedAt?: string;
 }

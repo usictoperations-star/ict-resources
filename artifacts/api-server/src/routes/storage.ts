@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { ObjectPermission } from "../lib/objectAcl";
+import { sendError } from "../lib/errors";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -20,7 +21,7 @@ const objectStorageService = new ObjectStorageService();
 router.post("/storage/uploads/request-url", async (req: Request, res: Response) => {
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Missing or invalid required fields" });
+    sendError(res, 400, "Missing or invalid required fields");
     return;
   }
 
@@ -39,7 +40,7 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
     );
   } catch (error) {
     req.log.error({ err: error }, "Error generating upload URL");
-    res.status(500).json({ error: "Failed to generate upload URL" });
+    sendError(res, 500, "Failed to generate upload URL");
   }
 });
 
@@ -56,7 +57,7 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
     const filePath = Array.isArray(raw) ? raw.join("/") : raw;
     const file = await objectStorageService.searchPublicObject(filePath);
     if (!file) {
-      res.status(404).json({ error: "File not found" });
+      sendError(res, 404, "File not found");
       return;
     }
 
@@ -73,7 +74,7 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
     }
   } catch (error) {
     req.log.error({ err: error }, "Error serving public object");
-    res.status(500).json({ error: "Failed to serve public object" });
+    sendError(res, 500, "Failed to serve public object");
   }
 });
 
@@ -93,7 +94,7 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
 
     // --- Protected route example (uncomment when using replit-auth) ---
     // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
+    //   sendError(res, 401, "Unauthorized");
     //   return;
     // }
     // const canAccess = await objectStorageService.canAccessObjectEntity({
@@ -102,7 +103,7 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     //   requestedPermission: ObjectPermission.READ,
     // });
     // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
+    //   sendError(res, 403, "Forbidden");
     //   return;
     // }
 
@@ -120,11 +121,11 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
       req.log.warn({ err: error }, "Object not found");
-      res.status(404).json({ error: "Object not found" });
+      sendError(res, 404, "Object not found");
       return;
     }
     req.log.error({ err: error }, "Error serving object");
-    res.status(500).json({ error: "Failed to serve object" });
+    sendError(res, 500, "Failed to serve object");
   }
 });
 

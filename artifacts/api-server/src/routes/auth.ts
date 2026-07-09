@@ -7,6 +7,7 @@ import { usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { LoginBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { sendError } from "../lib/errors";
 
 const router = Router();
 
@@ -23,30 +24,30 @@ router.post("/auth/login", loginRateLimiter, async (req: Request, res: Response)
   try {
     const parsed = LoginBody.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "Email and password are required" });
+      sendError(res, 400, "Email and password are required");
       return;
     }
     const { email, password } = parsed.data;
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
     if (!user) {
-      res.status(401).json({ error: "Invalid email or password" });
+      sendError(res, 401, "Invalid email or password");
       return;
     }
 
     if (user.status !== "Active" && user.status !== "active") {
-      res.status(401).json({ error: "Account is inactive. Contact an administrator." });
+      sendError(res, 401, "Account is inactive. Contact an administrator.");
       return;
     }
 
     if (!user.passwordHash) {
-      res.status(401).json({ error: "Account has no password set. Contact an administrator." });
+      sendError(res, 401, "Account has no password set. Contact an administrator.");
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      res.status(401).json({ error: "Invalid email or password" });
+      sendError(res, 401, "Invalid email or password");
       return;
     }
 
@@ -58,7 +59,7 @@ router.post("/auth/login", loginRateLimiter, async (req: Request, res: Response)
     req.session.save((err) => {
       if (err) {
         logger.error({ err }, "Session save error");
-        res.status(500).json({ error: "Session error" });
+        sendError(res, 500, "Session error");
         return;
       }
       res.json({
@@ -73,7 +74,7 @@ router.post("/auth/login", loginRateLimiter, async (req: Request, res: Response)
     });
   } catch (err) {
     logger.error({ err }, "Login error");
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Internal server error");
   }
 });
 
@@ -90,14 +91,14 @@ router.post("/auth/logout", (req: Request, res: Response): void => {
 router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.session.userId) {
-      res.status(401).json({ error: "Not authenticated" });
+      sendError(res, 401, "Not authenticated");
       return;
     }
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.session.userId));
     if (!user) {
       req.session.destroy(() => {});
-      res.status(401).json({ error: "Not authenticated" });
+      sendError(res, 401, "Not authenticated");
       return;
     }
 
@@ -112,7 +113,7 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
     });
   } catch (err) {
     logger.error({ err }, "Auth/me error");
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Internal server error");
   }
 });
 

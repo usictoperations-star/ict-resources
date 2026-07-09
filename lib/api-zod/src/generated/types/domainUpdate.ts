@@ -19,5 +19,7 @@ export interface DomainUpdate {
   applicationId?: number;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  teamId?: number | null;
   notes?: string;
 }
