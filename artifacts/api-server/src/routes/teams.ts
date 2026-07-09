@@ -1,17 +1,21 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { teamsTable, auditLogsTable } from "@workspace/db";
 import { CreateTeamBody, UpdateTeamBody } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const results = await db.select().from(teamsTable);
-    return res.json(results.map(t => ({ ...t, createdAt: t.createdAt.toISOString(), updatedAt: t.updatedAt.toISOString() })));
+    const { limit, offset } = parsePagination(req);
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(teamsTable),
+      db.select().from(teamsTable).limit(limit).offset(offset),
+    ]);
+    return res.json({ data: results.map(t => ({ ...t, createdAt: t.createdAt.toISOString(), updatedAt: t.updatedAt.toISOString() })), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing teams");
     return res.status(500).json({ error: "Internal server error" });

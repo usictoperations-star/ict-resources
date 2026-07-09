@@ -128,7 +128,8 @@ const APP_EXPORT_COLS = [
 ];
 
 export default function Applications() {
-  const { data: applications, isLoading } = useListApplications();
+  const { data: applicationsPage, isLoading } = useListApplications({ limit: 100 });
+  const applications = applicationsPage?.data;
   const { mutateAsync: createApplication, isPending: isCreating } = useCreateApplication();
   const { mutateAsync: updateApplication, isPending: isUpdating } = useUpdateApplication();
   const { mutateAsync: deleteApplication, isPending: isDeleting } = useDeleteApplication();

@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListDocumentsParams = {
-type?: string;
-applicationId?: number;
+export type ListTeamsParams = {
 /**
  * @maximum 500
  */

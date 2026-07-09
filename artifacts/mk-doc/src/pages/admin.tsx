@@ -209,7 +209,8 @@ export default function Admin() {
   const canAdmin = can("admin");
 
   const { data: users, isLoading: usersLoading } = useListUsers();
-  const { data: auditLogs, isLoading: logsLoading } = useListAuditLogs({ limit: 50 });
+  const { data: auditLogsPage, isLoading: logsLoading } = useListAuditLogs({ limit: 100 });
+  const auditLogs = auditLogsPage?.data;
   const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser();
@@ -225,7 +226,8 @@ export default function Admin() {
   const { page: usersPage, setPage: setUsersPage, totalPages: usersTotalPages, pageItems: pagedUsers, startIndex: usersStartIndex, endIndex: usersEndIndex, total: usersTotal } = usePagination(users, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
-  const { data: teams, isLoading: teamsLoading } = useListTeams();
+  const { data: teamsListPage, isLoading: teamsLoading } = useListTeams({ limit: 100 });
+  const teams = teamsListPage?.data;
   const { mutateAsync: createTeam, isPending: isCreatingTeam } = useCreateTeam();
   const { mutateAsync: updateTeam, isPending: isUpdatingTeam } = useUpdateTeam();
   const { mutateAsync: deleteTeam, isPending: isDeletingTeam } = useDeleteTeam();

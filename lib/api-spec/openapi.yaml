@@ -184,15 +184,24 @@ paths:
           in: query
           schema:
             type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: List of applications
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Application"
+                $ref: "#/components/schemas/PaginatedApplicationList"
     post:
       operationId: createApplication
       tags: [applications]
@@ -352,15 +361,24 @@ paths:
           in: query
           schema:
             type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Infrastructure list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/InfrastructureItem"
+                $ref: "#/components/schemas/PaginatedInfrastructureList"
     post:
       operationId: createInfrastructure
       tags: [infrastructure]
@@ -482,15 +500,25 @@ paths:
       operationId: listDatabases
       tags: [databases]
       summary: List database records
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Databases
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/DatabaseRecord"
+                $ref: "#/components/schemas/PaginatedDatabaseList"
     post:
       operationId: createDatabase
       tags: [databases]
@@ -612,15 +640,25 @@ paths:
       operationId: listDomains
       tags: [domains]
       summary: List domains
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Domains
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Domain"
+                $ref: "#/components/schemas/PaginatedDomainList"
     post:
       operationId: createDomain
       tags: [domains]
@@ -757,15 +795,25 @@ paths:
       operationId: listRepositories
       tags: [repositories]
       summary: List repositories
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Repositories
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Repository"
+                $ref: "#/components/schemas/PaginatedRepositoryList"
     post:
       operationId: createRepository
       tags: [repositories]
@@ -875,15 +923,24 @@ paths:
           in: query
           schema:
             type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Releases
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Release"
+                $ref: "#/components/schemas/PaginatedReleaseList"
     post:
       operationId: createRelease
       tags: [releases]
@@ -993,15 +1050,24 @@ paths:
           in: query
           schema:
             type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Vulnerabilities
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Vulnerability"
+                $ref: "#/components/schemas/PaginatedVulnerabilityList"
     post:
       operationId: createVulnerability
       tags: [security]
@@ -1111,15 +1177,25 @@ paths:
       operationId: listTeams
       tags: [teams]
       summary: List teams
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Teams
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Team"
+                $ref: "#/components/schemas/PaginatedTeamList"
     post:
       operationId: createTeam
       tags: [teams]
@@ -1191,15 +1267,24 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Software list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SoftwareItem"
+                $ref: "#/components/schemas/PaginatedSoftwareList"
     post:
       operationId: createSoftware
       tags: [software]
@@ -1292,15 +1377,24 @@ paths:
           in: query
           schema:
             type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Documents
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Document"
+                $ref: "#/components/schemas/PaginatedDocumentList"
     post:
       operationId: createDocument
       tags: [documentation]
@@ -1531,15 +1625,20 @@ paths:
           in: query
           schema:
             type: integer
+            default: 100
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
       responses:
         "200":
           description: Audit logs
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLog"
+                $ref: "#/components/schemas/PaginatedAuditLogList"
 
   /search:
     get:
@@ -3492,3 +3591,125 @@ components:
           items:
             $ref: "#/components/schemas/Document"
       required: [applications, infrastructure, databases, domains, repositories, documents]
+
+    # ── Paginated List Responses ──────────────────────────────────────────
+    PaginatedApplicationList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        total:
+          type: integer
+
+    PaginatedInfrastructureList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfrastructureItem"
+        total:
+          type: integer
+
+    PaginatedDatabaseList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DatabaseRecord"
+        total:
+          type: integer
+
+    PaginatedDomainList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Domain"
+        total:
+          type: integer
+
+    PaginatedRepositoryList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
+        total:
+          type: integer
+
+    PaginatedReleaseList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Release"
+        total:
+          type: integer
+
+    PaginatedVulnerabilityList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vulnerability"
+        total:
+          type: integer
+
+    PaginatedTeamList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Team"
+        total:
+          type: integer
+
+    PaginatedSoftwareList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SoftwareItem"
+        total:
+          type: integer
+
+    PaginatedDocumentList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+        total:
+          type: integer
+
+    PaginatedAuditLogList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer

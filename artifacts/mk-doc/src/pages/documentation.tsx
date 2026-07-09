@@ -90,7 +90,8 @@ function fileNameFromObjectPath(url: string): string {
 }
 
 export default function Documentation() {
-  const { data: documents, isLoading } = useListDocuments();
+  const { data: documentsPage, isLoading } = useListDocuments({ limit: 100 });
+  const documents = documentsPage?.data;
   const { mutateAsync: createDocument, isPending: isCreating } = useCreateDocument();
   const { mutateAsync: updateDocument, isPending: isUpdating } = useUpdateDocument();
   const { mutateAsync: deleteDocument, isPending: isDeleting } = useDeleteDocument();

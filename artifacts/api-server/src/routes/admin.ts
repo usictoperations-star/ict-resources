@@ -1,10 +1,11 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import { parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable, domainsTable, repositoriesTable, releasesTable, vulnerabilitiesTable, softwareTable, documentsTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
-import { eq, isNull, isNotNull } from "drizzle-orm";
+import { eq, isNull, isNotNull, count } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 const router = Router();
 
@@ -175,12 +176,15 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
 
 router.get("/audit-logs", async (req: Request, res: Response) => {
   try {
-    const { limit } = req.query as Record<string, string>;
-    const maxLimit = Math.min(parseInt(limit ?? "50"), 200);
-    const logs = await db.select().from(auditLogsTable)
-      .orderBy(sql`${auditLogsTable.createdAt} DESC`)
-      .limit(maxLimit);
-    return res.json(logs.map(l => ({ ...l, createdAt: l.createdAt.toISOString() })));
+    const { limit, offset } = parsePagination(req);
+    const [[{ total }], logs] = await Promise.all([
+      db.select({ total: count() }).from(auditLogsTable),
+      db.select().from(auditLogsTable)
+        .orderBy(sql`${auditLogsTable.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({ data: logs.map(l => ({ ...l, createdAt: l.createdAt.toISOString() })), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing audit logs");
     return res.status(500).json({ error: "Internal server error" });

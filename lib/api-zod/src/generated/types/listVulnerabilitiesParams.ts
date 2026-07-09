@@ -9,4 +9,9 @@
 export type ListVulnerabilitiesParams = {
 severity?: string;
 status?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };

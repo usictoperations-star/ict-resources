@@ -28,7 +28,6 @@ import type {
   ApplicationInput,
   ApplicationSummary,
   ApplicationUpdate,
-  AuditLog,
   AuthUser,
   DashboardStats,
   DatabaseDependents,
@@ -54,12 +53,27 @@ import type {
   InventoryReport,
   ListApplicationsParams,
   ListAuditLogsParams,
+  ListDatabasesParams,
   ListDocumentsParams,
+  ListDomainsParams,
   ListInfrastructureParams,
   ListReleasesParams,
+  ListRepositoriesParams,
   ListSoftwareParams,
+  ListTeamsParams,
   ListVulnerabilitiesParams,
   LoginInput,
+  PaginatedApplicationList,
+  PaginatedAuditLogList,
+  PaginatedDatabaseList,
+  PaginatedDocumentList,
+  PaginatedDomainList,
+  PaginatedInfrastructureList,
+  PaginatedReleaseList,
+  PaginatedRepositoryList,
+  PaginatedSoftwareList,
+  PaginatedTeamList,
+  PaginatedVulnerabilityList,
   PushTokenInput,
   Release,
   ReleaseInput,
@@ -735,9 +749,9 @@ export const getListApplicationsUrl = (params?: ListApplicationsParams,) => {
 /**
  * @summary List all applications
  */
-export const listApplications = async (params?: ListApplicationsParams, options?: RequestInit): Promise<Application[]> => {
+export const listApplications = async (params?: ListApplicationsParams, options?: RequestInit): Promise<PaginatedApplicationList> => {
 
-  return customFetch<Application[]>(getListApplicationsUrl(params),
+  return customFetch<PaginatedApplicationList>(getListApplicationsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1340,9 +1354,9 @@ export const getListInfrastructureUrl = (params?: ListInfrastructureParams,) => 
 /**
  * @summary List infrastructure items
  */
-export const listInfrastructure = async (params?: ListInfrastructureParams, options?: RequestInit): Promise<InfrastructureItem[]> => {
+export const listInfrastructure = async (params?: ListInfrastructureParams, options?: RequestInit): Promise<PaginatedInfrastructureList> => {
 
-  return customFetch<InfrastructureItem[]>(getListInfrastructureUrl(params),
+  return customFetch<PaginatedInfrastructureList>(getListInfrastructureUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1841,20 +1855,27 @@ export const useRestoreInfrastructure = <TError = ErrorType<void>,
       return useMutation(getRestoreInfrastructureMutationOptions(options));
     }
 
-export const getListDatabasesUrl = () => {
+export const getListDatabasesUrl = (params?: ListDatabasesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/databases`
+  return stringifiedParams.length > 0 ? `/api/databases?${stringifiedParams}` : `/api/databases`
 }
 
 /**
  * @summary List database records
  */
-export const listDatabases = async ( options?: RequestInit): Promise<DatabaseRecord[]> => {
+export const listDatabases = async (params?: ListDatabasesParams, options?: RequestInit): Promise<PaginatedDatabaseList> => {
 
-  return customFetch<DatabaseRecord[]>(getListDatabasesUrl(),
+  return customFetch<PaginatedDatabaseList>(getListDatabasesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1867,23 +1888,23 @@ export const listDatabases = async ( options?: RequestInit): Promise<DatabaseRec
 
 
 
-export const getListDatabasesQueryKey = () => {
+export const getListDatabasesQueryKey = (params?: ListDatabasesParams,) => {
     return [
-    `/api/databases`
+    `/api/databases`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListDatabasesQueryOptions = <TData = Awaited<ReturnType<typeof listDatabases>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDatabases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListDatabasesQueryOptions = <TData = Awaited<ReturnType<typeof listDatabases>>, TError = ErrorType<unknown>>(params?: ListDatabasesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDatabases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListDatabasesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListDatabasesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDatabases>>> = ({ signal }) => listDatabases({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDatabases>>> = ({ signal }) => listDatabases(params, { signal, ...requestOptions });
 
 
 
@@ -1901,11 +1922,11 @@ export type ListDatabasesQueryError = ErrorType<unknown>
  */
 
 export function useListDatabases<TData = Awaited<ReturnType<typeof listDatabases>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDatabases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListDatabasesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDatabases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListDatabasesQueryOptions(options)
+  const queryOptions = getListDatabasesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2353,20 +2374,27 @@ export const useRestoreDatabase = <TError = ErrorType<void>,
       return useMutation(getRestoreDatabaseMutationOptions(options));
     }
 
-export const getListDomainsUrl = () => {
+export const getListDomainsUrl = (params?: ListDomainsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/domains`
+  return stringifiedParams.length > 0 ? `/api/domains?${stringifiedParams}` : `/api/domains`
 }
 
 /**
  * @summary List domains
  */
-export const listDomains = async ( options?: RequestInit): Promise<Domain[]> => {
+export const listDomains = async (params?: ListDomainsParams, options?: RequestInit): Promise<PaginatedDomainList> => {
 
-  return customFetch<Domain[]>(getListDomainsUrl(),
+  return customFetch<PaginatedDomainList>(getListDomainsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2379,23 +2407,23 @@ export const listDomains = async ( options?: RequestInit): Promise<Domain[]> => 
 
 
 
-export const getListDomainsQueryKey = () => {
+export const getListDomainsQueryKey = (params?: ListDomainsParams,) => {
     return [
-    `/api/domains`
+    `/api/domains`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListDomainsQueryOptions = <TData = Awaited<ReturnType<typeof listDomains>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDomains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListDomainsQueryOptions = <TData = Awaited<ReturnType<typeof listDomains>>, TError = ErrorType<unknown>>(params?: ListDomainsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDomains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListDomainsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListDomainsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDomains>>> = ({ signal }) => listDomains({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDomains>>> = ({ signal }) => listDomains(params, { signal, ...requestOptions });
 
 
 
@@ -2413,11 +2441,11 @@ export type ListDomainsQueryError = ErrorType<unknown>
  */
 
 export function useListDomains<TData = Awaited<ReturnType<typeof listDomains>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDomains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListDomainsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDomains>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListDomainsQueryOptions(options)
+  const queryOptions = getListDomainsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2942,20 +2970,27 @@ export function useGetExpiringDomains<TData = Awaited<ReturnType<typeof getExpir
 
 
 
-export const getListRepositoriesUrl = () => {
+export const getListRepositoriesUrl = (params?: ListRepositoriesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/repositories`
+  return stringifiedParams.length > 0 ? `/api/repositories?${stringifiedParams}` : `/api/repositories`
 }
 
 /**
  * @summary List repositories
  */
-export const listRepositories = async ( options?: RequestInit): Promise<Repository[]> => {
+export const listRepositories = async (params?: ListRepositoriesParams, options?: RequestInit): Promise<PaginatedRepositoryList> => {
 
-  return customFetch<Repository[]>(getListRepositoriesUrl(),
+  return customFetch<PaginatedRepositoryList>(getListRepositoriesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2968,23 +3003,23 @@ export const listRepositories = async ( options?: RequestInit): Promise<Reposito
 
 
 
-export const getListRepositoriesQueryKey = () => {
+export const getListRepositoriesQueryKey = (params?: ListRepositoriesParams,) => {
     return [
-    `/api/repositories`
+    `/api/repositories`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListRepositoriesQueryOptions = <TData = Awaited<ReturnType<typeof listRepositories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRepositories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListRepositoriesQueryOptions = <TData = Awaited<ReturnType<typeof listRepositories>>, TError = ErrorType<unknown>>(params?: ListRepositoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRepositories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListRepositoriesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListRepositoriesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRepositories>>> = ({ signal }) => listRepositories({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRepositories>>> = ({ signal }) => listRepositories(params, { signal, ...requestOptions });
 
 
 
@@ -3002,11 +3037,11 @@ export type ListRepositoriesQueryError = ErrorType<unknown>
  */
 
 export function useListRepositories<TData = Awaited<ReturnType<typeof listRepositories>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRepositories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListRepositoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRepositories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListRepositoriesQueryOptions(options)
+  const queryOptions = getListRepositoriesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3395,9 +3430,9 @@ export const getListReleasesUrl = (params?: ListReleasesParams,) => {
 /**
  * @summary List releases
  */
-export const listReleases = async (params?: ListReleasesParams, options?: RequestInit): Promise<Release[]> => {
+export const listReleases = async (params?: ListReleasesParams, options?: RequestInit): Promise<PaginatedReleaseList> => {
 
-  return customFetch<Release[]>(getListReleasesUrl(params),
+  return customFetch<PaginatedReleaseList>(getListReleasesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3837,9 +3872,9 @@ export const getListVulnerabilitiesUrl = (params?: ListVulnerabilitiesParams,) =
 /**
  * @summary List vulnerabilities
  */
-export const listVulnerabilities = async (params?: ListVulnerabilitiesParams, options?: RequestInit): Promise<Vulnerability[]> => {
+export const listVulnerabilities = async (params?: ListVulnerabilitiesParams, options?: RequestInit): Promise<PaginatedVulnerabilityList> => {
 
-  return customFetch<Vulnerability[]>(getListVulnerabilitiesUrl(params),
+  return customFetch<PaginatedVulnerabilityList>(getListVulnerabilitiesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4338,20 +4373,27 @@ export function useGetSecurityDashboard<TData = Awaited<ReturnType<typeof getSec
 
 
 
-export const getListTeamsUrl = () => {
+export const getListTeamsUrl = (params?: ListTeamsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/teams`
+  return stringifiedParams.length > 0 ? `/api/teams?${stringifiedParams}` : `/api/teams`
 }
 
 /**
  * @summary List teams
  */
-export const listTeams = async ( options?: RequestInit): Promise<Team[]> => {
+export const listTeams = async (params?: ListTeamsParams, options?: RequestInit): Promise<PaginatedTeamList> => {
 
-  return customFetch<Team[]>(getListTeamsUrl(),
+  return customFetch<PaginatedTeamList>(getListTeamsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4364,23 +4406,23 @@ export const listTeams = async ( options?: RequestInit): Promise<Team[]> => {
 
 
 
-export const getListTeamsQueryKey = () => {
+export const getListTeamsQueryKey = (params?: ListTeamsParams,) => {
     return [
-    `/api/teams`
+    `/api/teams`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListTeamsQueryOptions = <TData = Awaited<ReturnType<typeof listTeams>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListTeamsQueryOptions = <TData = Awaited<ReturnType<typeof listTeams>>, TError = ErrorType<unknown>>(params?: ListTeamsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListTeamsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListTeamsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeams>>> = ({ signal }) => listTeams({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeams>>> = ({ signal }) => listTeams(params, { signal, ...requestOptions });
 
 
 
@@ -4398,11 +4440,11 @@ export type ListTeamsQueryError = ErrorType<unknown>
  */
 
 export function useListTeams<TData = Awaited<ReturnType<typeof listTeams>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListTeamsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListTeamsQueryOptions(options)
+  const queryOptions = getListTeamsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -4644,9 +4686,9 @@ export const getListSoftwareUrl = (params?: ListSoftwareParams,) => {
 /**
  * @summary List software inventory
  */
-export const listSoftware = async (params?: ListSoftwareParams, options?: RequestInit): Promise<SoftwareItem[]> => {
+export const listSoftware = async (params?: ListSoftwareParams, options?: RequestInit): Promise<PaginatedSoftwareList> => {
 
-  return customFetch<SoftwareItem[]>(getListSoftwareUrl(params),
+  return customFetch<PaginatedSoftwareList>(getListSoftwareUrl(params),
   {
     ...options,
     method: 'GET'
@@ -5009,9 +5051,9 @@ export const getListDocumentsUrl = (params?: ListDocumentsParams,) => {
 /**
  * @summary List documents
  */
-export const listDocuments = async (params?: ListDocumentsParams, options?: RequestInit): Promise<Document[]> => {
+export const listDocuments = async (params?: ListDocumentsParams, options?: RequestInit): Promise<PaginatedDocumentList> => {
 
-  return customFetch<Document[]>(getListDocumentsUrl(params),
+  return customFetch<PaginatedDocumentList>(getListDocumentsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -6047,9 +6089,9 @@ export const getListAuditLogsUrl = (params?: ListAuditLogsParams,) => {
 /**
  * @summary List audit log entries
  */
-export const listAuditLogs = async (params?: ListAuditLogsParams, options?: RequestInit): Promise<AuditLog[]> => {
+export const listAuditLogs = async (params?: ListAuditLogsParams, options?: RequestInit): Promise<PaginatedAuditLogList> => {
 
-  return customFetch<AuditLog[]>(getListAuditLogsUrl(params),
+  return customFetch<PaginatedAuditLogList>(getListAuditLogsUrl(params),
   {
     ...options,
     method: 'GET'

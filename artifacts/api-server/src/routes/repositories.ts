@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { repositoriesTable, auditLogsTable, usersTable } from "@workspace/db";
 import { CreateRepositoryBody, UpdateRepositoryBody } from "@workspace/api-zod";
-import { eq, isNull, isNotNull, and, gte } from "drizzle-orm";
+import { eq, isNull, isNotNull, and, gte, count } from "drizzle-orm";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
@@ -26,12 +26,17 @@ const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const results = await db
-      .select({ repo: repositoriesTable, ownerName: usersTable.name })
-      .from(repositoriesTable)
-      .leftJoin(usersTable, eq(repositoriesTable.ownerId, usersTable.id))
-      .where(isNull(repositoriesTable.deletedAt));
-    return res.json(results.map(({ repo: r, ownerName }) => fmt(r, ownerName ?? null)));
+    const { limit, offset } = parsePagination(req);
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(repositoriesTable).where(isNull(repositoriesTable.deletedAt)),
+      db.select({ repo: repositoriesTable, ownerName: usersTable.name })
+        .from(repositoriesTable)
+        .leftJoin(usersTable, eq(repositoriesTable.ownerId, usersTable.id))
+        .where(isNull(repositoriesTable.deletedAt))
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({ data: results.map(({ repo: r, ownerName }) => fmt(r, ownerName ?? null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing repositories");
     return res.status(500).json({ error: "Internal server error" });

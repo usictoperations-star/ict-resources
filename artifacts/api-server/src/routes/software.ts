@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { softwareTable, auditLogsTable, usersTable } from "@workspace/db";
 import { CreateSoftwareBody, UpdateSoftwareBody } from "@workspace/api-zod";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, count } from "drizzle-orm";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
@@ -17,15 +17,23 @@ const router = Router();
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { type, endOfLife } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(softwareTable.deletedAt)];
     if (type) conditions.push(eq(softwareTable.type, type));
     if (endOfLife !== undefined) conditions.push(eq(softwareTable.endOfLife, endOfLife === "true"));
-    const results = await db
-      .select({ sw: softwareTable, ownerName: usersTable.name })
-      .from(softwareTable)
-      .leftJoin(usersTable, eq(softwareTable.ownerId, usersTable.id))
-      .where(and(...conditions));
-    return res.json(results.map(({ sw: r, ownerName }) => ({ ...r, ownerName: ownerName ?? null, createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(), deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null })));
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(softwareTable).where(and(...conditions)),
+      db.select({ sw: softwareTable, ownerName: usersTable.name })
+        .from(softwareTable)
+        .leftJoin(usersTable, eq(softwareTable.ownerId, usersTable.id))
+        .where(and(...conditions))
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({
+      data: results.map(({ sw: r, ownerName }) => ({ ...r, ownerName: ownerName ?? null, createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(), deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null })),
+      total: Number(total),
+    });
   } catch (err) {
     req.log.error({ err }, "Error listing software");
     return res.status(500).json({ error: "Internal server error" });

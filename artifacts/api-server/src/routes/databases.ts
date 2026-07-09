@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { databasesTable, auditLogsTable, usersTable, applicationsTable } from "@workspace/db";
 import { CreateDatabaseBody, UpdateDatabaseRecordBody } from "@workspace/api-zod";
@@ -24,12 +24,17 @@ async function resolveOwnerName(ownerId: number | null | undefined): Promise<str
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const results = await db
-      .select({ item: databasesTable, ownerName: usersTable.name })
-      .from(databasesTable)
-      .leftJoin(usersTable, eq(databasesTable.ownerId, usersTable.id))
-      .where(isNull(databasesTable.deletedAt));
-    return res.json(results.map(({ item, ownerName }) => fmt(item, ownerName ?? null)));
+    const { limit, offset } = parsePagination(req);
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(databasesTable).where(isNull(databasesTable.deletedAt)),
+      db.select({ item: databasesTable, ownerName: usersTable.name })
+        .from(databasesTable)
+        .leftJoin(usersTable, eq(databasesTable.ownerId, usersTable.id))
+        .where(isNull(databasesTable.deletedAt))
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({ data: results.map(({ item, ownerName }) => fmt(item, ownerName ?? null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing databases");
     return res.status(500).json({ error: "Internal server error" });

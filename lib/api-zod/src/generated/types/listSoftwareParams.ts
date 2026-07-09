@@ -9,4 +9,9 @@
 export type ListSoftwareParams = {
 type?: string;
 endOfLife?: boolean;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };

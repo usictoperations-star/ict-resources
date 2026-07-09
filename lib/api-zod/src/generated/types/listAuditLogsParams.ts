@@ -7,5 +7,9 @@
  */
 
 export type ListAuditLogsParams = {
+/**
+ * @maximum 500
+ */
 limit?: number;
+offset?: number;
 };

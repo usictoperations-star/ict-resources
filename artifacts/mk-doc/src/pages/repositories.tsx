@@ -100,7 +100,8 @@ const REPO_EXPORT_COLS = [
 ];
 
 export default function Repositories() {
-  const { data: repositories, isLoading } = useListRepositories();
+  const { data: repositoriesPage, isLoading } = useListRepositories({ limit: 100 });
+  const repositories = repositoriesPage?.data;
   const { mutateAsync: createRepository, isPending: isCreating } = useCreateRepository();
   const { mutateAsync: updateRepository, isPending: isUpdating } = useUpdateRepository();
   const { mutateAsync: deleteRepository, isPending: isDeleting } = useDeleteRepository();

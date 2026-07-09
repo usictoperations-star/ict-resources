@@ -9,4 +9,9 @@
 export type ListInfrastructureParams = {
 type?: string;
 status?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };

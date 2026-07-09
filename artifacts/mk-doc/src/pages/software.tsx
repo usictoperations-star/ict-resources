@@ -115,7 +115,8 @@ const SOFTWARE_EXPORT_COLS = [
 ];
 
 export default function Software() {
-  const { data: software, isLoading } = useListSoftware();
+  const { data: softwarePage, isLoading } = useListSoftware({ limit: 100 });
+  const software = softwarePage?.data;
   const { mutateAsync: createSoftware, isPending: isCreating } = useCreateSoftware();
   const { mutateAsync: updateSoftware, isPending: isUpdating } = useUpdateSoftware();
   const { mutateAsync: deleteSoftware, isPending: isDeleting } = useDeleteSoftware();

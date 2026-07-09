@@ -87,7 +87,8 @@ const DB_EXPORT_COLS = [
 ];
 
 export default function Databases() {
-  const { data: databases, isLoading } = useListDatabases();
+  const { data: databasesPage, isLoading } = useListDatabases({ limit: 100 });
+  const databases = databasesPage?.data;
   const { mutateAsync: createDatabase, isPending: isCreating } = useCreateDatabase();
   const { mutateAsync: updateDatabase, isPending: isUpdating } = useUpdateDatabaseRecord();
   const { mutateAsync: deleteDatabase, isPending: isDeleting } = useDeleteDatabaseRecord();

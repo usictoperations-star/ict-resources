@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { releasesTable, applicationsTable, auditLogsTable } from "@workspace/db";
 import { CreateReleaseBody, UpdateReleaseBody } from "@workspace/api-zod";
-import { eq, and, isNull, isNotNull, gte } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, gte, count } from "drizzle-orm";
 
 function fmt(r: typeof releasesTable.$inferSelect, applicationName: string | null = null) {
   return {
@@ -21,16 +21,19 @@ const router = Router();
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { applicationId, environment } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(releasesTable.deletedAt)];
     if (applicationId) conditions.push(eq(releasesTable.applicationId, parseInt(applicationId)));
     if (environment) conditions.push(eq(releasesTable.environment, environment));
 
-    const releases = await db.select().from(releasesTable).where(and(...conditions));
-
-    const apps = await db.select().from(applicationsTable);
+    const [[{ total }], releases, apps] = await Promise.all([
+      db.select({ total: count() }).from(releasesTable).where(and(...conditions)),
+      db.select().from(releasesTable).where(and(...conditions)).limit(limit).offset(offset),
+      db.select({ id: applicationsTable.id, name: applicationsTable.name }).from(applicationsTable),
+    ]);
     const appMap = new Map(apps.map(a => [a.id, a.name]));
 
-    return res.json(releases.map(r => fmt(r, appMap.get(r.applicationId) ?? null)));
+    return res.json({ data: releases.map(r => fmt(r, r.applicationId != null ? appMap.get(r.applicationId) ?? null : null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing releases");
     return res.status(500).json({ error: "Internal server error" });

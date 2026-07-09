@@ -154,7 +154,8 @@ function daysRemainingBadge(days?: number | null) {
 function RiskIndicatorsView() {
   const { data: summary,         isLoading: summaryLoading } = useGetSecuritySummary();
   const { data: dashboard,       isLoading: dashLoading }    = useGetSecurityDashboard();
-  const { data: vulnerabilities, isLoading: vulnsLoading }   = useListVulnerabilities();
+  const { data: vulnsPage, isLoading: vulnsLoading }   = useListVulnerabilities({ limit: 100 });
+  const vulnerabilities = vulnsPage?.data;
   const [, navigate] = useLocation();
 
   // Needs Attention: top flagged areas sorted danger → warning
@@ -849,8 +850,10 @@ function NeedsAttentionView() {
 
 // ── VIEW: Vulnerabilities ──────────────────────────────────────────────────────
 function VulnerabilitiesView() {
-  const { data: vulnerabilities, isLoading: vulnsLoading } = useListVulnerabilities();
-  const { data: applications }                             = useListApplications();
+  const { data: vulnsPage2, isLoading: vulnsLoading } = useListVulnerabilities({ limit: 100 });
+  const vulnerabilities = vulnsPage2?.data;
+  const { data: appsPage }                             = useListApplications({ limit: 500 });
+  const applications = appsPage?.data;
   const { mutateAsync: createVulnerability, isPending: isCreating } = useCreateVulnerability();
   const { mutateAsync: updateVulnerability, isPending: isUpdating } = useUpdateVulnerability();
   const { mutateAsync: deleteVulnerability, isPending: isDeleting } = useDeleteVulnerability();

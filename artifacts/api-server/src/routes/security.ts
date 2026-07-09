@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import {
   vulnerabilitiesTable,
@@ -14,7 +14,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { CreateVulnerabilityBody, UpdateVulnerabilityBody } from "@workspace/api-zod";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -147,27 +147,31 @@ router.get("/summary", async (req: Request, res: Response) => {
 router.get("/vulnerabilities", async (req: Request, res: Response) => {
   try {
     const { severity, status } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(vulnerabilitiesTable.deletedAt)];
     if (severity) conditions.push(eq(vulnerabilitiesTable.severity, severity));
     if (status) conditions.push(eq(vulnerabilitiesTable.status, status));
 
-    const vulns = await db.select().from(vulnerabilitiesTable).where(and(...conditions));
-
-    const [apps, owners] = await Promise.all([
+    const [[{ total }], vulns, apps, owners] = await Promise.all([
+      db.select({ total: count() }).from(vulnerabilitiesTable).where(and(...conditions)),
+      db.select().from(vulnerabilitiesTable).where(and(...conditions)).limit(limit).offset(offset),
       db.select({ id: applicationsTable.id, name: applicationsTable.name }).from(applicationsTable),
       db.select({ id: usersTable.id, name: usersTable.name }).from(usersTable),
     ]);
     const appMap = new Map(apps.map(a => [a.id, a.name]));
     const ownerMap = new Map(owners.map(u => [u.id, u.name]));
 
-    return res.json(vulns.map(v => ({
-      ...v,
-      applicationName: v.applicationId ? appMap.get(v.applicationId) ?? null : null,
-      ownerName: v.ownerId ? ownerMap.get(v.ownerId) ?? null : null,
-      createdAt: v.createdAt.toISOString(),
-      updatedAt: v.updatedAt.toISOString(),
-      deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
-    })));
+    return res.json({
+      data: vulns.map(v => ({
+        ...v,
+        applicationName: v.applicationId ? appMap.get(v.applicationId) ?? null : null,
+        ownerName: v.ownerId ? ownerMap.get(v.ownerId) ?? null : null,
+        createdAt: v.createdAt.toISOString(),
+        updatedAt: v.updatedAt.toISOString(),
+        deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
+      })),
+      total: Number(total),
+    });
   } catch (err) {
     req.log.error({ err }, "Error listing vulnerabilities");
     return res.status(500).json({ error: "Internal server error" });

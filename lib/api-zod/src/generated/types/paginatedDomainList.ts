@@ -5,13 +5,9 @@
  * MK Digital Operations Center API
  * OpenAPI spec version: 1.0.0
  */
+import type { Domain } from './domain';
 
-export type ListDocumentsParams = {
-type?: string;
-applicationId?: number;
-/**
- * @maximum 500
- */
-limit?: number;
-offset?: number;
-};
+export interface PaginatedDomainList {
+  data: Domain[];
+  total: number;
+}

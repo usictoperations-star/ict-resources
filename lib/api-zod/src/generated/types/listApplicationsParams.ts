@@ -11,4 +11,9 @@ status?: string;
 category?: string;
 environment?: string;
 search?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };

@@ -99,7 +99,8 @@ const DOMAIN_EXPORT_COLS = [
 ];
 
 export default function Domains() {
-  const { data: domains, isLoading: domainsLoading } = useListDomains();
+  const { data: domainsPage, isLoading: domainsLoading } = useListDomains({ limit: 100 });
+  const domains = domainsPage?.data;
   const { data: expiringDomains, isLoading: expiringLoading } = useGetExpiringDomains();
   const { mutateAsync: createDomain, isPending: isCreating } = useCreateDomain();
   const { mutateAsync: updateDomain, isPending: isUpdating } = useUpdateDomain();

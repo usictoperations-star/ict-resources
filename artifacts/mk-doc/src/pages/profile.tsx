@@ -48,8 +48,8 @@ export default function Profile() {
   const [pw, setPw] = useState({ newPassword: "", confirm: "" });
   const [pwErrors, setPwErrors] = useState<Record<string, string>>({});
 
-  const { data: allLogs } = useListAuditLogs({ limit: 200 });
-  const myLogs = (allLogs ?? [])
+  const { data: allLogsPage } = useListAuditLogs({ limit: 200 });
+  const myLogs = (allLogsPage?.data ?? [])
     .filter(l => l.userName === user?.name)
     .slice(0, 20);
 

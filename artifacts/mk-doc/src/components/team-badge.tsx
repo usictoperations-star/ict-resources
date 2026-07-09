@@ -13,7 +13,8 @@ export function useTeams() {
 }
 
 export function TeamBadge({ teamId }: { teamId?: number | null }) {
-  const { data: teams } = useListTeams();
+  const { data: teamsPage } = useListTeams({ limit: 100 });
+  const teams = teamsPage?.data;
   if (!teamId) return <span className="text-sm text-muted-foreground">Unassigned</span>;
   const team = teams?.find(t => t.id === teamId);
   if (!team) return <span className="text-sm text-muted-foreground">Unassigned</span>;

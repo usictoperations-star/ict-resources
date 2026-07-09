@@ -9,4 +9,9 @@
 export type ListReleasesParams = {
 applicationId?: number;
 environment?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };

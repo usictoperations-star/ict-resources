@@ -98,7 +98,8 @@ const EMPTY_FORM = { applicationId: "", version: "", environment: "Production", 
 type ReleaseRow = { id: number; applicationId: number; applicationName?: string | null; version: string; environment: string; status: string; releaseDate?: string | null; releasedBy?: string | null; releaseNotes?: string | null; rollbackAvailable: boolean; approved: boolean; approvedBy?: string | null };
 
 export default function Releases() {
-  const { data: releases, isLoading } = useListReleases();
+  const { data: releasesPage, isLoading } = useListReleases({ limit: 100 });
+  const releases = releasesPage?.data;
   const { mutateAsync: createRelease, isPending: isCreating } = useCreateRelease();
   const { mutateAsync: updateRelease, isPending: isUpdating } = useUpdateRelease();
   const { mutateAsync: deleteRelease, isPending: isDeleting } = useDeleteRelease();

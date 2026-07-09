@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { infrastructureTable, auditLogsTable, usersTable, applicationsTable } from "@workspace/db";
 import { CreateInfrastructureBody, UpdateInfrastructureBody } from "@workspace/api-zod";
@@ -25,15 +25,20 @@ async function resolveOwnerName(ownerId: number | null | undefined): Promise<str
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { type, status } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(infrastructureTable.deletedAt)];
     if (type) conditions.push(eq(infrastructureTable.type, type));
     if (status) conditions.push(eq(infrastructureTable.status, status));
-    const results = await db
-      .select({ item: infrastructureTable, ownerName: usersTable.name })
-      .from(infrastructureTable)
-      .leftJoin(usersTable, eq(infrastructureTable.ownerId, usersTable.id))
-      .where(and(...conditions));
-    return res.json(results.map(({ item, ownerName }) => fmt(item, ownerName ?? null)));
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(infrastructureTable).where(and(...conditions)),
+      db.select({ item: infrastructureTable, ownerName: usersTable.name })
+        .from(infrastructureTable)
+        .leftJoin(usersTable, eq(infrastructureTable.ownerId, usersTable.id))
+        .where(and(...conditions))
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({ data: results.map(({ item, ownerName }) => fmt(item, ownerName ?? null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing infrastructure");
     return res.status(500).json({ error: "Internal server error" });

@@ -1,35 +1,41 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { documentsTable, applicationsTable, auditLogsTable, usersTable } from "@workspace/db";
 import { CreateDocumentBody, UpdateDocumentBody } from "@workspace/api-zod";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, count } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { type, applicationId } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(documentsTable.deletedAt)];
     if (type) conditions.push(eq(documentsTable.type, type));
     if (applicationId) conditions.push(eq(documentsTable.applicationId, parseInt(applicationId)));
 
-    const docs = await db.select().from(documentsTable).where(and(...conditions));
-
-    const apps = await db.select().from(applicationsTable);
+    const [[{ total }], docs, apps, users] = await Promise.all([
+      db.select({ total: count() }).from(documentsTable).where(and(...conditions)),
+      db.select().from(documentsTable).where(and(...conditions)).limit(limit).offset(offset),
+      db.select({ id: applicationsTable.id, name: applicationsTable.name }).from(applicationsTable),
+      db.select({ id: usersTable.id, name: usersTable.name }).from(usersTable),
+    ]);
     const appMap = new Map(apps.map(a => [a.id, a.name]));
-    const users = await db.select().from(usersTable);
     const userMap = new Map(users.map(u => [u.id, u.name]));
 
-    return res.json(docs.map(d => ({
-      ...d,
-      applicationName: d.applicationId ? appMap.get(d.applicationId) ?? null : null,
-      ownerName: d.ownerId ? userMap.get(d.ownerId) ?? null : null,
-      createdAt: d.createdAt.toISOString(),
-      updatedAt: d.updatedAt.toISOString(),
-      deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
-    })));
+    return res.json({
+      data: docs.map(d => ({
+        ...d,
+        applicationName: d.applicationId ? appMap.get(d.applicationId) ?? null : null,
+        ownerName: d.ownerId ? userMap.get(d.ownerId) ?? null : null,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString(),
+        deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
+      })),
+      total: Number(total),
+    });
   } catch (err) {
     req.log.error({ err }, "Error listing documents");
     return res.status(500).json({ error: "Internal server error" });

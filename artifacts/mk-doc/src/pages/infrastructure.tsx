@@ -93,7 +93,8 @@ const INFRA_EXPORT_COLS = [
 ];
 
 export default function Infrastructure() {
-  const { data: infra, isLoading } = useListInfrastructure();
+  const { data: infraPage, isLoading } = useListInfrastructure({ limit: 100 });
+  const infra = infraPage?.data;
   const { mutateAsync: createInfrastructure, isPending: isCreating } = useCreateInfrastructure();
   const { mutateAsync: updateInfrastructure, isPending: isUpdating } = useUpdateInfrastructure();
   const { mutateAsync: deleteInfrastructure, isPending: isDeleting } = useDeleteInfrastructure();

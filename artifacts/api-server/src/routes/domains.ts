@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { domainsTable, auditLogsTable, usersTable } from "@workspace/db";
 import { CreateDomainBody, UpdateDomainBody } from "@workspace/api-zod";
-import { eq, desc, isNull, isNotNull, and, gte } from "drizzle-orm";
+import { eq, desc, isNull, isNotNull, and, gte, count } from "drizzle-orm";
 
 async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
   if (!ownerId) return null;
@@ -48,12 +48,17 @@ router.get("/expiring", async (req: Request, res: Response) => {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const results = await db
-      .select({ domain: domainsTable, ownerName: usersTable.name })
-      .from(domainsTable)
-      .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
-      .where(isNull(domainsTable.deletedAt));
-    return res.json(results.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)));
+    const { limit, offset } = parsePagination(req);
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(domainsTable).where(isNull(domainsTable.deletedAt)),
+      db.select({ domain: domainsTable, ownerName: usersTable.name })
+        .from(domainsTable)
+        .leftJoin(usersTable, eq(domainsTable.ownerId, usersTable.id))
+        .where(isNull(domainsTable.deletedAt))
+        .limit(limit)
+        .offset(offset),
+    ]);
+    return res.json({ data: results.map(({ domain: d, ownerName }) => fmt(d, ownerName ?? null)), total: Number(total) });
   } catch (err) {
     req.log.error({ err }, "Error listing domains");
     return res.status(500).json({ error: "Internal server error" });

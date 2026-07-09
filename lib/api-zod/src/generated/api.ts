@@ -125,14 +125,22 @@ export const GetDashboardActivityChartResponse = zod.array(GetDashboardActivityC
 /**
  * @summary List all applications
  */
+export const listApplicationsQueryLimitDefault = 100;
+export const listApplicationsQueryLimitMax = 500;
+
+export const listApplicationsQueryOffsetDefault = 0;
+
 export const ListApplicationsQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
   "environment": zod.coerce.string().optional(),
-  "search": zod.coerce.string().optional()
+  "search": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().max(listApplicationsQueryLimitMax).default(listApplicationsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listApplicationsQueryOffsetDefault)
 })
 
-export const ListApplicationsResponseItem = zod.object({
+export const ListApplicationsResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "shortName": zod.string().nullish(),
@@ -166,8 +174,9 @@ export const ListApplicationsResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListApplicationsResponse = zod.array(ListApplicationsResponseItem)
 
 
 /**
@@ -466,12 +475,20 @@ export const GetApplicationSummaryResponse = zod.object({
 /**
  * @summary List infrastructure items
  */
+export const listInfrastructureQueryLimitDefault = 100;
+export const listInfrastructureQueryLimitMax = 500;
+
+export const listInfrastructureQueryOffsetDefault = 0;
+
 export const ListInfrastructureQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
-  "status": zod.coerce.string().optional()
+  "status": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().max(listInfrastructureQueryLimitMax).default(listInfrastructureQueryLimitDefault),
+  "offset": zod.coerce.number().default(listInfrastructureQueryOffsetDefault)
 })
 
-export const ListInfrastructureResponseItem = zod.object({
+export const ListInfrastructureResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "type": zod.string(),
@@ -491,8 +508,9 @@ export const ListInfrastructureResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListInfrastructureResponse = zod.array(ListInfrastructureResponseItem)
 
 
 /**
@@ -674,7 +692,18 @@ export const RestoreInfrastructureResponse = zod.object({
 /**
  * @summary List database records
  */
-export const ListDatabasesResponseItem = zod.object({
+export const listDatabasesQueryLimitDefault = 100;
+export const listDatabasesQueryLimitMax = 500;
+
+export const listDatabasesQueryOffsetDefault = 0;
+
+export const ListDatabasesQueryParams = zod.object({
+  "limit": zod.coerce.number().max(listDatabasesQueryLimitMax).default(listDatabasesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listDatabasesQueryOffsetDefault)
+})
+
+export const ListDatabasesResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "type": zod.string(),
@@ -693,8 +722,9 @@ export const ListDatabasesResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListDatabasesResponse = zod.array(ListDatabasesResponseItem)
 
 
 /**
@@ -870,7 +900,18 @@ export const RestoreDatabaseResponse = zod.object({
 /**
  * @summary List domains
  */
-export const ListDomainsResponseItem = zod.object({
+export const listDomainsQueryLimitDefault = 100;
+export const listDomainsQueryLimitMax = 500;
+
+export const listDomainsQueryOffsetDefault = 0;
+
+export const ListDomainsQueryParams = zod.object({
+  "limit": zod.coerce.number().max(listDomainsQueryLimitMax).default(listDomainsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listDomainsQueryOffsetDefault)
+})
+
+export const ListDomainsResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "registrar": zod.string().nullish(),
@@ -888,8 +929,9 @@ export const ListDomainsResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListDomainsResponse = zod.array(ListDomainsResponseItem)
 
 
 /**
@@ -1089,7 +1131,18 @@ export const GetExpiringDomainsResponse = zod.array(GetExpiringDomainsResponseIt
 /**
  * @summary List repositories
  */
-export const ListRepositoriesResponseItem = zod.object({
+export const listRepositoriesQueryLimitDefault = 100;
+export const listRepositoriesQueryLimitMax = 500;
+
+export const listRepositoriesQueryOffsetDefault = 0;
+
+export const ListRepositoriesQueryParams = zod.object({
+  "limit": zod.coerce.number().max(listRepositoriesQueryLimitMax).default(listRepositoriesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listRepositoriesQueryOffsetDefault)
+})
+
+export const ListRepositoriesResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "url": zod.string().nullish(),
@@ -1109,8 +1162,9 @@ export const ListRepositoriesResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListRepositoriesResponse = zod.array(ListRepositoriesResponseItem)
 
 
 /**
@@ -1279,12 +1333,20 @@ export const RestoreRepositoryResponse = zod.object({
 /**
  * @summary List releases
  */
+export const listReleasesQueryLimitDefault = 100;
+export const listReleasesQueryLimitMax = 500;
+
+export const listReleasesQueryOffsetDefault = 0;
+
 export const ListReleasesQueryParams = zod.object({
   "applicationId": zod.coerce.number().optional(),
-  "environment": zod.coerce.string().optional()
+  "environment": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().max(listReleasesQueryLimitMax).default(listReleasesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listReleasesQueryOffsetDefault)
 })
 
-export const ListReleasesResponseItem = zod.object({
+export const ListReleasesResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "applicationId": zod.number(),
   "applicationName": zod.string().nullish(),
@@ -1300,8 +1362,9 @@ export const ListReleasesResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListReleasesResponse = zod.array(ListReleasesResponseItem)
 
 
 /**
@@ -1445,12 +1508,20 @@ export const RestoreReleaseResponse = zod.object({
 /**
  * @summary List vulnerabilities
  */
+export const listVulnerabilitiesQueryLimitDefault = 100;
+export const listVulnerabilitiesQueryLimitMax = 500;
+
+export const listVulnerabilitiesQueryOffsetDefault = 0;
+
 export const ListVulnerabilitiesQueryParams = zod.object({
   "severity": zod.coerce.string().optional(),
-  "status": zod.coerce.string().optional()
+  "status": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().max(listVulnerabilitiesQueryLimitMax).default(listVulnerabilitiesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listVulnerabilitiesQueryOffsetDefault)
 })
 
-export const ListVulnerabilitiesResponseItem = zod.object({
+export const ListVulnerabilitiesResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "description": zod.string().nullish(),
@@ -1476,8 +1547,9 @@ export const ListVulnerabilitiesResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListVulnerabilitiesResponse = zod.array(ListVulnerabilitiesResponseItem)
 
 
 /**
@@ -1720,15 +1792,27 @@ export const GetSecurityDashboardResponse = zod.object({
 /**
  * @summary List teams
  */
-export const ListTeamsResponseItem = zod.object({
+export const listTeamsQueryLimitDefault = 100;
+export const listTeamsQueryLimitMax = 500;
+
+export const listTeamsQueryOffsetDefault = 0;
+
+export const ListTeamsQueryParams = zod.object({
+  "limit": zod.coerce.number().max(listTeamsQueryLimitMax).default(listTeamsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listTeamsQueryOffsetDefault)
+})
+
+export const ListTeamsResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
   "description": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
+})),
+  "total": zod.number()
 })
-export const ListTeamsResponse = zod.array(ListTeamsResponseItem)
 
 
 /**
@@ -1790,12 +1874,20 @@ export const DeleteTeamResponse = zod.void()
 /**
  * @summary List software inventory
  */
+export const listSoftwareQueryLimitDefault = 100;
+export const listSoftwareQueryLimitMax = 500;
+
+export const listSoftwareQueryOffsetDefault = 0;
+
 export const ListSoftwareQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
-  "endOfLife": zod.coerce.boolean().optional()
+  "endOfLife": zod.coerce.boolean().optional(),
+  "limit": zod.coerce.number().max(listSoftwareQueryLimitMax).default(listSoftwareQueryLimitDefault),
+  "offset": zod.coerce.number().default(listSoftwareQueryOffsetDefault)
 })
 
-export const ListSoftwareResponseItem = zod.object({
+export const ListSoftwareResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "type": zod.string(),
@@ -1814,8 +1906,9 @@ export const ListSoftwareResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListSoftwareResponse = zod.array(ListSoftwareResponseItem)
 
 
 /**
@@ -1949,12 +2042,20 @@ export const RestoreSoftwareResponse = zod.object({
 /**
  * @summary List documents
  */
+export const listDocumentsQueryLimitDefault = 100;
+export const listDocumentsQueryLimitMax = 500;
+
+export const listDocumentsQueryOffsetDefault = 0;
+
 export const ListDocumentsQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
-  "applicationId": zod.coerce.number().optional()
+  "applicationId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().max(listDocumentsQueryLimitMax).default(listDocumentsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listDocumentsQueryOffsetDefault)
 })
 
-export const ListDocumentsResponseItem = zod.object({
+export const ListDocumentsResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "type": zod.string(),
@@ -1970,8 +2071,9 @@ export const ListDocumentsResponseItem = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
+})),
+  "total": zod.number()
 })
-export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem)
 
 
 /**
@@ -2458,11 +2560,18 @@ export const DeleteUserResponse = zod.void()
 /**
  * @summary List audit log entries
  */
+export const listAuditLogsQueryLimitDefault = 100;
+export const listAuditLogsQueryLimitMax = 500;
+
+export const listAuditLogsQueryOffsetDefault = 0;
+
 export const ListAuditLogsQueryParams = zod.object({
-  "limit": zod.coerce.number().optional()
+  "limit": zod.coerce.number().max(listAuditLogsQueryLimitMax).default(listAuditLogsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listAuditLogsQueryOffsetDefault)
 })
 
-export const ListAuditLogsResponseItem = zod.object({
+export const ListAuditLogsResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
   "action": zod.string(),
   "entityType": zod.string(),
@@ -2472,8 +2581,9 @@ export const ListAuditLogsResponseItem = zod.object({
   "userName": zod.string().nullish(),
   "changes": zod.string().nullish(),
   "createdAt": zod.string()
+})),
+  "total": zod.number()
 })
-export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem)
 
 
 /**

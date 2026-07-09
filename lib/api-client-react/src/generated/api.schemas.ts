@@ -1074,11 +1074,71 @@ export interface SearchResults {
   documents: Document[];
 }
 
+export interface PaginatedApplicationList {
+  data: Application[];
+  total: number;
+}
+
+export interface PaginatedInfrastructureList {
+  data: InfrastructureItem[];
+  total: number;
+}
+
+export interface PaginatedDatabaseList {
+  data: DatabaseRecord[];
+  total: number;
+}
+
+export interface PaginatedDomainList {
+  data: Domain[];
+  total: number;
+}
+
+export interface PaginatedRepositoryList {
+  data: Repository[];
+  total: number;
+}
+
+export interface PaginatedReleaseList {
+  data: Release[];
+  total: number;
+}
+
+export interface PaginatedVulnerabilityList {
+  data: Vulnerability[];
+  total: number;
+}
+
+export interface PaginatedTeamList {
+  data: Team[];
+  total: number;
+}
+
+export interface PaginatedSoftwareList {
+  data: SoftwareItem[];
+  total: number;
+}
+
+export interface PaginatedDocumentList {
+  data: Document[];
+  total: number;
+}
+
+export interface PaginatedAuditLogList {
+  data: AuditLog[];
+  total: number;
+}
+
 export type ListApplicationsParams = {
 status?: string;
 category?: string;
 environment?: string;
 search?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type DeleteApplicationParams = {
@@ -1095,30 +1155,91 @@ reassignTo?: number;
 export type ListInfrastructureParams = {
 type?: string;
 status?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
+};
+
+export type ListDatabasesParams = {
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
+};
+
+export type ListDomainsParams = {
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
+};
+
+export type ListRepositoriesParams = {
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type ListReleasesParams = {
 applicationId?: number;
 environment?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type ListVulnerabilitiesParams = {
 severity?: string;
 status?: string;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
+};
+
+export type ListTeamsParams = {
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type ListSoftwareParams = {
 type?: string;
 endOfLife?: boolean;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type ListDocumentsParams = {
 type?: string;
 applicationId?: number;
+/**
+ * @maximum 500
+ */
+limit?: number;
+offset?: number;
 };
 
 export type ListAuditLogsParams = {
+/**
+ * @maximum 500
+ */
 limit?: number;
+offset?: number;
 };
 
 export type GlobalSearchParams = {

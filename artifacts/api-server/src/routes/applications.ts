@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { parseIdParam } from "../lib/params";
+import { parseIdParam, parsePagination } from "../lib/params";
 import { db } from "@workspace/db";
 import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable, usersTable } from "@workspace/db";
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
@@ -63,25 +63,33 @@ router.get("/summary", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { status, category, environment, search } = req.query as Record<string, string>;
+    const { limit, offset } = parsePagination(req);
     const conditions = [isNull(applicationsTable.deletedAt)];
     if (status) conditions.push(eq(applicationsTable.status, status));
     if (category) conditions.push(eq(applicationsTable.category, category));
     if (environment) conditions.push(eq(applicationsTable.environment, environment));
     if (search) conditions.push(ilike(applicationsTable.name, `%${search}%`));
 
-    const results = await db
-      .select({ app: applicationsTable, ownerName: usersTable.name })
-      .from(applicationsTable)
-      .leftJoin(usersTable, eq(applicationsTable.ownerId, usersTable.id))
-      .where(and(...conditions));
+    const [[{ total }], results] = await Promise.all([
+      db.select({ total: count() }).from(applicationsTable).where(and(...conditions)),
+      db.select({ app: applicationsTable, ownerName: usersTable.name })
+        .from(applicationsTable)
+        .leftJoin(usersTable, eq(applicationsTable.ownerId, usersTable.id))
+        .where(and(...conditions))
+        .limit(limit)
+        .offset(offset),
+    ]);
 
-    return res.json(results.map(({ app: a, ownerName }) => ({
-      ...a,
-      ownerName: ownerName ?? null,
-      createdAt: a.createdAt.toISOString(),
-      updatedAt: a.updatedAt.toISOString(),
-      deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
-    })));
+    return res.json({
+      data: results.map(({ app: a, ownerName }) => ({
+        ...a,
+        ownerName: ownerName ?? null,
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
+        deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
+      })),
+      total: Number(total),
+    });
   } catch (err) {
     req.log.error({ err }, "Error listing applications");
     return res.status(500).json({ error: "Internal server error" });
