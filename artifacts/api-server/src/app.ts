@@ -1,11 +1,15 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { createSessionMiddleware } from "./lib/session";
 
 const app: Express = express();
+
+// Security headers — applied before all routes
+app.use(helmet());
 
 app.use(
   pinoHttp({

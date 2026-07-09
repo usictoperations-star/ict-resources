@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import { rateLimit } from "express-rate-limit";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -9,7 +10,16 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
-router.post("/auth/login", async (req: Request, res: Response): Promise<void> => {
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please try again in 15 minutes." },
+  skipSuccessfulRequests: true,
+});
+
+router.post("/auth/login", loginRateLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = LoginBody.safeParse(req.body);
     if (!parsed.success) {
