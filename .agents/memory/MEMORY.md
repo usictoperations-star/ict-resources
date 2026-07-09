@@ -3,3 +3,4 @@
 - [drizzle-kit push in non-interactive shell](drizzle-push-noninteractive.md) — use `--force` flag when a push has data-loss confirmation prompts; agent shells have no TTY to answer them.
 - [Playwright e2e setup in this pnpm monorepo](playwright-e2e-setup.md) — workspace-scoped install, Nix system deps needed for chromium to launch, and a Dialog/button text strict-mode selector gotcha.
 - [Orval hooks always pass a signal](orval-fetch-signal-defeats-timeout.md) — generated queryFn always forwards React Query's own signal, so "only timeout if no signal given" fetch logic is dead code; combine signals instead.
+- [Auth: email+password with bcryptjs + express-session](auth-session-setup.md) — bcrypt hashing in API routes; sessions in postgres via connect-pg-simple; AuthProvider context in frontend; bcryptjs is in artifacts/api-server/node_modules for hashing seeds.

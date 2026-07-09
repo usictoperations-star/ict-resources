@@ -1,11 +1,13 @@
 import React from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
+import { AuthProvider, useAuth } from "@/contexts/auth";
 
 // Pages
+import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Applications from "@/pages/applications";
 import ApplicationDetail from "@/pages/application-detail";
@@ -34,7 +36,28 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function AppRoutes() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0F2D5C]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
+            <img src="/mk-logo.png" alt="MK DOC" className="h-8 w-8 object-contain" />
+          </div>
+          <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-400 rounded-full animate-[loading_1.2s_ease-in-out_infinite]" style={{ width: "60%" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
   return (
     <Layout>
       <Switch>
@@ -67,7 +90,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

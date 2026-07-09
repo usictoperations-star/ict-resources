@@ -4,10 +4,24 @@ import {
   LayoutDashboard, AppWindow, Server, Database, Globe,
   GitBranch, Rocket, Shield, PackageSearch, FileText,
   BarChart, Settings, Menu, Activity, PenLine, AlertTriangle, Table2,
+  LogOut, User, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SearchBar } from "@/components/search-bar";
+import { useAuth } from "@/contexts/auth";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+
+const ROLE_BADGE: Record<string, { label: string; class: string }> = {
+  admin:   { label: "Admin",   class: "bg-red-500/20 text-red-200 border-red-400/30" },
+  editor:  { label: "Editor",  class: "bg-blue-400/20 text-blue-200 border-blue-300/30" },
+  analyst: { label: "Analyst", class: "bg-amber-400/20 text-amber-200 border-amber-300/30" },
+  viewer:  { label: "Viewer",  class: "bg-white/10 text-blue-200 border-white/20" },
+};
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -105,6 +119,48 @@ function SidebarBranding() {
   );
 }
 
+function UserMenu() {
+  const { user, logout } = useAuth();
+  if (!user) return null;
+  const badge = ROLE_BADGE[user.role] ?? ROLE_BADGE.viewer;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 h-9 px-2.5 text-white hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0"
+        >
+          <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <User className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="hidden sm:flex flex-col items-start leading-none">
+            <span className="text-sm font-medium text-white max-w-[120px] truncate">{user.name}</span>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5 text-white/60 flex-shrink-0" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="pb-1">
+          <p className="font-medium truncate">{user.name}</p>
+          <p className="text-xs text-muted-foreground font-normal truncate">{user.email}</p>
+          <span className={`inline-flex items-center mt-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.class}`}>
+            {badge.label}
+          </span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive cursor-pointer"
+          onClick={logout}
+        >
+          <LogOut className="h-3.5 w-3.5 mr-2" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [tabletSidebarOpen, setTabletSidebarOpen] = useState(false);
@@ -192,6 +248,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Search bar */}
           <SearchBar />
+
+          {/* User menu */}
+          <div className="ml-auto flex-shrink-0">
+            <UserMenu />
+          </div>
         </header>
 
         {/* Page Content */}

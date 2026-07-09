@@ -13,19 +13,35 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, RotateCcw, KeyRound, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { useAuth } from "@/contexts/auth";
 
-const ROLE_OPTIONS = ["admin", "manager", "operator", "viewer", "auditor"];
-const STATUS_OPTIONS = ["active", "inactive", "suspended"];
+const ROLE_OPTIONS = ["admin", "editor", "analyst", "viewer"];
+const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
+
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  admin:   "Full access including user management and deletes",
+  editor:  "Create and edit everything, no user management",
+  analyst: "Read-only access to all data and reports",
+  viewer:  "Read-only access to core modules",
+};
+
+const ROLE_BADGE: Record<string, string> = {
+  admin:   "bg-red-100 text-red-700 border-red-200",
+  editor:  "bg-blue-100 text-blue-700 border-blue-200",
+  analyst: "bg-amber-100 text-amber-700 border-amber-200",
+  viewer:  "bg-gray-100 text-gray-600 border-gray-200",
+};
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().min(1, "Email is required").email("Must be a valid email address"),
   role: z.string().min(1, "Role is required"),
   status: z.string().min(1, "Status is required"),
+  password: z.string().optional(),
 });
 
 const teamSchema = z.object({
@@ -33,11 +49,13 @@ const teamSchema = z.object({
   slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only"),
 });
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children, error, hint }: { label: string; required?: boolean; children: React.ReactNode; error?: string; hint?: string }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm font-medium">{label}{required && <span className="text-destructive ml-0.5">*</span>}</Label>
       {children}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -46,19 +64,45 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="h-9"><SelectValue placeholder={placeholder} /></SelectTrigger>
-      <SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+      <SelectContent>{options.map(o => <SelectItem key={o} value={o} className="capitalize">{o}</SelectItem>)}</SelectContent>
     </Select>
   );
 }
 
-const EMPTY_FORM = { name: "", email: "", role: "viewer", department: "", status: "active" };
+function PasswordInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        type={show ? "text" : "password"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 pr-9 font-mono text-sm"
+        autoComplete="new-password"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(v => !v)}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+}
 
-type UserRow = { id: number; name: string; email: string; role: string; department?: string | null; status: string; lastLoginAt?: string | null };
+const EMPTY_FORM = { name: "", email: "", role: "viewer", department: "", status: "Active", password: "" };
+
+type UserRow = {
+  id: number; name: string; email: string; role: string;
+  department?: string | null; status: string; lastLoginAt?: string | null;
+  hasPassword?: boolean;
+};
 
 const EMPTY_TEAM_FORM = { name: "", slug: "", description: "" };
-
 type TeamRow = { id: number; name: string; slug: string; description?: string | null };
-
 type DeletedEntity = { id: number; name: string; deletedAt?: string | null };
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -68,6 +112,10 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function Admin() {
+  const { can } = useAuth();
+  const canWrite = can("write");
+  const canAdmin = can("admin");
+
   const { data: users, isLoading: usersLoading } = useListUsers();
   const { data: auditLogs, isLoading: logsLoading } = useListAuditLogs({ limit: 50 });
   const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
@@ -127,7 +175,6 @@ export default function Admin() {
       }
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/deleted-records"] });
     } catch {
-      // restore failed silently — user can retry
     } finally {
       setRestoringId(null);
     }
@@ -139,9 +186,7 @@ export default function Admin() {
       await deleteTeam({ id: teamDeleteTarget.id });
       await queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
       setTeamDeleteTarget(null);
-    } catch {
-      // keep dialog open on failure; user can retry or cancel
-    }
+    } catch {}
   };
 
   const openTeamCreate = () => { setTeamEditTarget(null); setTeamForm({ ...EMPTY_TEAM_FORM }); setTeamErrors({}); setTeamOpen(true); };
@@ -192,16 +237,14 @@ export default function Admin() {
       await deleteUser({ id: deleteTarget.id });
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setDeleteTarget(null);
-    } catch {
-      // keep dialog open on failure; user can retry or cancel
-    }
+    } catch {}
   };
 
   const openCreate = () => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setErrors({}); setOpen(true); };
 
   const openEdit = (user: UserRow) => {
     setEditTarget(user);
-    setForm({ name: user.name ?? "", email: user.email ?? "", role: user.role ?? "viewer", department: user.department ?? "", status: user.status ?? "active" });
+    setForm({ name: user.name ?? "", email: user.email ?? "", role: user.role ?? "viewer", department: user.department ?? "", status: user.status ?? "Active", password: "" });
     setErrors({});
     setOpen(true);
   };
@@ -223,12 +266,19 @@ export default function Admin() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    const payload = { name: form.name, email: form.email, role: form.role, department: form.department || undefined, status: form.status };
+    const payload: Record<string, unknown> = {
+      name: form.name,
+      email: form.email,
+      role: form.role,
+      department: form.department || undefined,
+      status: form.status,
+    };
+    if (form.password) payload.password = form.password;
     try {
       if (editTarget) {
-        await updateUser({ id: editTarget.id, data: payload });
+        await updateUser({ id: editTarget.id, data: payload as any });
       } else {
-        await createUser({ data: payload });
+        await createUser({ data: payload as any });
       }
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setOpen(false);
@@ -239,10 +289,7 @@ export default function Admin() {
     }
   };
 
-  const renderDeletedSection = (
-    entityType: "applications" | "infrastructure" | "databases",
-    items: DeletedEntity[],
-  ) => {
+  const renderDeletedSection = (entityType: "applications" | "infrastructure" | "databases", items: DeletedEntity[]) => {
     if (items.length === 0) return null;
     const isRestoring = (id: number) => restoringId === `${entityType}:${id}`;
     return (
@@ -274,18 +321,8 @@ export default function Admin() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs"
-                      disabled={isRestoring(item.id)}
-                      onClick={() => handleRestore(entityType, item.id)}
-                    >
-                      {isRestoring(item.id) ? (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      ) : (
-                        <RotateCcw className="h-3 w-3 mr-1" />
-                      )}
+                    <Button variant="outline" size="sm" className="h-7 text-xs" disabled={isRestoring(item.id)} onClick={() => handleRestore(entityType, item.id)}>
+                      {isRestoring(item.id) ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RotateCcw className="h-3 w-3 mr-1" />}
                       Restore
                     </Button>
                   </TableCell>
@@ -301,7 +338,20 @@ export default function Admin() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Administration</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Administration</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage users, roles, teams, and system audit logs.</p>
+        </div>
+      </div>
+
+      {/* Role legend */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {ROLE_OPTIONS.map(role => (
+          <div key={role} className={`rounded-lg border px-3 py-2.5 ${ROLE_BADGE[role] ?? ""}`}>
+            <p className="text-xs font-semibold capitalize mb-0.5">{role}</p>
+            <p className="text-[10px] leading-snug opacity-80">{ROLE_DESCRIPTIONS[role]}</p>
+          </div>
+        ))}
       </div>
 
       <Tabs defaultValue="users" className="w-full">
@@ -322,9 +372,9 @@ export default function Admin() {
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
                 <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage user access and roles across MK DOC.</CardDescription>
+                <CardDescription>Manage user access, roles, and login credentials.</CardDescription>
               </div>
-              <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-2" />New User</Button>
+              {canAdmin && <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-2" />New User</Button>}
             </CardHeader>
             <CardContent>
               {usersLoading ? (
@@ -339,38 +389,61 @@ export default function Admin() {
                         <TableHead>Role</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Password</TableHead>
                         <TableHead>Last Login</TableHead>
-                        <TableHead className="w-16"></TableHead>
+                        {canAdmin && <TableHead className="w-16"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pagedUsers.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell><Badge variant="outline" className="capitalize">{user.role}</Badge></TableCell>
-                          <TableCell>{user.department || 'N/A'}</TableCell>
-                          <TableCell><Badge variant={user.status === 'active' ? 'default' : 'secondary'}>{user.status}</Badge></TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(user as UserRow)}>
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(user as UserRow)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {pagedUsers.map((user) => {
+                        const u = user as UserRow;
+                        return (
+                          <TableRow key={u.id}>
+                            <TableCell className="font-medium">{u.name}</TableCell>
+                            <TableCell className="text-sm">{u.email}</TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${ROLE_BADGE[u.role] ?? ""}`}>
+                                {u.role}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{u.department || '—'}</TableCell>
+                            <TableCell>
+                              <Badge variant={u.status === 'Active' || u.status === 'active' ? 'default' : 'secondary'} className="capitalize text-[10px]">{u.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {u.hasPassword ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
+                                  <CheckCircle2 className="h-3 w-3" />Set
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-amber-600">
+                                  <KeyRound className="h-3 w-3" />Not set
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}</TableCell>
+                            {canAdmin && (
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(u)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(u)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
               ) : (
                 <div className="text-center py-12">
                   <p className="text-sm text-muted-foreground mb-4">No users found.</p>
-                  <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First User</Button>
+                  {canAdmin && <Button variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add First User</Button>}
                 </div>
               )}
               <TablePagination page={usersPage} totalPages={usersTotalPages} onPageChange={setUsersPage} startIndex={usersStartIndex} endIndex={usersEndIndex} total={usersTotal} />
@@ -385,7 +458,7 @@ export default function Admin() {
                 <CardTitle>Team Management</CardTitle>
                 <CardDescription>Define the teams that own applications, infrastructure, and other assets.</CardDescription>
               </div>
-              <Button onClick={openTeamCreate} size="sm"><Plus className="h-4 w-4 mr-2" />New Team</Button>
+              {canAdmin && <Button onClick={openTeamCreate} size="sm"><Plus className="h-4 w-4 mr-2" />New Team</Button>}
             </CardHeader>
             <CardContent>
               {teamsLoading ? (
@@ -398,7 +471,7 @@ export default function Admin() {
                         <TableHead>Name</TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Description</TableHead>
-                        <TableHead className="w-16"></TableHead>
+                        {canAdmin && <TableHead className="w-16"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -406,17 +479,19 @@ export default function Admin() {
                         <TableRow key={team.id}>
                           <TableCell className="font-medium">{team.name}</TableCell>
                           <TableCell><Badge variant="outline" className="font-mono text-xs">{team.slug}</Badge></TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{team.description || 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openTeamEdit(team as TeamRow)}>
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setTeamDeleteTarget(team as TeamRow)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{(team as TeamRow).description || '—'}</TableCell>
+                          {canAdmin && (
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openTeamEdit(team as TeamRow)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setTeamDeleteTarget(team as TeamRow)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -425,7 +500,7 @@ export default function Admin() {
               ) : (
                 <div className="text-center py-12">
                   <p className="text-sm text-muted-foreground mb-4">No teams found.</p>
-                  <Button variant="outline" onClick={openTeamCreate}><Plus className="h-4 w-4 mr-2" />Add First Team</Button>
+                  {canAdmin && <Button variant="outline" onClick={openTeamCreate}><Plus className="h-4 w-4 mr-2" />Add First Team</Button>}
                 </div>
               )}
               <TablePagination page={teamsPage} totalPages={teamsTotalPages} onPageChange={setTeamsPage} startIndex={teamsStartIndex} endIndex={teamsEndIndex} total={teamsTotal} />
@@ -437,16 +512,14 @@ export default function Admin() {
           <Card>
             <CardHeader>
               <CardTitle>Recently Deleted</CardTitle>
-              <CardDescription>
-                Applications, infrastructure, and databases deleted in the last 30 days. Records are permanently removed after 30 days.
-              </CardDescription>
+              <CardDescription>Applications, infrastructure, and databases deleted in the last 30 days. Permanently removed after 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               {deletedLoading ? (
                 <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
               ) : totalDeleted === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-sm text-muted-foreground">No recently deleted records. Items appear here within 30 days of deletion.</p>
+                  <p className="text-sm text-muted-foreground">No recently deleted records.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -502,42 +575,53 @@ export default function Admin() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!isPending) { setOpen(v); if (!v) { setForm({ ...EMPTY_FORM }); setErrors({}); } } }}>
-        <DialogContent className="max-w-md p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle>{editTarget ? "Edit User" : "Add User"}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-5 space-y-4">
-            {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
-            <Field label="Full Name" required>
-              <Input placeholder="John Smith" value={form.name} onChange={set("name")} className="h-9" />
-              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
-            </Field>
-            <Field label="Email" required>
-              <Input type="email" placeholder="john.smith@mk.gov" value={form.email} onChange={set("email")} className="h-9" />
-              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Role" required>
-                <SelectField value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))} placeholder="Select role" options={ROLE_OPTIONS} />
-                {errors.role && <p className="text-xs text-destructive mt-1">{errors.role}</p>}
+      {/* User create/edit dialog */}
+      {canAdmin && (
+        <Dialog open={open} onOpenChange={(v) => { if (!isPending) { setOpen(v); if (!v) { setForm({ ...EMPTY_FORM }); setErrors({}); } } }}>
+          <DialogContent className="max-w-md p-0 gap-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b">
+              <DialogTitle>{editTarget ? "Edit User" : "Add User"}</DialogTitle>
+            </DialogHeader>
+            <div className="px-6 py-5 space-y-4">
+              {errors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{errors.submit}</div>}
+              <Field label="Full Name" required error={errors.name}>
+                <Input placeholder="John Smith" value={form.name} onChange={set("name")} className="h-9" />
               </Field>
-              <Field label="Status">
-                <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+              <Field label="Email" required error={errors.email}>
+                <Input type="email" placeholder="john.smith@mk.gov" value={form.email} onChange={set("email")} className="h-9" />
+              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Role" required error={errors.role}>
+                  <SelectField value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))} placeholder="Select role" options={ROLE_OPTIONS} />
+                </Field>
+                <Field label="Status">
+                  <SelectField value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))} placeholder="Select status" options={STATUS_OPTIONS} />
+                </Field>
+              </div>
+              <Field label="Department">
+                <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
+              </Field>
+              <Field
+                label={editTarget ? "New Password" : "Password"}
+                hint={editTarget ? "Leave blank to keep the existing password" : "Required — user will use this to log in"}
+                error={errors.password}
+              >
+                <PasswordInput
+                  value={form.password}
+                  onChange={(v) => setForm(f => ({ ...f, password: v }))}
+                  placeholder={editTarget ? "Leave blank to keep unchanged" : "Set login password"}
+                />
               </Field>
             </div>
-            <Field label="Department">
-              <Input placeholder="Platform Team" value={form.department} onChange={set("department")} className="h-9" />
-            </Field>
-          </div>
-          <DialogFooter className="px-6 py-4 border-t gap-2">
-            <Button variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isPending}>
-              {isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Adding..."}</> : editTarget ? "Save Changes" : "Add User"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="px-6 py-4 border-t gap-2">
+              <Button variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
+              <Button onClick={handleSubmit} disabled={isPending}>
+                {isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Adding..."}</> : editTarget ? "Save Changes" : "Add User"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <DeleteConfirmDialog
         open={!!deleteTarget}
@@ -548,33 +632,33 @@ export default function Admin() {
         onConfirm={handleDelete}
       />
 
-      <Dialog open={teamOpen} onOpenChange={(v) => { if (!isTeamPending) { setTeamOpen(v); if (!v) { setTeamForm({ ...EMPTY_TEAM_FORM }); setTeamErrors({}); } } }}>
-        <DialogContent className="max-w-md p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle>{teamEditTarget ? "Edit Team" : "Add Team"}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-5 space-y-4">
-            {teamErrors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{teamErrors.submit}</div>}
-            <Field label="Team Name" required>
-              <Input placeholder="Infrastructure & Cloud Operations" value={teamForm.name} onChange={setTeam("name")} className="h-9" />
-              {teamErrors.name && <p className="text-xs text-destructive mt-1">{teamErrors.name}</p>}
-            </Field>
-            <Field label="Slug" required>
-              <Input placeholder="infra-cloud-ops" value={teamForm.slug} onChange={setTeam("slug")} className="h-9" />
-              {teamErrors.slug && <p className="text-xs text-destructive mt-1">{teamErrors.slug}</p>}
-            </Field>
-            <Field label="Description">
-              <Textarea placeholder="What this team owns..." value={teamForm.description} onChange={setTeam("description")} rows={2} className="resize-none" />
-            </Field>
-          </div>
-          <DialogFooter className="px-6 py-4 border-t gap-2">
-            <Button variant="outline" onClick={() => { setTeamOpen(false); setTeamForm({ ...EMPTY_TEAM_FORM }); setTeamErrors({}); }} disabled={isTeamPending}>Cancel</Button>
-            <Button onClick={handleTeamSubmit} disabled={isTeamPending}>
-              {isTeamPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{teamEditTarget ? "Saving..." : "Adding..."}</> : teamEditTarget ? "Save Changes" : "Add Team"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {canAdmin && (
+        <Dialog open={teamOpen} onOpenChange={(v) => { if (!isTeamPending) { setTeamOpen(v); if (!v) { setTeamForm({ ...EMPTY_TEAM_FORM }); setTeamErrors({}); } } }}>
+          <DialogContent className="max-w-md p-0 gap-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b">
+              <DialogTitle>{teamEditTarget ? "Edit Team" : "Add Team"}</DialogTitle>
+            </DialogHeader>
+            <div className="px-6 py-5 space-y-4">
+              {teamErrors.submit && <div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-md">{teamErrors.submit}</div>}
+              <Field label="Team Name" required error={teamErrors.name}>
+                <Input placeholder="Infrastructure & Cloud Operations" value={teamForm.name} onChange={setTeam("name")} className="h-9" />
+              </Field>
+              <Field label="Slug" required error={teamErrors.slug}>
+                <Input placeholder="infra-cloud-ops" value={teamForm.slug} onChange={setTeam("slug")} className="h-9" />
+              </Field>
+              <Field label="Description">
+                <Textarea placeholder="What this team owns..." value={teamForm.description} onChange={setTeam("description")} rows={2} className="resize-none" />
+              </Field>
+            </div>
+            <DialogFooter className="px-6 py-4 border-t gap-2">
+              <Button variant="outline" onClick={() => { setTeamOpen(false); setTeamForm({ ...EMPTY_TEAM_FORM }); setTeamErrors({}); }} disabled={isTeamPending}>Cancel</Button>
+              <Button onClick={handleTeamSubmit} disabled={isTeamPending}>
+                {isTeamPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{teamEditTarget ? "Saving..." : "Adding..."}</> : teamEditTarget ? "Save Changes" : "Add Team"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <DeleteConfirmDialog
         open={!!teamDeleteTarget}

@@ -911,6 +911,21 @@ export interface RenewalItem {
   status: string;
 }
 
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  /** @nullable */
+  department?: string | null;
+  status: string;
+}
+
 export interface User {
   id: number;
   name: string;

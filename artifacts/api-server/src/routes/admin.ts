@@ -1,10 +1,12 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
 import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
-import { eq, isNull, isNotNull, gte } from "drizzle-orm";
+import { eq, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
+import { z } from "zod/v4";
 
 const router = Router();
 
@@ -53,7 +55,17 @@ router.get("/deleted-records", async (req: Request, res: Response) => {
 
 router.get("/users", async (req: Request, res: Response) => {
   try {
-    const results = await db.select().from(usersTable);
+    const results = await db.select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+      department: usersTable.department,
+      status: usersTable.status,
+      lastLoginAt: usersTable.lastLoginAt,
+      createdAt: usersTable.createdAt,
+      hasPassword: sql<boolean>`(${usersTable.passwordHash} IS NOT NULL)`,
+    }).from(usersTable);
     return res.json(results.map(u => ({ ...u, createdAt: u.createdAt.toISOString() })));
   } catch (err) {
     req.log.error({ err }, "Error listing users");
@@ -64,9 +76,16 @@ router.get("/users", async (req: Request, res: Response) => {
 router.post("/users", async (req: Request, res: Response) => {
   try {
     const body = CreateUserBody.parse(req.body);
-    const [item] = await db.insert(usersTable).values(body).returning();
+    const { password, ...rest } = body as typeof body & { password?: string };
+
+    const values: typeof usersTable.$inferInsert = { ...rest };
+    if (password) {
+      values.passwordHash = await bcrypt.hash(password, 12);
+    }
+
+    const [item] = await db.insert(usersTable).values(values).returning();
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "User", entityId: item.id, entityName: item.name, userName: "System" });
-    return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString() });
+    return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error creating user");
     return res.status(400).json({ error: "Invalid request" });
@@ -75,11 +94,19 @@ router.post("/users", async (req: Request, res: Response) => {
 
 router.patch("/users/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const body = UpdateUserBody.parse(req.body);
-    const [item] = await db.update(usersTable).set(body).where(eq(usersTable.id, id)).returning();
+    const { password, ...rest } = body as typeof body & { password?: string };
+
+    const values: Partial<typeof usersTable.$inferInsert> = { ...rest };
+    if (password) {
+      values.passwordHash = await bcrypt.hash(password, 12);
+    }
+
+    const [item] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...item, createdAt: item.createdAt.toISOString() });
+    await db.insert(auditLogsTable).values({ action: "UPDATE", entityType: "User", entityId: item.id, entityName: item.name, userName: "System" });
+    return res.json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error updating user");
     return res.status(400).json({ error: "Invalid request" });
@@ -88,7 +115,7 @@ router.patch("/users/:id", async (req: Request, res: Response) => {
 
 router.delete("/users/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const [item] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();

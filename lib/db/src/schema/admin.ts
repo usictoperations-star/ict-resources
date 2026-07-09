@@ -10,7 +10,14 @@ export const usersTable = pgTable("users", {
   department: text("department"),
   status: text("status").notNull().default("Active"),
   lastLoginAt: text("last_login_at"),
+  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const sessionsTable = pgTable("sessions", {
+  sid: text("sid").primaryKey(),
+  sess: text("sess").notNull(),
+  expire: timestamp("expire", { precision: 6 }).notNull(),
 });
 
 export const auditLogsTable = pgTable("audit_logs", {
