@@ -35,6 +35,7 @@ import type {
   DatabaseInput,
   DatabaseRecord,
   DatabaseUpdate,
+  DeleteApplicationParams,
   DeletedRecordsResponse,
   Document,
   DocumentInput,
@@ -1018,20 +1019,29 @@ export const useUpdateApplication = <TError = ErrorType<unknown>,
       return useMutation(getUpdateApplicationMutationOptions(options));
     }
 
-export const getDeleteApplicationUrl = (id: number,) => {
+export const getDeleteApplicationUrl = (id: number,
+    params?: DeleteApplicationParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/applications/${id}`
+  return stringifiedParams.length > 0 ? `/api/applications/${id}?${stringifiedParams}` : `/api/applications/${id}`
 }
 
 /**
  * @summary Delete application
  */
-export const deleteApplication = async (id: number, options?: RequestInit): Promise<void> => {
+export const deleteApplication = async (id: number,
+    params?: DeleteApplicationParams, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getDeleteApplicationUrl(id),
+  return customFetch<void>(getDeleteApplicationUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -1043,9 +1053,9 @@ export const deleteApplication = async (id: number, options?: RequestInit): Prom
 
 
 
-export const getDeleteApplicationMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number}, TContext> => {
+export const getDeleteApplicationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number;params?: DeleteApplicationParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number;params?: DeleteApplicationParams}, TContext> => {
 
 const mutationKey = ['deleteApplication'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1057,10 +1067,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApplication>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApplication>>, {id: number;params?: DeleteApplicationParams}> = (props) => {
+          const {id,params} = props ?? {};
 
-          return  deleteApplication(id,requestOptions)
+          return  deleteApplication(id,params,requestOptions)
         }
 
 
@@ -1072,17 +1082,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApplication>>>
 
-    export type DeleteApplicationMutationError = ErrorType<unknown>
+    export type DeleteApplicationMutationError = ErrorType<void>
 
     /**
  * @summary Delete application
  */
-export const useDeleteApplication = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useDeleteApplication = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApplication>>, TError,{id: number;params?: DeleteApplicationParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteApplication>>,
         TError,
-        {id: number},
+        {id: number;params?: DeleteApplicationParams},
         TContext
       > => {
       return useMutation(getDeleteApplicationMutationOptions(options));

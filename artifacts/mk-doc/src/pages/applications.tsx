@@ -3,6 +3,7 @@ import { ExportButton } from "@/components/export-button";
 import { z } from "zod";
 import { useListApplications, useCreateApplication, useUpdateApplication, useDeleteApplication, useGetApplicationDependents } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import type { LinkedAction } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -105,10 +106,11 @@ export default function Applications() {
   const [editTarget, setEditTarget] = useState<AppRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AppRow | null>(null);
 
-  const { data: dependents, isLoading: isLoadingDependents } = useGetApplicationDependents(
+  const { data: dependents, isPending: isDependentsPending } = useGetApplicationDependents(
     deleteTarget?.id ?? 0,
     { query: { enabled: !!deleteTarget, queryKey: ["/api/applications", deleteTarget?.id, "dependents"] } }
   );
+  const isLoadingDependents = !!deleteTarget && isDependentsPending;
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -119,6 +121,21 @@ export default function Applications() {
     if (!deleteTarget) return;
     try {
       await deleteApplication({ id: deleteTarget.id });
+      await queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      setDeleteTarget(null);
+    } catch {
+      // keep dialog open on failure; user can retry or cancel
+    }
+  };
+
+  const handleDeleteWithLinked = async (action: LinkedAction) => {
+    if (!deleteTarget) return;
+    try {
+      if (action.type === "cascade") {
+        await deleteApplication({ id: deleteTarget.id, params: { cascade: true } });
+      } else {
+        await deleteApplication({ id: deleteTarget.id, params: { reassignTo: action.targetId } });
+      }
       await queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
       setDeleteTarget(null);
     } catch {
@@ -448,6 +465,14 @@ export default function Applications() {
         onConfirm={handleDelete}
         dependents={dependents}
         isLoadingDependents={!!deleteTarget && isLoadingDependents}
+        linkedOptions={
+          deleteTarget
+            ? {
+                apps: (applications as AppRow[] ?? []).filter((a) => a.id !== deleteTarget?.id),
+                onConfirm: handleDeleteWithLinked,
+              }
+            : undefined
+        }
       />
     </div>
   );

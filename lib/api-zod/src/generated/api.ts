@@ -370,6 +370,11 @@ export const DeleteApplicationParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const DeleteApplicationQueryParams = zod.object({
+  "cascade": zod.coerce.boolean().optional().describe('If true, cascade-delete all linked records (releases, documents, vulnerabilities, software, repositories, domains)'),
+  "reassignTo": zod.coerce.number().optional().describe('If provided, reassign all linked records to this application ID before deleting')
+})
+
 export const DeleteApplicationResponse = zod.void()
 
 

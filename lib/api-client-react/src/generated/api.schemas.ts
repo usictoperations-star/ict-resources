@@ -1057,6 +1057,17 @@ environment?: string;
 search?: string;
 };
 
+export type DeleteApplicationParams = {
+/**
+ * If true, cascade-delete all linked records (releases, documents, vulnerabilities, software, repositories, domains)
+ */
+cascade?: boolean;
+/**
+ * If provided, reassign all linked records to this application ID before deleting
+ */
+reassignTo?: number;
+};
+
 export type ListInfrastructureParams = {
 type?: string;
 status?: string;

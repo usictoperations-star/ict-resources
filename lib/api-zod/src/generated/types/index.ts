@@ -25,6 +25,7 @@ export * from './databaseDependents';
 export * from './databaseInput';
 export * from './databaseRecord';
 export * from './databaseUpdate';
+export * from './deleteApplicationParams';
 export * from './deletedRecordsResponse';
 export * from './document';
 export * from './documentInput';

@@ -194,11 +194,74 @@ router.patch("/:id", async (req: Request, res: Response) => {
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
-    const [app] = await db.update(applicationsTable)
-      .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))
-      .returning();
+    const cascade = req.query.cascade === "true";
+    const reassignToRaw = req.query.reassignTo;
+    const reassignTo = reassignToRaw ? parseInt(reassignToRaw as string, 10) : null;
+
+    if (cascade && reassignTo !== null) {
+      return res.status(400).json({ error: "Cannot specify both cascade and reassignTo" });
+    }
+
+    const [app] = await db.select({ id: applicationsTable.id, name: applicationsTable.name })
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
     if (!app) return res.status(404).json({ error: "Not found" });
+
+    if (reassignTo !== null && isNaN(reassignTo)) {
+      return res.status(400).json({ error: "Invalid reassignTo value" });
+    }
+
+    if (reassignTo !== null && reassignTo === id) {
+      return res.status(400).json({ error: "Cannot reassign linked records to the same application being deleted" });
+    }
+
+    const [[relCount], [docCount], [vulnCount], [swCount], [repoCount], [domCount]] = await Promise.all([
+      db.select({ n: count() }).from(releasesTable).where(eq(releasesTable.applicationId, id)),
+      db.select({ n: count() }).from(documentsTable).where(eq(documentsTable.applicationId, id)),
+      db.select({ n: count() }).from(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.applicationId, id)),
+      db.select({ n: count() }).from(softwareTable).where(eq(softwareTable.applicationId, id)),
+      db.select({ n: count() }).from(repositoriesTable).where(eq(repositoriesTable.applicationId, id)),
+      db.select({ n: count() }).from(domainsTable).where(eq(domainsTable.applicationId, id)),
+    ]);
+    const dependentTotal = Number(relCount.n) + Number(docCount.n) + Number(vulnCount.n) + Number(swCount.n) + Number(repoCount.n) + Number(domCount.n);
+
+    if (dependentTotal > 0 && !cascade && reassignTo === null) {
+      return res.status(409).json({
+        error: "This application has linked records. Provide cascade=true to delete them or reassignTo=<id> to reassign them.",
+        dependentTotal,
+      });
+    }
+
+    if (reassignTo !== null) {
+      const [targetApp] = await db.select({ id: applicationsTable.id })
+        .from(applicationsTable)
+        .where(and(eq(applicationsTable.id, reassignTo), isNull(applicationsTable.deletedAt)));
+      if (!targetApp) {
+        return res.status(400).json({ error: "Target application not found or has been deleted" });
+      }
+      await Promise.all([
+        db.update(releasesTable).set({ applicationId: reassignTo }).where(eq(releasesTable.applicationId, id)),
+        db.update(documentsTable).set({ applicationId: reassignTo }).where(eq(documentsTable.applicationId, id)),
+        db.update(vulnerabilitiesTable).set({ applicationId: reassignTo }).where(eq(vulnerabilitiesTable.applicationId, id)),
+        db.update(softwareTable).set({ applicationId: reassignTo }).where(eq(softwareTable.applicationId, id)),
+        db.update(repositoriesTable).set({ applicationId: reassignTo }).where(eq(repositoriesTable.applicationId, id)),
+        db.update(domainsTable).set({ applicationId: reassignTo }).where(eq(domainsTable.applicationId, id)),
+      ]);
+    } else if (cascade) {
+      await Promise.all([
+        db.delete(releasesTable).where(eq(releasesTable.applicationId, id)),
+        db.delete(documentsTable).where(eq(documentsTable.applicationId, id)),
+        db.delete(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.applicationId, id)),
+        db.delete(softwareTable).where(eq(softwareTable.applicationId, id)),
+        db.delete(repositoriesTable).where(eq(repositoriesTable.applicationId, id)),
+        db.delete(domainsTable).where(eq(domainsTable.applicationId, id)),
+      ]);
+    }
+
+    await db.update(applicationsTable)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(applicationsTable.id, id));
+
     await logAudit(req, "DELETE", "Application", app.id, app.name);
     return res.status(204).send();
   } catch (err) {
