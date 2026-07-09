@@ -40,11 +40,20 @@ export function SearchBar() {
 
   useEffect(() => {
     setOpen(debouncedQuery.length > 0);
-    setActiveIndex(-1);
   }, [debouncedQuery]);
 
   useEffect(() => {
-    setActiveIndex(-1);
+    const total = flatResults.length;
+    if (total === 0) {
+      setActiveIndex(-1);
+    } else {
+      setActiveIndex((prev) => {
+        if (prev < 0) return prev;
+        return Math.min(prev, total - 1);
+      });
+    }
+    // flatResults is derived from data; capturing its length here is intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   useEffect(() => {
