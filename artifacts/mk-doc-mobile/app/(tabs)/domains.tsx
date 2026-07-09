@@ -3,7 +3,8 @@ import {
   useListDomains,
 } from "@workspace/api-client-react";
 import { Feather } from "@expo/vector-icons";
-import React, { useCallback, useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -77,6 +78,16 @@ const FILTERS: { key: UrgencyFilter; label: string }[] = [
   { key: "ok", label: "OK" },
 ];
 
+function isValidFilter(value: string | undefined): value is UrgencyFilter {
+  return (
+    value === "all" ||
+    value === "expired" ||
+    value === "critical" ||
+    value === "warning" ||
+    value === "ok"
+  );
+}
+
 function DomainCard({ domain }: { domain: Domain }) {
   const colors = useColors();
   const urgency = getUrgency(domain);
@@ -129,7 +140,21 @@ export default function DomainsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
-  const [filter, setFilter] = useState<UrgencyFilter>("all");
+
+  // Read filter from URL params — set when navigating from a notification tap
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const paramFilter = Array.isArray(params.filter) ? params.filter[0] : params.filter;
+
+  const [filter, setFilter] = useState<UrgencyFilter>(
+    isValidFilter(paramFilter) ? paramFilter : "all"
+  );
+
+  // Sync filter when returning to this tab via a different notification
+  useEffect(() => {
+    if (isValidFilter(paramFilter)) {
+      setFilter(paramFilter);
+    }
+  }, [paramFilter]);
 
   const {
     data: domains,

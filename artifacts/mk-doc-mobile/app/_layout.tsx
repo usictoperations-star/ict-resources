@@ -15,6 +15,11 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import {
+  registerDevicePushToken,
+  requestNotificationPermissions,
+  useNotificationDeepLink,
+} from "@/hooks/useNotifications";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -23,9 +28,6 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cap retries so a downed API server fails fast with a visible error
-      // state instead of spinning through React Query's default 3 retries
-      // (each with growing backoff) on top of the request-level timeout.
       retry: 1,
       retryDelay: 1000,
     },
@@ -33,6 +35,9 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
+  // Handles notification taps → deep-link to Domains tab with urgency filter
+  useNotificationDeepLink();
+
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -51,6 +56,15 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
+
+      // Request notification permission, then register this device's push token
+      // with the API server. The server's hourly job sends push notifications
+      // when a domain newly enters critical/expired status.
+      requestNotificationPermissions()
+        .then((granted) => {
+          if (granted) return registerDevicePushToken();
+        })
+        .catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 

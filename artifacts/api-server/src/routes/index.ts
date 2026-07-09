@@ -16,6 +16,7 @@ import adminRouter from "./admin";
 import searchRouter from "./search";
 import storageRouter from "./storage";
 import teamsRouter from "./teams";
+import pushTokensRouter from "./push-tokens";
 
 const router: IRouter = Router();
 
@@ -35,6 +36,7 @@ router.use("/reports", reportsRouter);
 router.use("/admin", adminRouter);
 router.use("/search", searchRouter);
 router.use("/teams", teamsRouter);
+router.use("/push-tokens", pushTokensRouter);
 router.use(storageRouter);
 
 export default router;

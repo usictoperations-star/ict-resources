@@ -2193,6 +2193,16 @@ export const GlobalSearchResponse = zod.object({
 
 
 /**
+ * @summary Register an Expo push token for a device
+ */
+export const RegisterPushTokenBody = zod.object({
+  "token": zod.string().describe('Expo push token (ExponentPushToken[...])')
+})
+
+export const RegisterPushTokenResponse = zod.void()
+
+
+/**
  * Returns a presigned GCS URL for direct upload. The client sends JSON
  * metadata here, then uploads the file directly to the returned URL.
  * @summary Request a presigned URL for file upload

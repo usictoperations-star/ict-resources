@@ -1357,6 +1357,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/SearchResults"
 
+  # ─── Push Notifications ───────────────────────────────────────────────────
+  /push-tokens:
+    post:
+      operationId: registerPushToken
+      tags: [admin]
+      summary: Register an Expo push token for a device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenInput"
+      responses:
+        "204":
+          description: Token registered (or already registered)
+        "400":
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /storage/uploads/request-url:
     post:
       tags: [Storage]
@@ -2998,6 +3020,15 @@ components:
         status:
           type: string
       required: [id, type, name, expiryDate, daysUntilExpiry, status]
+
+    # ── Push Notifications ─────────────────────────────────────────────────
+    PushTokenInput:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Expo push token (ExponentPushToken[...])
+      required: [token]
 
     # ── Auth ──────────────────────────────────────────────────────────────
     LoginInput:

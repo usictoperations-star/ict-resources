@@ -48,6 +48,7 @@ export * from './listReleasesParams';
 export * from './listSoftwareParams';
 export * from './listVulnerabilitiesParams';
 export * from './loginInput';
+export * from './pushTokenInput';
 export * from './release';
 export * from './releaseInput';
 export * from './releaseUpdate';

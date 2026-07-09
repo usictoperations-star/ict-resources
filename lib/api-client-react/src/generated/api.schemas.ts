@@ -911,6 +911,11 @@ export interface RenewalItem {
   status: string;
 }
 
+export interface PushTokenInput {
+  /** Expo push token (ExponentPushToken[...]) */
+  token: string;
+}
+
 export interface LoginInput {
   email: string;
   password: string;

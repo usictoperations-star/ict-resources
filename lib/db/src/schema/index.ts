@@ -9,3 +9,4 @@ export * from "./software";
 export * from "./documentation";
 export * from "./admin";
 export * from "./teams";
+export * from "./notifications";
