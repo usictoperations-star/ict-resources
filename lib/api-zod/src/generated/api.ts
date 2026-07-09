@@ -1474,7 +1474,8 @@ export const ListVulnerabilitiesResponseItem = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListVulnerabilitiesResponse = zod.array(ListVulnerabilitiesResponseItem)
 
@@ -1531,7 +1532,8 @@ export const CreateVulnerabilityResponse = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1588,7 +1590,8 @@ export const UpdateVulnerabilityResponse = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1600,6 +1603,42 @@ export const DeleteVulnerabilityParams = zod.object({
 })
 
 export const DeleteVulnerabilityResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted vulnerability
+ */
+export const RestoreVulnerabilityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreVulnerabilityResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "applicationId": zod.number().nullish(),
+  "applicationName": zod.string().nullish(),
+  "cveId": zod.string().nullish(),
+  "affectedComponent": zod.string().nullish(),
+  "version": zod.string().nullish(),
+  "vendor": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "installationDate": zod.string().nullish(),
+  "licenseType": zod.string().nullish(),
+  "licenseExpiration": zod.string().nullish(),
+  "endOfLifeDate": zod.string().nullish(),
+  "discoveredAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -1773,7 +1812,8 @@ export const ListSoftwareResponseItem = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListSoftwareResponse = zod.array(ListSoftwareResponseItem)
 
@@ -1817,7 +1857,8 @@ export const CreateSoftwareResponse = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1861,7 +1902,8 @@ export const UpdateSoftwareResponse = zod.object({
   "ownerId": zod.number().nullish(),
   "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1873,6 +1915,35 @@ export const DeleteSoftwareParams = zod.object({
 })
 
 export const DeleteSoftwareResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted software record
+ */
+export const RestoreSoftwareParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreSoftwareResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "installedVersion": zod.string().nullish(),
+  "latestVersion": zod.string().nullish(),
+  "vendor": zod.string().nullish(),
+  "license": zod.string().nullish(),
+  "supported": zod.boolean(),
+  "endOfLife": zod.boolean(),
+  "endOfLifeDate": zod.string().nullish(),
+  "upgradeAvailable": zod.boolean(),
+  "applicationId": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -1895,7 +1966,8 @@ export const ListDocumentsResponseItem = zod.object({
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem)
 
@@ -1929,7 +2001,8 @@ export const CreateDocumentResponse = zod.object({
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1952,7 +2025,8 @@ export const GetDocumentResponse = zod.object({
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1986,7 +2060,8 @@ export const UpdateDocumentResponse = zod.object({
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 })
 
 
@@ -1998,6 +2073,30 @@ export const DeleteDocumentParams = zod.object({
 })
 
 export const DeleteDocumentResponse = zod.void()
+
+
+/**
+ * @summary Restore a soft-deleted document
+ */
+export const RestoreDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.string(),
+  "content": zod.string().nullish(),
+  "url": zod.string().nullish(),
+  "applicationId": zod.number().nullish(),
+  "applicationName": zod.string().nullish(),
+  "version": zod.string().nullish(),
+  "author": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})
 
 
 /**
@@ -2188,6 +2287,68 @@ export const ListDeletedRecordsResponse = zod.object({
   "rollbackAvailable": zod.boolean(),
   "approved": zod.boolean(),
   "approvedBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})),
+  "vulnerabilities": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "applicationId": zod.number().nullish(),
+  "applicationName": zod.string().nullish(),
+  "cveId": zod.string().nullish(),
+  "affectedComponent": zod.string().nullish(),
+  "version": zod.string().nullish(),
+  "vendor": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "installationDate": zod.string().nullish(),
+  "licenseType": zod.string().nullish(),
+  "licenseExpiration": zod.string().nullish(),
+  "endOfLifeDate": zod.string().nullish(),
+  "discoveredAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})),
+  "software": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "installedVersion": zod.string().nullish(),
+  "latestVersion": zod.string().nullish(),
+  "vendor": zod.string().nullish(),
+  "license": zod.string().nullish(),
+  "supported": zod.boolean(),
+  "endOfLife": zod.boolean(),
+  "endOfLifeDate": zod.string().nullish(),
+  "upgradeAvailable": zod.boolean(),
+  "applicationId": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.string(),
+  "content": zod.string().nullish(),
+  "url": zod.string().nullish(),
+  "applicationId": zod.number().nullish(),
+  "applicationName": zod.string().nullish(),
+  "version": zod.string().nullish(),
+  "author": zod.string().nullish(),
+  "tags": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2437,7 +2598,8 @@ export const GlobalSearchResponse = zod.object({
   "author": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "deletedAt": zod.string().nullish()
 }))
 })
 

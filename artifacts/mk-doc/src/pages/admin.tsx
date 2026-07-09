@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { z } from "zod";
-import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase, useRestoreDomain, useRestoreRepository, useRestoreRelease } from "@workspace/api-client-react";
+import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase, useRestoreDomain, useRestoreRepository, useRestoreRelease, useRestoreVulnerability, useRestoreSoftware, useRestoreDocument } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -198,6 +198,9 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   domains: "Domain",
   repositories: "Repository",
   releases: "Release",
+  vulnerabilities: "Vulnerability",
+  software: "Software",
+  documents: "Document",
 };
 
 export default function Admin() {
@@ -245,6 +248,9 @@ export default function Admin() {
   const { mutateAsync: restoreDomain } = useRestoreDomain();
   const { mutateAsync: restoreRepository } = useRestoreRepository();
   const { mutateAsync: restoreRelease } = useRestoreRelease();
+  const { mutateAsync: restoreVulnerability } = useRestoreVulnerability();
+  const { mutateAsync: restoreSoftware } = useRestoreSoftware();
+  const { mutateAsync: restoreDocument } = useRestoreDocument();
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const totalDeleted = (deletedRecords?.applications?.length ?? 0) +
@@ -252,9 +258,12 @@ export default function Admin() {
     (deletedRecords?.databases?.length ?? 0) +
     (deletedRecords?.domains?.length ?? 0) +
     (deletedRecords?.repositories?.length ?? 0) +
-    (deletedRecords?.releases?.length ?? 0);
+    (deletedRecords?.releases?.length ?? 0) +
+    (deletedRecords?.vulnerabilities?.length ?? 0) +
+    (deletedRecords?.software?.length ?? 0) +
+    (deletedRecords?.documents?.length ?? 0);
 
-  const handleRestore = async (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases", id: number) => {
+  const handleRestore = async (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases" | "vulnerabilities" | "software" | "documents", id: number) => {
     const key = `${entityType}:${id}`;
     setRestoringId(key);
     try {
@@ -273,9 +282,18 @@ export default function Admin() {
       } else if (entityType === "repositories") {
         await restoreRepository({ id });
         await queryClient.invalidateQueries({ queryKey: ["/api/repositories"] });
-      } else {
+      } else if (entityType === "releases") {
         await restoreRelease({ id });
         await queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      } else if (entityType === "vulnerabilities") {
+        await restoreVulnerability({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/security/vulnerabilities"] });
+      } else if (entityType === "software") {
+        await restoreSoftware({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/software"] });
+      } else {
+        await restoreDocument({ id });
+        await queryClient.invalidateQueries({ queryKey: ["/api/documentation"] });
       }
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/deleted-records"] });
     } catch {
@@ -402,7 +420,7 @@ export default function Admin() {
     }
   };
 
-  const renderDeletedSection = (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases", items: DeletedEntity[]) => {
+  const renderDeletedSection = (entityType: "applications" | "infrastructure" | "databases" | "domains" | "repositories" | "releases" | "vulnerabilities" | "software" | "documents", items: DeletedEntity[]) => {
     if (items.length === 0) return null;
     const isRestoring = (id: number) => restoringId === `${entityType}:${id}`;
     return (
@@ -632,7 +650,7 @@ export default function Admin() {
           <Card>
             <CardHeader>
               <CardTitle>Recently Deleted</CardTitle>
-              <CardDescription>Applications, infrastructure, databases, domains, repositories, and releases deleted in the last 30 days. Permanently removed after 30 days.</CardDescription>
+              <CardDescription>Records deleted in the last 30 days across all modules. Permanently removed after 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               {deletedLoading ? (
@@ -648,7 +666,10 @@ export default function Admin() {
                   {renderDeletedSection("databases", (deletedRecords?.databases ?? []) as DeletedEntity[])}
                   {renderDeletedSection("domains", (deletedRecords?.domains ?? []) as DeletedEntity[])}
                   {renderDeletedSection("repositories", (deletedRecords?.repositories ?? []) as DeletedEntity[])}
-                  {renderDeletedSection("releases", (deletedRecords?.releases ?? []).map(r => ({ id: r.id, name: `v${r.version}`, deletedAt: r.deletedAt })) as DeletedEntity[])}
+                  {renderDeletedSection("releases", (deletedRecords?.releases ?? []).map(r => ({ id: r.id, name: `v${(r as any).version}`, deletedAt: r.deletedAt })) as DeletedEntity[])}
+                  {renderDeletedSection("vulnerabilities", (deletedRecords?.vulnerabilities ?? []).map(v => ({ id: v.id, name: v.title, deletedAt: v.deletedAt })) as DeletedEntity[])}
+                  {renderDeletedSection("software", (deletedRecords?.software ?? []).map(s => ({ id: s.id, name: s.name, deletedAt: s.deletedAt })) as DeletedEntity[])}
+                  {renderDeletedSection("documents", (deletedRecords?.documents ?? []).map(d => ({ id: d.id, name: d.title, deletedAt: d.deletedAt })) as DeletedEntity[])}
                 </div>
               )}
             </CardContent>

@@ -26,4 +26,6 @@ export interface Document {
   tags?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

@@ -635,6 +635,8 @@ export interface Vulnerability {
   ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface VulnerabilityInput {
@@ -837,6 +839,8 @@ export interface SoftwareItem {
   ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface SoftwareInput {
@@ -894,6 +898,8 @@ export interface Document {
   tags?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }
 
 export interface DocumentInput {
@@ -1048,6 +1054,9 @@ export interface DeletedRecordsResponse {
   domains: Domain[];
   repositories: Repository[];
   releases: Release[];
+  vulnerabilities: Vulnerability[];
+  software: SoftwareItem[];
+  documents: Document[];
 }
 
 export interface SearchResults {

@@ -7,10 +7,13 @@
  */
 import type { Application } from './application';
 import type { DatabaseRecord } from './databaseRecord';
+import type { Document } from './document';
 import type { Domain } from './domain';
 import type { InfrastructureItem } from './infrastructureItem';
 import type { Release } from './release';
 import type { Repository } from './repository';
+import type { SoftwareItem } from './softwareItem';
+import type { Vulnerability } from './vulnerability';
 
 export interface DeletedRecordsResponse {
   applications: Application[];
@@ -19,4 +22,7 @@ export interface DeletedRecordsResponse {
   domains: Domain[];
   repositories: Repository[];
   releases: Release[];
+  vulnerabilities: Vulnerability[];
+  software: SoftwareItem[];
+  documents: Document[];
 }

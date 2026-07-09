@@ -1058,6 +1058,27 @@ paths:
         "204":
           description: Deleted
 
+  /security/vulnerabilities/{id}/restore:
+    post:
+      operationId: restoreVulnerability
+      tags: [security]
+      summary: Restore a soft-deleted vulnerability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored vulnerability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vulnerability"
+        "404":
+          description: Not found
+
   /security/summary:
     get:
       operationId: getSecuritySummary
@@ -1235,6 +1256,27 @@ paths:
         "204":
           description: Deleted
 
+  /software/{id}/restore:
+    post:
+      operationId: restoreSoftware
+      tags: [software]
+      summary: Restore a soft-deleted software record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored software record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoftwareItem"
+        "404":
+          description: Not found
+
   # ─── Documentation ────────────────────────────────────────────────────────
   /documentation:
     get:
@@ -1331,6 +1373,27 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /documentation/{id}/restore:
+    post:
+      operationId: restoreDocument
+      tags: [documentation]
+      summary: Restore a soft-deleted document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          description: Not found
 
   # ─── Reports ──────────────────────────────────────────────────────────────
   /reports/inventory:
@@ -2643,6 +2706,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, title, severity, status, createdAt, updatedAt]
 
     VulnerabilityInput:
@@ -2974,6 +3039,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, name, type, supported, endOfLife, upgradeAvailable, createdAt, updatedAt]
 
     SoftwareInput:
@@ -3066,6 +3133,8 @@ components:
           type: string
         updatedAt:
           type: string
+        deletedAt:
+          type: ["string", "null"]
       required: [id, title, type, createdAt, updatedAt]
 
     DocumentInput:
@@ -3372,7 +3441,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Release"
-      required: [applications, infrastructure, databases, domains, repositories, releases]
+        vulnerabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vulnerability"
+        software:
+          type: array
+          items:
+            $ref: "#/components/schemas/SoftwareItem"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+      required: [applications, infrastructure, databases, domains, repositories, releases, vulnerabilities, software, documents]
 
     # ── Search ────────────────────────────────────────────────────────────
     SearchResults:

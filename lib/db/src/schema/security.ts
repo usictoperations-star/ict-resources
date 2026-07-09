@@ -26,11 +26,13 @@ export const vulnerabilitiesTable = pgTable("vulnerabilities", {
   ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 }, (table) => [
   index("vulnerabilities_owner_id_idx").on(table.ownerId),
   index("vulnerabilities_application_id_idx").on(table.applicationId),
   index("vulnerabilities_severity_idx").on(table.severity),
   index("vulnerabilities_status_idx").on(table.status),
+  index("vulnerabilities_deleted_at_idx").on(table.deletedAt),
 ]);
 
 export const insertVulnerabilitySchema = createInsertSchema(vulnerabilitiesTable).omit({ id: true, createdAt: true, updatedAt: true });

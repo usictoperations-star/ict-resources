@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
-import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable, domainsTable, repositoriesTable, releasesTable } from "@workspace/db";
+import { usersTable, auditLogsTable, applicationsTable, databasesTable, infrastructureTable, domainsTable, repositoriesTable, releasesTable, vulnerabilitiesTable, softwareTable, documentsTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
 import { eq, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
@@ -13,13 +13,16 @@ router.get("/deleted-records", async (req: Request, res: Response) => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
 
-    const [applications, infrastructure, databases, domains, repositories, releases] = await Promise.all([
+    const [applications, infrastructure, databases, domains, repositories, releases, vulnerabilities, software, documents] = await Promise.all([
       db.select().from(applicationsTable).where(isNotNull(applicationsTable.deletedAt)),
       db.select().from(infrastructureTable).where(isNotNull(infrastructureTable.deletedAt)),
       db.select().from(databasesTable).where(isNotNull(databasesTable.deletedAt)),
       db.select().from(domainsTable).where(isNotNull(domainsTable.deletedAt)),
       db.select().from(repositoriesTable).where(isNotNull(repositoriesTable.deletedAt)),
       db.select().from(releasesTable).where(isNotNull(releasesTable.deletedAt)),
+      db.select().from(vulnerabilitiesTable).where(isNotNull(vulnerabilitiesTable.deletedAt)),
+      db.select().from(softwareTable).where(isNotNull(softwareTable.deletedAt)),
+      db.select().from(documentsTable).where(isNotNull(documentsTable.deletedAt)),
     ]);
 
     const within30Days = (deletedAt: Date | null) => deletedAt && deletedAt >= cutoff;
@@ -63,6 +66,28 @@ router.get("/deleted-records", async (req: Request, res: Response) => {
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
         deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+      })),
+      vulnerabilities: vulnerabilities.filter(v => within30Days(v.deletedAt)).map(v => ({
+        ...v,
+        applicationName: null,
+        ownerName: null,
+        createdAt: v.createdAt.toISOString(),
+        updatedAt: v.updatedAt.toISOString(),
+        deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
+      })),
+      software: software.filter(s => within30Days(s.deletedAt)).map(s => ({
+        ...s,
+        ownerName: null,
+        createdAt: s.createdAt.toISOString(),
+        updatedAt: s.updatedAt.toISOString(),
+        deletedAt: s.deletedAt ? s.deletedAt.toISOString() : null,
+      })),
+      documents: documents.filter(d => within30Days(d.deletedAt)).map(d => ({
+        ...d,
+        applicationName: null,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString(),
+        deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
       })),
     });
   } catch (err) {

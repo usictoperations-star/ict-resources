@@ -14,7 +14,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { CreateVulnerabilityBody, UpdateVulnerabilityBody } from "@workspace/api-zod";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -30,14 +30,14 @@ function daysRemaining(dateStr: string | null): number | null {
 router.get("/dashboard", async (req: Request, res: Response) => {
   try {
     const [apps, infra, domains, databases, repos, software, users, vulns] = await Promise.all([
-      db.select().from(applicationsTable),
-      db.select().from(infrastructureTable),
-      db.select().from(domainsTable),
-      db.select().from(databasesTable),
-      db.select().from(repositoriesTable),
-      db.select().from(softwareTable),
+      db.select().from(applicationsTable).where(isNull(applicationsTable.deletedAt)),
+      db.select().from(infrastructureTable).where(isNull(infrastructureTable.deletedAt)),
+      db.select().from(domainsTable).where(isNull(domainsTable.deletedAt)),
+      db.select().from(databasesTable).where(isNull(databasesTable.deletedAt)),
+      db.select().from(repositoriesTable).where(isNull(repositoriesTable.deletedAt)),
+      db.select().from(softwareTable).where(isNull(softwareTable.deletedAt)),
       db.select().from(usersTable),
-      db.select().from(vulnerabilitiesTable),
+      db.select().from(vulnerabilitiesTable).where(isNull(vulnerabilitiesTable.deletedAt)),
     ]);
 
     const now = Date.now();
@@ -128,7 +128,7 @@ router.get("/dashboard", async (req: Request, res: Response) => {
 
 router.get("/summary", async (req: Request, res: Response) => {
   try {
-    const all = await db.select().from(vulnerabilitiesTable);
+    const all = await db.select().from(vulnerabilitiesTable).where(isNull(vulnerabilitiesTable.deletedAt));
     const critical = all.filter(v => v.severity === "Critical").length;
     const high = all.filter(v => v.severity === "High").length;
     const medium = all.filter(v => v.severity === "Medium").length;
@@ -147,13 +147,11 @@ router.get("/summary", async (req: Request, res: Response) => {
 router.get("/vulnerabilities", async (req: Request, res: Response) => {
   try {
     const { severity, status } = req.query as Record<string, string>;
-    const conditions = [];
+    const conditions = [isNull(vulnerabilitiesTable.deletedAt)];
     if (severity) conditions.push(eq(vulnerabilitiesTable.severity, severity));
     if (status) conditions.push(eq(vulnerabilitiesTable.status, status));
 
-    const vulns = conditions.length
-      ? await db.select().from(vulnerabilitiesTable).where(and(...conditions))
-      : await db.select().from(vulnerabilitiesTable);
+    const vulns = await db.select().from(vulnerabilitiesTable).where(and(...conditions));
 
     const [apps, owners] = await Promise.all([
       db.select({ id: applicationsTable.id, name: applicationsTable.name }).from(applicationsTable),
@@ -168,6 +166,7 @@ router.get("/vulnerabilities", async (req: Request, res: Response) => {
       ownerName: v.ownerId ? ownerMap.get(v.ownerId) ?? null : null,
       createdAt: v.createdAt.toISOString(),
       updatedAt: v.updatedAt.toISOString(),
+      deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
     })));
   } catch (err) {
     req.log.error({ err }, "Error listing vulnerabilities");
@@ -181,10 +180,26 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
     const [item] = await db.insert(vulnerabilitiesTable).values(body).returning();
     const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
-    return res.status(201).json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.status(201).json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating vulnerability");
     return res.status(400).json({ error: "Invalid request" });
+  }
+});
+
+router.post("/vulnerabilities/:id/restore", async (req: Request, res: Response) => {
+  try {
+    const id = parseIdParam(req);
+    const [item] = await db.update(vulnerabilitiesTable)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(eq(vulnerabilitiesTable.id, id))
+      .returning();
+    if (!item) return res.status(404).json({ error: "Not found" });
+    await db.insert(auditLogsTable).values({ action: "RESTORE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
+    return res.json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: null });
+  } catch (err) {
+    req.log.error({ err }, "Error restoring vulnerability");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -195,7 +210,7 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
     const [item] = await db.update(vulnerabilitiesTable).set({ ...body, updatedAt: new Date() }).where(eq(vulnerabilitiesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
     const ownerRow = item.ownerId ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, item.ownerId)).limit(1) : [];
-    return res.json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.json({ ...item, applicationName: null, ownerName: ownerRow[0]?.name ?? null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(), deletedAt: item.deletedAt ? item.deletedAt.toISOString() : null });
   } catch (err) {
     req.log.error({ err }, "Error updating vulnerability");
     return res.status(400).json({ error: "Invalid request" });
@@ -205,8 +220,12 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
 router.delete("/vulnerabilities/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
-    const [item] = await db.delete(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.id, id)).returning();
+    const [item] = await db.update(vulnerabilitiesTable)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(vulnerabilitiesTable.id, id), isNull(vulnerabilitiesTable.deletedAt)))
+      .returning();
     if (!item) return res.status(404).json({ error: "Not found" });
+    await db.insert(auditLogsTable).values({ action: "DELETE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting vulnerability");

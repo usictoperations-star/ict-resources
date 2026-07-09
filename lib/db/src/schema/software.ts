@@ -20,9 +20,11 @@ export const softwareTable = pgTable("software", {
   ownerId: integer("owner_id").references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 }, (table) => [
   index("software_owner_id_idx").on(table.ownerId),
   index("software_application_id_idx").on(table.applicationId),
+  index("software_deleted_at_idx").on(table.deletedAt),
 ]);
 
 export const insertSoftwareSchema = createInsertSchema(softwareTable).omit({ id: true, createdAt: true, updatedAt: true });

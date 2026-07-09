@@ -33,4 +33,6 @@ export interface SoftwareItem {
   ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  deletedAt?: string | null;
 }

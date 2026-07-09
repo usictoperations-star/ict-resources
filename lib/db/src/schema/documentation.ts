@@ -14,8 +14,10 @@ export const documentsTable = pgTable("documents", {
   tags: text("tags"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 }, (table) => [
   index("documents_application_id_idx").on(table.applicationId),
+  index("documents_deleted_at_idx").on(table.deletedAt),
 ]);
 
 export const insertDocumentSchema = createInsertSchema(documentsTable).omit({ id: true, createdAt: true, updatedAt: true });
