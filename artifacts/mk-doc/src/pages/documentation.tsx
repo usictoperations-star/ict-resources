@@ -18,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import type { UppyFile, UploadResult } from "@uppy/core";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 
@@ -90,8 +90,10 @@ function fileNameFromObjectPath(url: string): string {
 }
 
 export default function Documentation() {
-  const { data: documentsPage, isLoading } = useListDocuments({ limit: 100 });
-  const documents = documentsPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: documentsPage, isLoading } = useListDocuments({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const documents = documentsPage?.data ?? [];
   const { mutateAsync: createDocument, isPending: isCreating } = useCreateDocument();
   const { mutateAsync: updateDocument, isPending: isUpdating } = useUpdateDocument();
   const { mutateAsync: deleteDocument, isPending: isDeleting } = useDeleteDocument();
@@ -106,7 +108,10 @@ export default function Documentation() {
   const [isUploading, setIsUploading] = useState(false);
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedDocuments, startIndex, endIndex, total } = usePagination(documents, 10);
+  const total = documentsPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const lastObjectPathRef = useRef<string | null>(null);
@@ -216,7 +221,7 @@ export default function Documentation() {
         iconColor="#1B56A5"
         title="Documentation Center"
         subtitle="PRDs, TRDs, SOPs, runbooks, and technical documents — all in one place"
-        count={documents?.length}
+        count={total}
         actions={
           <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Document</Button>
         }
@@ -252,7 +257,7 @@ export default function Documentation() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedDocuments.map((doc) => (
+                  {documents.map((doc) => (
                     <TableRow key={doc.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div className="flex items-start gap-2">

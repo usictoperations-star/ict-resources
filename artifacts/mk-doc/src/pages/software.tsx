@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 
@@ -115,8 +115,10 @@ const SOFTWARE_EXPORT_COLS = [
 ];
 
 export default function Software() {
-  const { data: softwarePage, isLoading } = useListSoftware({ limit: 100 });
-  const software = softwarePage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: softwarePage, isLoading } = useListSoftware({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const software = softwarePage?.data ?? [];
   const { mutateAsync: createSoftware, isPending: isCreating } = useCreateSoftware();
   const { mutateAsync: updateSoftware, isPending: isUpdating } = useUpdateSoftware();
   const { mutateAsync: deleteSoftware, isPending: isDeleting } = useDeleteSoftware();
@@ -129,7 +131,10 @@ export default function Software() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedSoftware, startIndex, endIndex, total } = usePagination(software, 10);
+  const total = softwarePage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -196,7 +201,7 @@ export default function Software() {
         iconColor="#059669"
         title="Software Inventory"
         subtitle="Frameworks, libraries, runtimes, and dependencies across all applications"
-        count={software?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(software ?? []) as unknown as Record<string, unknown>[]} columns={SOFTWARE_EXPORT_COLS} filename="software-inventory" title="Software Inventory" />
@@ -237,7 +242,7 @@ export default function Software() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedSoftware.map((item) => (
+                  {software.map((item) => (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>

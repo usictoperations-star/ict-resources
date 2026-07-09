@@ -209,8 +209,10 @@ export default function Admin() {
   const canAdmin = can("admin");
 
   const { data: users, isLoading: usersLoading } = useListUsers();
-  const { data: auditLogsPage, isLoading: logsLoading } = useListAuditLogs({ limit: 100 });
-  const auditLogs = auditLogsPage?.data;
+  const AUDIT_PAGE_SIZE = 20;
+  const [auditPage, setAuditPage] = useState(1);
+  const { data: auditLogsPage, isLoading: logsLoading } = useListAuditLogs({ limit: AUDIT_PAGE_SIZE, offset: (auditPage - 1) * AUDIT_PAGE_SIZE });
+  const auditLogs = auditLogsPage?.data ?? [];
   const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser();
@@ -226,8 +228,10 @@ export default function Admin() {
   const { page: usersPage, setPage: setUsersPage, totalPages: usersTotalPages, pageItems: pagedUsers, startIndex: usersStartIndex, endIndex: usersEndIndex, total: usersTotal } = usePagination(users, 10);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
-  const { data: teamsListPage, isLoading: teamsLoading } = useListTeams({ limit: 100 });
-  const teams = teamsListPage?.data;
+  const TEAMS_PAGE_SIZE = 20;
+  const [teamsPage, setTeamsPage] = useState(1);
+  const { data: teamsListPage, isLoading: teamsLoading } = useListTeams({ limit: TEAMS_PAGE_SIZE, offset: (teamsPage - 1) * TEAMS_PAGE_SIZE });
+  const teams = teamsListPage?.data ?? [];
   const { mutateAsync: createTeam, isPending: isCreatingTeam } = useCreateTeam();
   const { mutateAsync: updateTeam, isPending: isUpdatingTeam } = useUpdateTeam();
   const { mutateAsync: deleteTeam, isPending: isDeletingTeam } = useDeleteTeam();
@@ -239,8 +243,14 @@ export default function Admin() {
   const [teamErrors, setTeamErrors] = useState<Record<string, string>>({});
 
   const isTeamPending = isCreatingTeam || isUpdatingTeam;
-  const { page: teamsPage, setPage: setTeamsPage, totalPages: teamsTotalPages, pageItems: pagedTeams, startIndex: teamsStartIndex, endIndex: teamsEndIndex, total: teamsTotal } = usePagination(teams, 10);
-  const { page: auditPage, setPage: setAuditPage, totalPages: auditTotalPages, pageItems: pagedAuditLogs, startIndex: auditStartIndex, endIndex: auditEndIndex, total: auditTotal } = usePagination(auditLogs, 10);
+  const teamsTotal = teamsListPage?.total ?? 0;
+  const teamsTotalPages = Math.max(1, Math.ceil(teamsTotal / TEAMS_PAGE_SIZE));
+  const teamsStartIndex = teamsTotal === 0 ? 0 : (teamsPage - 1) * TEAMS_PAGE_SIZE;
+  const teamsEndIndex = Math.min(teamsStartIndex + TEAMS_PAGE_SIZE, teamsTotal);
+  const auditTotal = auditLogsPage?.total ?? 0;
+  const auditTotalPages = Math.max(1, Math.ceil(auditTotal / AUDIT_PAGE_SIZE));
+  const auditStartIndex = auditTotal === 0 ? 0 : (auditPage - 1) * AUDIT_PAGE_SIZE;
+  const auditEndIndex = Math.min(auditStartIndex + AUDIT_PAGE_SIZE, auditTotal);
   const setTeam = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTeamForm(f => ({ ...f, [field]: e.target.value }));
 
   const { data: deletedRecords, isLoading: deletedLoading } = useListDeletedRecords();
@@ -615,7 +625,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pagedTeams.map((team) => (
+                      {teams.map((team) => (
                         <TableRow key={team.id}>
                           <TableCell className="font-medium">{team.name}</TableCell>
                           <TableCell><Badge variant="outline" className="font-mono text-xs">{team.slug}</Badge></TableCell>
@@ -700,7 +710,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pagedAuditLogs.map((log) => (
+                      {auditLogs.map((log) => (
                         <TableRow key={log.id} className="text-sm">
                           <TableCell className="text-muted-foreground whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
                           <TableCell className="font-medium">{log.userName || `User #${log.userId}`}</TableCell>

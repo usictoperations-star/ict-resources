@@ -18,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -100,8 +100,10 @@ const REPO_EXPORT_COLS = [
 ];
 
 export default function Repositories() {
-  const { data: repositoriesPage, isLoading } = useListRepositories({ limit: 100 });
-  const repositories = repositoriesPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: repositoriesPage, isLoading } = useListRepositories({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const repositories = repositoriesPage?.data ?? [];
   const { mutateAsync: createRepository, isPending: isCreating } = useCreateRepository();
   const { mutateAsync: updateRepository, isPending: isUpdating } = useUpdateRepository();
   const { mutateAsync: deleteRepository, isPending: isDeleting } = useDeleteRepository();
@@ -114,7 +116,10 @@ export default function Repositories() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedRepositories, startIndex, endIndex, total } = usePagination(repositories, 10);
+  const total = repositoriesPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -195,7 +200,7 @@ export default function Repositories() {
         iconColor="#7C3AED"
         title="Repository Management"
         subtitle="Source code repositories, version control, and open pull request tracking"
-        count={repositories?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(repositories ?? []) as unknown as Record<string, unknown>[]} columns={REPO_EXPORT_COLS} filename="repositories" title="Repository Management" />
@@ -237,7 +242,7 @@ export default function Repositories() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedRepositories.map((repo) => (
+                  {repositories.map((repo) => (
                     <TableRow key={repo.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>

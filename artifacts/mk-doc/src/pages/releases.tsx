@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Rocket, CheckCircle2, Clock, RotateCcw, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -98,8 +98,10 @@ const EMPTY_FORM = { applicationId: "", version: "", environment: "Production", 
 type ReleaseRow = { id: number; applicationId: number; applicationName?: string | null; version: string; environment: string; status: string; releaseDate?: string | null; releasedBy?: string | null; releaseNotes?: string | null; rollbackAvailable: boolean; approved: boolean; approvedBy?: string | null };
 
 export default function Releases() {
-  const { data: releasesPage, isLoading } = useListReleases({ limit: 100 });
-  const releases = releasesPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: releasesPage, isLoading } = useListReleases({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const releases = releasesPage?.data ?? [];
   const { mutateAsync: createRelease, isPending: isCreating } = useCreateRelease();
   const { mutateAsync: updateRelease, isPending: isUpdating } = useUpdateRelease();
   const { mutateAsync: deleteRelease, isPending: isDeleting } = useDeleteRelease();
@@ -112,7 +114,10 @@ export default function Releases() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedReleases, startIndex, endIndex, total } = usePagination(releases, 10);
+  const total = releasesPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -201,7 +206,7 @@ export default function Releases() {
         iconColor="#1B56A5"
         title="Release Management"
         subtitle="Deployment history with approval workflow and rollback tracking"
-        count={releases?.length}
+        count={total}
         actions={
           <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Release</Button>
         }
@@ -240,7 +245,7 @@ export default function Releases() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedReleases.map((release) => (
+                  {releases.map((release) => (
                     <TableRow key={release.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>

@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "info"];
@@ -850,8 +850,10 @@ function NeedsAttentionView() {
 
 // ── VIEW: Vulnerabilities ──────────────────────────────────────────────────────
 function VulnerabilitiesView() {
-  const { data: vulnsPage2, isLoading: vulnsLoading } = useListVulnerabilities({ limit: 100 });
-  const vulnerabilities = vulnsPage2?.data;
+  const PAGE_SIZE = 20;
+  const [vulnsPage, setVulnsPage] = useState(1);
+  const { data: vulnsPage2, isLoading: vulnsLoading } = useListVulnerabilities({ limit: PAGE_SIZE, offset: (vulnsPage - 1) * PAGE_SIZE });
+  const vulnerabilities = vulnsPage2?.data ?? [];
   const { data: appsPage }                             = useListApplications({ limit: 500 });
   const applications = appsPage?.data;
   const { mutateAsync: createVulnerability, isPending: isCreating } = useCreateVulnerability();
@@ -866,8 +868,10 @@ function VulnerabilitiesView() {
   const [errors, setErrors]             = useState<Record<string, string>>({});
   const isPending = isCreating || isUpdating;
 
-  const { page, setPage, totalPages, pageItems: pagedVulns, startIndex, endIndex, total } =
-    usePagination(vulnerabilities, 10);
+  const total = vulnsPage2?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (vulnsPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
 
   const set = (field: string) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -934,7 +938,7 @@ function VulnerabilitiesView() {
   };
 
   const isResolved = form.status === "resolved" || form.status === "accepted";
-  const vulnCount  = vulnerabilities?.length ?? 0;
+  const vulnCount  = vulnsPage2?.total ?? 0;
 
   return (
     <div className="space-y-5 max-w-5xl">
@@ -985,7 +989,7 @@ function VulnerabilitiesView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagedVulns.map((vuln) => {
+                    {vulnerabilities.map((vuln) => {
                       const v = vuln as VulnRow;
                       const meta = [v.cveId, v.affectedComponent].filter(Boolean).join(" · ");
                       return (
@@ -1027,7 +1031,7 @@ function VulnerabilitiesView() {
                 </Table>
               </div>
               <div className="px-4">
-                <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} startIndex={startIndex} endIndex={endIndex} total={total} />
+                <TablePagination page={vulnsPage} totalPages={totalPages} onPageChange={setVulnsPage} startIndex={startIndex} endIndex={endIndex} total={total} />
               </div>
             </>
           ) : (

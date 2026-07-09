@@ -19,7 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -99,8 +99,10 @@ const DOMAIN_EXPORT_COLS = [
 ];
 
 export default function Domains() {
-  const { data: domainsPage, isLoading: domainsLoading } = useListDomains({ limit: 100 });
-  const domains = domainsPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: domainsPage, isLoading: domainsLoading } = useListDomains({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const domains = domainsPage?.data ?? [];
   const { data: expiringDomains, isLoading: expiringLoading } = useGetExpiringDomains();
   const { mutateAsync: createDomain, isPending: isCreating } = useCreateDomain();
   const { mutateAsync: updateDomain, isPending: isUpdating } = useUpdateDomain();
@@ -114,7 +116,10 @@ export default function Domains() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedDomains, startIndex, endIndex, total } = usePagination(domains, 10);
+  const total = domainsPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleDelete = async () => {
@@ -199,7 +204,7 @@ export default function Domains() {
         iconColor="#0891B2"
         title="Domains & SSL"
         subtitle="Monitor domain renewals and SSL certificate health across all registered domains"
-        count={domains?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(domains ?? []) as unknown as Record<string, unknown>[]} columns={DOMAIN_EXPORT_COLS} filename="domains" title="Domain & SSL Management" />
@@ -283,7 +288,7 @@ export default function Domains() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagedDomains.map((domain) => (
+                    {domains.map((domain) => (
                       <TableRow key={domain.id} className="hover:bg-muted/30">
                         <TableCell>
                           <div>

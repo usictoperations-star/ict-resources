@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -128,8 +128,10 @@ const APP_EXPORT_COLS = [
 ];
 
 export default function Applications() {
-  const { data: applicationsPage, isLoading } = useListApplications({ limit: 100 });
-  const applications = applicationsPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: applicationsPage, isLoading } = useListApplications({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const applications = applicationsPage?.data ?? [];
   const { mutateAsync: createApplication, isPending: isCreating } = useCreateApplication();
   const { mutateAsync: updateApplication, isPending: isUpdating } = useUpdateApplication();
   const { mutateAsync: deleteApplication, isPending: isDeleting } = useDeleteApplication();
@@ -148,7 +150,10 @@ export default function Applications() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedApplications, startIndex, endIndex, total } = usePagination(applications, 10);
+  const total = applicationsPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -283,7 +288,7 @@ export default function Applications() {
         iconColor="#1B56A5"
         title="Application Registry"
         subtitle="Master record for every digital application across ministries and departments"
-        count={applications?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(applications ?? []) as unknown as Record<string, unknown>[]} columns={APP_EXPORT_COLS} filename="applications" title="Application Registry" />
@@ -323,7 +328,7 @@ export default function Applications() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedApplications.map((app) => (
+                  {applications.map((app) => (
                     <TableRow key={app.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>

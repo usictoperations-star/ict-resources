@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -93,8 +93,10 @@ const INFRA_EXPORT_COLS = [
 ];
 
 export default function Infrastructure() {
-  const { data: infraPage, isLoading } = useListInfrastructure({ limit: 100 });
-  const infra = infraPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: infraPage, isLoading } = useListInfrastructure({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const infra = infraPage?.data ?? [];
   const { mutateAsync: createInfrastructure, isPending: isCreating } = useCreateInfrastructure();
   const { mutateAsync: updateInfrastructure, isPending: isUpdating } = useUpdateInfrastructure();
   const { mutateAsync: deleteInfrastructure, isPending: isDeleting } = useDeleteInfrastructure();
@@ -107,7 +109,10 @@ export default function Infrastructure() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedInfra, startIndex, endIndex, total } = usePagination(infra, 10);
+  const total = infraPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const { data: dependents, isLoading: isLoadingDependents } = useGetInfrastructureDependents(
@@ -186,7 +191,7 @@ export default function Infrastructure() {
         iconColor="#7C3AED"
         title="Infrastructure Management"
         subtitle="Servers, VPS, containers, and cloud resources across all environments"
-        count={infra?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(infra ?? []) as unknown as Record<string, unknown>[]} columns={INFRA_EXPORT_COLS} filename="infrastructure" title="Infrastructure Management" />
@@ -227,7 +232,7 @@ export default function Infrastructure() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedInfra.map((item) => (
+                  {infra.map((item) => (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>

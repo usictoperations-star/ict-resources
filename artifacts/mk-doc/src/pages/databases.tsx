@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OwnerBadge } from "@/components/owner-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TablePagination } from "@/components/table-pagination";
-import { usePagination } from "@/hooks/use-pagination";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -87,8 +87,10 @@ const DB_EXPORT_COLS = [
 ];
 
 export default function Databases() {
-  const { data: databasesPage, isLoading } = useListDatabases({ limit: 100 });
-  const databases = databasesPage?.data;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const { data: databasesPage, isLoading } = useListDatabases({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+  const databases = databasesPage?.data ?? [];
   const { mutateAsync: createDatabase, isPending: isCreating } = useCreateDatabase();
   const { mutateAsync: updateDatabase, isPending: isUpdating } = useUpdateDatabaseRecord();
   const { mutateAsync: deleteDatabase, isPending: isDeleting } = useDeleteDatabaseRecord();
@@ -101,7 +103,10 @@ export default function Databases() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isPending = isCreating || isUpdating;
-  const { page, setPage, totalPages, pageItems: pagedDatabases, startIndex, endIndex, total } = usePagination(databases, 10);
+  const total = databasesPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const { data: dependents, isLoading: isLoadingDependents } = useGetDatabaseDependents(
@@ -178,7 +183,7 @@ export default function Databases() {
         iconColor="#059669"
         title="Database Management"
         subtitle="Monitored databases across all environments — backup and encryption at a glance"
-        count={databases?.length}
+        count={total}
         actions={
           <>
             <ExportButton data={(databases ?? []) as unknown as Record<string, unknown>[]} columns={DB_EXPORT_COLS} filename="databases" title="Database Management" />
@@ -220,7 +225,7 @@ export default function Databases() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedDatabases.map((db) => (
+                  {databases.map((db) => (
                     <TableRow key={db.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div>
