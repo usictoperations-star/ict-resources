@@ -1723,6 +1723,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         lastSecurityScanAt:
           type: ["string", "null"]
         createdAt:
@@ -1959,6 +1961,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         patchStatus:
           type: string
         lastPatchedAt:
@@ -2069,6 +2073,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2167,6 +2173,8 @@ components:
           type: ["integer", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         notes:
           type: ["string", "null"]
         createdAt:
@@ -2280,6 +2288,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         secretsExposed:
           type: boolean
         lastScannedAt:
@@ -2484,6 +2494,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -2813,6 +2825,8 @@ components:
           type: ["string", "null"]
         ownerId:
           type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:

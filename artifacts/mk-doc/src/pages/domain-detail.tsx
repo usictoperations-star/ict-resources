@@ -138,7 +138,7 @@ export default function DomainDetail() {
         <Field label="Updated" value={domain.updatedAt} />
         <div>
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
-          <dd><OwnerBadge ownerId={domain.ownerId} /></dd>
+          <dd><OwnerBadge ownerName={domain.ownerName} /></dd>
         </div>
       </Section>
 

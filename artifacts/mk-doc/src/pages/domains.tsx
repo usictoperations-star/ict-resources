@@ -49,7 +49,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 
 const EMPTY_FORM = { name: "", registrar: "", registrationExpiry: "", sslProvider: "", sslExpiry: "", sslStatus: "valid", dnsProvider: "", cloudflarEnabled: false, status: "active", notes: "", ownerId: "" };
 
-type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null };
+type DomainRow = { id: number; name: string; registrar?: string | null; registrationExpiry?: string | null; sslProvider?: string | null; sslExpiry?: string | null; sslStatus: string; dnsProvider?: string | null; cloudflarEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Domains() {
   const { data: domains, isLoading: domainsLoading } = useListDomains();
@@ -208,7 +208,7 @@ export default function Domains() {
                           <Badge variant={domain.sslStatus === 'valid' ? 'default' : 'destructive'}>{domain.sslStatus}</Badge>
                         </TableCell>
                         <TableCell>{domain.cloudflarEnabled ? 'Yes' : 'No'}</TableCell>
-                        <TableCell><OwnerBadge ownerId={(domain as DomainRow).ownerId} /></TableCell>
+                        <TableCell><OwnerBadge ownerName={(domain as DomainRow).ownerName} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(domain as DomainRow)}>

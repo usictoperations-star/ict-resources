@@ -139,7 +139,7 @@ export default function InfrastructureDetail() {
         <Field label="Updated" value={item.updatedAt} />
         <div>
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
-          <dd><OwnerBadge ownerId={item.ownerId} /></dd>
+          <dd><OwnerBadge ownerName={item.ownerName} /></dd>
         </div>
       </Section>
 

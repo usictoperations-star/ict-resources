@@ -2,12 +2,18 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { parseIdParam } from "../lib/params";
 import { db } from "@workspace/db";
-import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable } from "@workspace/db";
+import { applicationsTable, releasesTable, documentsTable, vulnerabilitiesTable, softwareTable, repositoriesTable, domainsTable, usersTable } from "@workspace/db";
 import { CreateApplicationBody, UpdateApplicationBody } from "@workspace/api-zod";
 import { eq, ilike, and, count, isNull, isNotNull, gte } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 const router = Router();
+
+async function resolveOwnerName(ownerId: number | null | undefined): Promise<string | null> {
+  if (!ownerId) return null;
+  const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, ownerId));
+  return user?.name ?? null;
+}
 
 router.get("/summary", async (req: Request, res: Response) => {
   try {
@@ -63,10 +69,15 @@ router.get("/", async (req: Request, res: Response) => {
     if (environment) conditions.push(eq(applicationsTable.environment, environment));
     if (search) conditions.push(ilike(applicationsTable.name, `%${search}%`));
 
-    const results = await db.select().from(applicationsTable).where(and(...conditions));
+    const results = await db
+      .select({ app: applicationsTable, ownerName: usersTable.name })
+      .from(applicationsTable)
+      .leftJoin(usersTable, eq(applicationsTable.ownerId, usersTable.id))
+      .where(and(...conditions));
 
-    return res.json(results.map(a => ({
+    return res.json(results.map(({ app: a, ownerName }) => ({
       ...a,
+      ownerName: ownerName ?? null,
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
       deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
@@ -81,8 +92,9 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const body = CreateApplicationBody.parse(req.body);
     const [app] = await db.insert(applicationsTable).values(body).returning();
+    const ownerName = await resolveOwnerName(app.ownerId);
     await logAudit(req, "CREATE", "Application", app.id, app.name);
-    return res.status(201).json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
+    return res.status(201).json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error creating application");
     return res.status(400).json({ error: "Invalid request" });
@@ -98,8 +110,9 @@ router.post("/:id/restore", async (req: Request, res: Response) => {
       .where(and(eq(applicationsTable.id, id), isNotNull(applicationsTable.deletedAt), gte(applicationsTable.deletedAt, cutoff)))
       .returning();
     if (!app) return res.status(404).json({ error: "Not found or outside the 30-day restore window" });
+    const ownerName = await resolveOwnerName(app.ownerId);
     await logAudit(req, "RESTORE", "Application", app.id, app.name);
-    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
+    return res.json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error restoring application");
     return res.status(500).json({ error: "Internal server error" });
@@ -146,9 +159,14 @@ router.get("/:id/dependents", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseIdParam(req);
-    const [app] = await db.select().from(applicationsTable).where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
-    if (!app) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: app.deletedAt ? app.deletedAt.toISOString() : null });
+    const [result] = await db
+      .select({ app: applicationsTable, ownerName: usersTable.name })
+      .from(applicationsTable)
+      .leftJoin(usersTable, eq(applicationsTable.ownerId, usersTable.id))
+      .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)));
+    if (!result) return res.status(404).json({ error: "Not found" });
+    const { app, ownerName } = result;
+    return res.json({ ...app, ownerName: ownerName ?? null, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: app.deletedAt ? app.deletedAt.toISOString() : null });
   } catch (err) {
     req.log.error({ err }, "Error fetching application");
     return res.status(500).json({ error: "Internal server error" });
@@ -164,8 +182,9 @@ router.patch("/:id", async (req: Request, res: Response) => {
       .where(and(eq(applicationsTable.id, id), isNull(applicationsTable.deletedAt)))
       .returning();
     if (!app) return res.status(404).json({ error: "Not found" });
+    const ownerName = await resolveOwnerName(app.ownerId);
     await logAudit(req, "UPDATE", "Application", app.id, app.name);
-    return res.json({ ...app, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
+    return res.json({ ...app, ownerName, createdAt: app.createdAt.toISOString(), updatedAt: app.updatedAt.toISOString(), deletedAt: null });
   } catch (err) {
     req.log.error({ err }, "Error updating application");
     return res.status(400).json({ error: "Invalid request" });

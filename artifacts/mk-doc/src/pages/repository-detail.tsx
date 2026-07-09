@@ -150,7 +150,7 @@ export default function RepositoryDetail() {
         <Field label="Updated" value={repo.updatedAt} />
         <div>
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
-          <dd><OwnerBadge ownerId={repo.ownerId} /></dd>
+          <dd><OwnerBadge ownerName={repo.ownerName} /></dd>
         </div>
       </Section>
 

@@ -51,7 +51,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 
 const EMPTY_FORM = { name: "", url: "", defaultBranch: "main", visibility: "private", language: "", openPullRequests: "", openIssues: "", status: "active", notes: "", ownerId: "" };
 
-type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; ownerId?: number | null };
+type RepoRow = { id: number; name: string; url?: string | null; defaultBranch?: string | null; visibility: string; language?: string | null; openPullRequests: number; openIssues: number; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Repositories() {
   const { data: repositories, isLoading } = useListRepositories();
@@ -185,7 +185,7 @@ export default function Repositories() {
                         <div className="flex items-center text-muted-foreground"><CircleDot className="w-4 h-4 mr-1" />{repo.openIssues}</div>
                       </TableCell>
                       <TableCell><Badge variant={repo.status === 'active' ? 'default' : 'secondary'}>{repo.status}</Badge></TableCell>
-                      <TableCell><OwnerBadge ownerId={(repo as RepoRow).ownerId} /></TableCell>
+                      <TableCell><OwnerBadge ownerName={(repo as RepoRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(repo as RepoRow)}>

@@ -29,6 +29,8 @@ export interface InfrastructureItem {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   patchStatus: string;
   /** @nullable */
   lastPatchedAt?: string | null;

@@ -155,12 +155,17 @@ router.get("/vulnerabilities", async (req: Request, res: Response) => {
       ? await db.select().from(vulnerabilitiesTable).where(and(...conditions))
       : await db.select().from(vulnerabilitiesTable);
 
-    const apps = await db.select().from(applicationsTable);
+    const [apps, owners] = await Promise.all([
+      db.select({ id: applicationsTable.id, name: applicationsTable.name }).from(applicationsTable),
+      db.select({ id: usersTable.id, name: usersTable.name }).from(usersTable),
+    ]);
     const appMap = new Map(apps.map(a => [a.id, a.name]));
+    const ownerMap = new Map(owners.map(u => [u.id, u.name]));
 
     return res.json(vulns.map(v => ({
       ...v,
       applicationName: v.applicationId ? appMap.get(v.applicationId) ?? null : null,
+      ownerName: v.ownerId ? ownerMap.get(v.ownerId) ?? null : null,
       createdAt: v.createdAt.toISOString(),
       updatedAt: v.updatedAt.toISOString(),
     })));
@@ -175,7 +180,7 @@ router.post("/vulnerabilities", async (req: Request, res: Response) => {
     const body = CreateVulnerabilityBody.parse(req.body);
     const [item] = await db.insert(vulnerabilitiesTable).values(body).returning();
     await db.insert(auditLogsTable).values({ action: "CREATE", entityType: "Vulnerability", entityId: item.id, entityName: item.title, userName: "System" });
-    return res.status(201).json({ ...item, applicationName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.status(201).json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error creating vulnerability");
     return res.status(400).json({ error: "Invalid request" });
@@ -188,7 +193,7 @@ router.patch("/vulnerabilities/:id", async (req: Request, res: Response) => {
     const body = UpdateVulnerabilityBody.parse(req.body);
     const [item] = await db.update(vulnerabilitiesTable).set({ ...body, updatedAt: new Date() }).where(eq(vulnerabilitiesTable.id, id)).returning();
     if (!item) return res.status(404).json({ error: "Not found" });
-    return res.json({ ...item, applicationName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
+    return res.json({ ...item, applicationName: null, ownerName: null, createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Error updating vulnerability");
     return res.status(400).json({ error: "Invalid request" });

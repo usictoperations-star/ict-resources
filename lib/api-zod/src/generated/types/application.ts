@@ -56,6 +56,8 @@ export interface Application {
   /** @nullable */
   ownerId?: number | null;
   /** @nullable */
+  ownerName?: string | null;
+  /** @nullable */
   lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;

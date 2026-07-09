@@ -27,6 +27,8 @@ export interface Domain {
   /** @nullable */
   ownerId?: number | null;
   /** @nullable */
+  ownerName?: string | null;
+  /** @nullable */
   notes?: string | null;
   createdAt: string;
   updatedAt: string;

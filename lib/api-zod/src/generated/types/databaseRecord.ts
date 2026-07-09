@@ -28,6 +28,8 @@ export interface DatabaseRecord {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */

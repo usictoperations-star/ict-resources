@@ -53,7 +53,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 
 const EMPTY_FORM = { name: "", type: "", version: "", server: "", sizeGb: "", owner: "", backupEnabled: true, encryptionEnabled: false, status: "active", notes: "", ownerId: "" };
 
-type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null };
+type DbRow = { id: number; name: string; type: string; version?: string | null; server?: string | null; sizeGb?: number | null; owner?: string | null; backupEnabled: boolean; encryptionEnabled: boolean; status: string; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Databases() {
   const { data: databases, isLoading } = useListDatabases();
@@ -168,7 +168,7 @@ export default function Databases() {
                       <TableCell>{db.type}</TableCell>
                       <TableCell>{db.server || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(db.status)}>{db.status}</Badge></TableCell>
-                      <TableCell><OwnerBadge ownerId={(db as DbRow).ownerId} /></TableCell>
+                      <TableCell><OwnerBadge ownerName={(db as DbRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(db as DbRow)}>

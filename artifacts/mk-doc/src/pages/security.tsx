@@ -67,7 +67,7 @@ type VulnRow = {
   affectedComponent?: string | null; version?: string | null; vendor?: string | null;
   category?: string | null; installationDate?: string | null; licenseType?: string | null;
   licenseExpiration?: string | null; endOfLifeDate?: string | null; discoveredAt?: string | null;
-  assignedTo?: string | null; notes?: string | null; ownerId?: number | null;
+  assignedTo?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null;
 };
 
 const TONE_TEXT: Record<string, string> = { danger: "text-destructive", warning: "text-amber-600", ok: "text-emerald-600", default: "text-foreground" };
@@ -710,7 +710,7 @@ export default function Security() {
                       <TableCell className="py-2.5">
                         <Badge variant="outline" className="capitalize text-[10px] font-normal">{vuln.status.replace(/_/g, " ")}</Badge>
                       </TableCell>
-                      <TableCell className="py-2.5"><OwnerBadge ownerId={(vuln as VulnRow).ownerId} /></TableCell>
+                      <TableCell className="py-2.5"><OwnerBadge ownerName={(vuln as VulnRow).ownerName} /></TableCell>
                       <TableCell className="py-2.5">
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(vuln as VulnRow)}>

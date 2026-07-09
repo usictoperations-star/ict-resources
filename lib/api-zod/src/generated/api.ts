@@ -161,6 +161,7 @@ export const ListApplicationsResponseItem = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -235,6 +236,7 @@ export const CreateApplicationResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -278,6 +280,7 @@ export const GetApplicationResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -352,6 +355,7 @@ export const UpdateApplicationResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -405,6 +409,7 @@ export const RestoreApplicationResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -475,6 +480,7 @@ export const ListInfrastructureResponseItem = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -521,6 +527,7 @@ export const CreateInfrastructureResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -550,6 +557,7 @@ export const GetInfrastructureResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -596,6 +604,7 @@ export const UpdateInfrastructureResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -635,6 +644,7 @@ export const RestoreInfrastructureResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -661,6 +671,7 @@ export const ListDatabasesResponseItem = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -705,6 +716,7 @@ export const CreateDatabaseResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -733,6 +745,7 @@ export const GetDatabaseRecordResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -777,6 +790,7 @@ export const UpdateDatabaseRecordResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -815,6 +829,7 @@ export const RestoreDatabaseResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -837,6 +852,7 @@ export const ListDomainsResponseItem = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -878,6 +894,7 @@ export const CreateDomainResponse = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -904,6 +921,7 @@ export const GetDomainResponse = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -945,6 +963,7 @@ export const UpdateDomainResponse = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -995,6 +1014,7 @@ export const GetExpiringDomainsResponseItem = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -1019,6 +1039,7 @@ export const ListRepositoriesResponseItem = zod.object({
   "status": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "secretsExposed": zod.boolean(),
   "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -1064,6 +1085,7 @@ export const CreateRepositoryResponse = zod.object({
   "status": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "secretsExposed": zod.boolean(),
   "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -1092,6 +1114,7 @@ export const GetRepositoryResponse = zod.object({
   "status": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "secretsExposed": zod.boolean(),
   "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -1137,6 +1160,7 @@ export const UpdateRepositoryResponse = zod.object({
   "status": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "secretsExposed": zod.boolean(),
   "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -1320,6 +1344,7 @@ export const ListVulnerabilitiesResponseItem = zod.object({
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1376,6 +1401,7 @@ export const CreateVulnerabilityResponse = zod.object({
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1432,6 +1458,7 @@ export const UpdateVulnerabilityResponse = zod.object({
   "assignedTo": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1616,6 +1643,7 @@ export const ListSoftwareResponseItem = zod.object({
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1659,6 +1687,7 @@ export const CreateSoftwareResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1702,6 +1731,7 @@ export const UpdateSoftwareResponse = zod.object({
   "applicationId": zod.number().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1930,6 +1960,7 @@ export const ListDeletedRecordsResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -1949,6 +1980,7 @@ export const ListDeletedRecordsResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -1970,6 +2002,7 @@ export const ListDeletedRecordsResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2120,6 +2153,7 @@ export const GlobalSearchResponse = zod.object({
   "launchDate": zod.string().nullish(),
   "tags": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "lastSecurityScanAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -2139,6 +2173,7 @@ export const GlobalSearchResponse = zod.object({
   "os": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "patchStatus": zod.string(),
   "lastPatchedAt": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -2160,6 +2195,7 @@ export const GlobalSearchResponse = zod.object({
   "lastBackupStatus": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "deletedAt": zod.string().nullish()
@@ -2177,6 +2213,7 @@ export const GlobalSearchResponse = zod.object({
   "status": zod.string(),
   "applicationId": zod.number().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -2195,6 +2232,7 @@ export const GlobalSearchResponse = zod.object({
   "status": zod.string(),
   "notes": zod.string().nullish(),
   "ownerId": zod.number().nullish(),
+  "ownerName": zod.string().nullish(),
   "secretsExposed": zod.boolean(),
   "lastScannedAt": zod.string().nullish(),
   "createdAt": zod.string(),

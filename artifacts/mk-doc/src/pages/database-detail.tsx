@@ -135,7 +135,7 @@ export default function DatabaseDetail() {
         <Field label="Updated" value={db.updatedAt} />
         <div>
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Owner</dt>
-          <dd><OwnerBadge ownerId={db.ownerId} /></dd>
+          <dd><OwnerBadge ownerName={db.ownerName} /></dd>
         </div>
       </Section>
 

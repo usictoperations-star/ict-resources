@@ -56,7 +56,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 
 const EMPTY_FORM = { name: "", type: "", provider: "", status: "active", ipAddress: "", location: "", cpuCores: "", ramGb: "", diskGb: "", os: "", notes: "", ownerId: "" };
 
-type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null };
+type InfraRow = { id: number; name: string; type: string; provider?: string | null; status: string; ipAddress?: string | null; location?: string | null; cpuCores?: number | null; ramGb?: number | null; diskGb?: number | null; os?: string | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Infrastructure() {
   const { data: infra, isLoading } = useListInfrastructure();
@@ -173,7 +173,7 @@ export default function Infrastructure() {
                       <TableCell>{item.type}</TableCell>
                       <TableCell className="font-mono text-sm">{item.ipAddress || 'N/A'}</TableCell>
                       <TableCell><Badge variant={statusColor(item.status)}>{item.status}</Badge></TableCell>
-                      <TableCell><OwnerBadge ownerId={(item as InfraRow).ownerId} /></TableCell>
+                      <TableCell><OwnerBadge ownerName={(item as InfraRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as InfraRow)}>

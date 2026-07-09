@@ -141,6 +141,8 @@ export interface Application {
   /** @nullable */
   ownerId?: number | null;
   /** @nullable */
+  ownerName?: string | null;
+  /** @nullable */
   lastSecurityScanAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -271,6 +273,8 @@ export interface InfrastructureItem {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   patchStatus: string;
   /** @nullable */
   lastPatchedAt?: string | null;
@@ -337,6 +341,8 @@ export interface DatabaseRecord {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */
@@ -396,6 +402,8 @@ export interface Domain {
   applicationId?: number | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   /** @nullable */
   notes?: string | null;
   createdAt: string;
@@ -466,6 +474,8 @@ export interface Repository {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   secretsExposed: boolean;
   /** @nullable */
   lastScannedAt?: string | null;
@@ -595,6 +605,8 @@ export interface Vulnerability {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -793,6 +805,8 @@ export interface SoftwareItem {
   notes?: string | null;
   /** @nullable */
   ownerId?: number | null;
+  /** @nullable */
+  ownerName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

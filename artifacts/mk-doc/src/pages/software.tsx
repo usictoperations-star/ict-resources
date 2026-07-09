@@ -51,7 +51,7 @@ function SelectField({ value, onValueChange, placeholder, options }: { value: st
 
 const EMPTY_FORM = { name: "", type: "", installedVersion: "", latestVersion: "", vendor: "", license: "", supported: true, endOfLife: false, endOfLifeDate: "", upgradeAvailable: false, applicationId: "", notes: "", ownerId: "" };
 
-type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; ownerId?: number | null };
+type SoftwareRow = { id: number; name: string; type: string; installedVersion?: string | null; latestVersion?: string | null; vendor?: string | null; license?: string | null; supported: boolean; endOfLife: boolean; endOfLifeDate?: string | null; upgradeAvailable: boolean; applicationId?: number | null; notes?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Software() {
   const { data: software, isLoading } = useListSoftware();
@@ -181,7 +181,7 @@ export default function Software() {
                           <span className="text-sm text-muted-foreground">Supported</span>
                         )}
                       </TableCell>
-                      <TableCell><OwnerBadge ownerId={(item as SoftwareRow).ownerId} /></TableCell>
+                      <TableCell><OwnerBadge ownerName={(item as SoftwareRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item as SoftwareRow)}>

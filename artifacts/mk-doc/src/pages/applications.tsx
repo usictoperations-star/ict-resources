@@ -72,7 +72,7 @@ const EMPTY_FORM = {
   serverName: "", hostingProvider: "", domain: "", currentVersion: "", tags: "", ownerId: ""
 };
 
-type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null };
+type AppRow = { id: number; name: string; shortName?: string | null; description?: string | null; category: string; classification: string; environment: string; status: string; priority?: string | null; criticality?: string | null; ministry?: string | null; department?: string | null; businessOwner?: string | null; technicalOwner?: string | null; frontend?: string | null; backend?: string | null; framework?: string | null; language?: string | null; database?: string | null; serverName?: string | null; hostingProvider?: string | null; domain?: string | null; currentVersion?: string | null; tags?: string | null; ownerId?: number | null; ownerName?: string | null };
 
 export default function Applications() {
   const { data: applications, isLoading } = useListApplications();
@@ -261,7 +261,7 @@ export default function Applications() {
                           {app.status}
                         </Badge>
                       </TableCell>
-                      <TableCell><OwnerBadge ownerId={(app as AppRow).ownerId} /></TableCell>
+                      <TableCell><OwnerBadge ownerName={(app as AppRow).ownerName} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(app as AppRow)}>
