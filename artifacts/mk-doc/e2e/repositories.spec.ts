@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { uniqueSuffix } from "./helpers";
 
-test.describe("Repositories - delete flow", () => {
-  test("creates a new repository and then deletes it", async ({ page }) => {
+test.describe("Repositories - create, edit, and delete", () => {
+  test("creates a new repository (team unassigned), edits and deletes it", async ({ page }) => {
     const suffix = uniqueSuffix();
     const name = `e2e-repo-${suffix}`;
     const updatedName = `e2e-repo-${suffix}-updated`;
@@ -15,6 +15,7 @@ test.describe("Repositories - delete flow", () => {
     await expect(createDialog.getByRole("heading", { name: "Add Repository" })).toBeVisible();
 
     await createDialog.getByPlaceholder("mk-citizen-portal").fill(name);
+    // Team picker deliberately left as "Unassigned" to verify silent-validation regression doesn't occur
 
     await createDialog.getByRole("combobox").nth(0).click();
     await page.getByRole("option", { name: "private", exact: true }).click();

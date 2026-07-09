@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { uniqueSuffix } from "./helpers";
 
-test.describe("Domains - delete flow", () => {
-  test("creates a new domain and then deletes it", async ({ page }) => {
+test.describe("Domains - create, edit, and delete", () => {
+  test("creates a new domain (team unassigned), edits and deletes it", async ({ page }) => {
     const suffix = uniqueSuffix();
     const name = `e2e-${suffix}.mk.gov`;
     const updatedName = `e2e-${suffix}-up.mk.gov`;
@@ -15,6 +15,7 @@ test.describe("Domains - delete flow", () => {
     await expect(createDialog.getByRole("heading", { name: "Add Domain" })).toBeVisible();
 
     await createDialog.getByPlaceholder("example.mk.gov").fill(name);
+    // Team picker deliberately left as "Unassigned" to verify silent-validation regression doesn't occur
 
     await createDialog.getByRole("button", { name: "Add Domain" }).click();
     await expect(createDialog).toBeHidden();

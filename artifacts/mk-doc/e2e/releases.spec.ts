@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { uniqueSuffix } from "./helpers";
 
-test.describe("Releases - delete flow", () => {
-  test("creates a new release and then deletes it", async ({ page }) => {
+test.describe("Releases - create, edit, and delete", () => {
+  test("creates a new release via form, edits and deletes it", async ({ page }) => {
     const suffix = uniqueSuffix();
     const version = `0.0.${suffix}`;
     const updatedVersion = `0.0.${suffix}-p`;

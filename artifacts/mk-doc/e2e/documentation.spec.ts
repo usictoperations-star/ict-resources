@@ -1,20 +1,26 @@
 import { test, expect } from "@playwright/test";
 import { uniqueSuffix, findRowAcrossPages } from "./helpers";
 
-test.describe("Documentation - delete flow", () => {
-  test("creates a new document via API and deletes it via UI", async ({ page }) => {
+test.describe("Documentation - create, edit, and delete", () => {
+  test("creates a new document via form, edits and deletes it", async ({ page }) => {
     const suffix = uniqueSuffix();
     const title = `E2E Doc ${suffix}`;
     const updatedTitle = `E2E Doc ${suffix} Updated`;
 
-    const resp = await page.request.post("/api/documentation", {
-      data: { title, type: "Guide" },
-    });
-    expect(resp.ok()).toBeTruthy();
-
     await page.goto("/documentation");
     await expect(page.getByRole("heading", { name: "Documentation Center" })).toBeVisible();
-    await expect(page.getByRole("table")).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: "New Document" }).click();
+    const createDialog = page.getByRole("dialog");
+    await expect(createDialog.getByRole("heading", { name: "Add Document" })).toBeVisible();
+
+    await createDialog.getByPlaceholder("MK Citizen Portal — PRD").fill(title);
+
+    await createDialog.getByRole("combobox").nth(0).click();
+    await page.getByRole("option", { name: "Guide", exact: true }).click();
+
+    await createDialog.getByRole("button", { name: "Add Document" }).click();
+    await expect(createDialog).toBeHidden();
 
     const row = await findRowAcrossPages(page, new RegExp(title));
     await expect(row).toBeVisible();
