@@ -122,15 +122,15 @@ router.get("/users", async (req: Request, res: Response) => {
 
 router.post("/users", async (req: Request, res: Response) => {
   try {
+    const password = typeof req.body.password === "string" ? req.body.password.trim() : undefined;
     const body = CreateUserBody.parse(req.body);
-    const { password, ...rest } = body as typeof body & { password?: string };
 
     if (!password) {
       return sendError(res, 400, "Password is required when creating a user");
     }
 
     const values: typeof usersTable.$inferInsert = {
-      ...rest,
+      ...body,
       passwordHash: await bcrypt.hash(password, 12),
     };
 
