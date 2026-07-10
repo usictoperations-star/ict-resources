@@ -6,13 +6,15 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed-admin": "tsx ./src/seed-admin.ts",
+    "reset-admin-password": "tsx ./src/reset-admin-password.ts",
     "backfill-password-hash": "tsx ./src/backfill-password-hash.ts",
     "migrate-roles-field": "tsx ./src/migrate-roles-field.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
-    "bcryptjs": "^3.0.2"
+    "bcryptjs": "^3.0.2",
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
