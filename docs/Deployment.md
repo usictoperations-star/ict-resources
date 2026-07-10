@@ -355,7 +355,8 @@ MK DOC is hosted on IONOS using Plesk as the server control panel. The following
    - `NODE_ENV=production`
    - `DATABASE_URL=postgresql://user:pass@localhost:5432/mkdoc`
    - `PORT=5000` (Plesk will proxy port 80/443 → 5000)
-   - `SESSION_SECRET=<random 64-char hex>`
+   - `SESSION_SECRET=<openssl rand -hex 32>`
+   - `ALLOWED_ORIGINS=https://yourdomain.org` (required — CORS whitelist for IONOS)
 
 3. **Static frontend**
    - Run `pnpm run build` locally (or in Plesk's SSH terminal) to produce `artifacts/mk-doc/dist/`
@@ -384,6 +385,16 @@ MK DOC is hosted on IONOS using Plesk as the server control panel. The following
 - IONOS provides **free Let's Encrypt** certificates through Plesk → SSL/TLS Certificates → Let's Encrypt
 - Enable **Force HTTPS redirect** in Plesk → Hosting Settings for the domain
 - MK DOC's Domains module will then pick up the expiry date automatically via the `/api/domains` endpoint
+
+### First-Time Database Setup
+
+After `db push`, the schema (including the `sessions` table) is created automatically by Drizzle. Then seed the first admin account:
+
+```bash
+pnpm --filter @workspace/db run push --force
+pnpm --filter @workspace/scripts run seed-admin
+# Prints the temporary admin email + password — change it after first login
+```
 
 ### Deploying Updates
 

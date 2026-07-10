@@ -9,6 +9,9 @@ import { sendError } from "./lib/errors";
 
 const app: Express = express();
 
+// Trust Plesk / nginx reverse proxy so secure cookies work behind SSL termination
+app.set("trust proxy", 1);
+
 // Security headers — applied before all routes
 app.use(helmet());
 
@@ -32,9 +35,14 @@ app.use(
   }),
 );
 
-// CORS: allow the real app domains in production, all origins in development
-const productionOrigins: string[] = process.env.NODE_ENV === "production" && process.env.REPLIT_DOMAINS
-  ? process.env.REPLIT_DOMAINS.split(",").map((d) => `https://${d.trim()}`).filter(Boolean)
+// CORS: allow the real app domains in production, all origins in development.
+// On Replit: reads REPLIT_DOMAINS. On IONOS/other hosts: set ALLOWED_ORIGINS=https://yourdomain.org
+const _rawOrigins = process.env.ALLOWED_ORIGINS ?? process.env.REPLIT_DOMAINS ?? "";
+const productionOrigins: string[] = process.env.NODE_ENV === "production" && _rawOrigins
+  ? _rawOrigins.split(",").map((d) => {
+      const t = d.trim();
+      return t.startsWith("http") ? t : `https://${t}`;
+    }).filter(Boolean)
   : [];
 
 app.use(
