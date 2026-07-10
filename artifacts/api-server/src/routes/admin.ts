@@ -9,6 +9,12 @@ import { eq, isNull, isNotNull, count, and } from "drizzle-orm";
 import { logAudit } from "../lib/audit";
 import { sql } from "drizzle-orm";
 import { sendError } from "../lib/errors";
+function isDuplicateEmail(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "message" in err &&
+    typeof (err as { message: unknown }).message === "string" &&
+    (err as { message: string }).message.includes("users_email_unique");
+}
+
 const router = Router();
 
 router.get("/deleted-records", async (req: Request, res: Response) => {
@@ -139,6 +145,7 @@ router.post("/users", async (req: Request, res: Response) => {
     return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error creating user");
+    if (isDuplicateEmail(err)) return sendError(res, 409, "A user with this email already exists");
     return sendError(res, 400, "Invalid request");
   }
 });
@@ -146,10 +153,10 @@ router.post("/users", async (req: Request, res: Response) => {
 router.patch("/users/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
+    const password = typeof req.body.password === "string" ? req.body.password.trim() : undefined;
     const body = UpdateUserBody.parse(req.body);
-    const { password, ...rest } = body as typeof body & { password?: string };
 
-    const values: Partial<typeof usersTable.$inferInsert> = { ...rest };
+    const values: Partial<typeof usersTable.$inferInsert> = { ...body };
     if (password) {
       values.passwordHash = await bcrypt.hash(password, 12);
     }
@@ -160,6 +167,7 @@ router.patch("/users/:id", async (req: Request, res: Response) => {
     return res.json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
   } catch (err) {
     req.log.error({ err }, "Error updating user");
+    if (isDuplicateEmail(err)) return sendError(res, 409, "A user with this email already exists");
     return sendError(res, 400, "Invalid request");
   }
 });
