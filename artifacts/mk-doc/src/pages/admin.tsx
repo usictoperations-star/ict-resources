@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { ApiError } from "@workspace/api-client-react";
 import { useListUsers, useListAuditLogs, useCreateUser, useUpdateUser, useDeleteUser, useListTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useListDeletedRecords, useRestoreApplication, useRestoreInfrastructure, useRestoreDatabase, useRestoreDomain, useRestoreRepository, useRestoreRelease, useRestoreVulnerability, useRestoreSoftware, useRestoreDocument } from "@workspace/api-client-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -207,6 +209,7 @@ export default function Admin() {
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<UserRow | null>(null);
@@ -417,8 +420,12 @@ export default function Admin() {
       setOpen(false);
       setForm({ ...EMPTY_FORM });
       setErrors({});
-    } catch {
-      setErrors({ submit: `Failed to ${editTarget ? "update" : "create"} user.` });
+      toast({ title: editTarget ? "User updated successfully" : "User account created successfully" });
+    } catch (err) {
+      const serverMessage = err instanceof ApiError
+        ? (err.data as { message?: string } | null)?.message
+        : undefined;
+      setErrors({ submit: serverMessage ?? `Failed to ${editTarget ? "update" : "create"} user.` });
     }
   };
 
