@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { z } from "zod";
 import { useListDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -98,6 +99,7 @@ export default function Documentation() {
   const { mutateAsync: updateDocument, isPending: isUpdating } = useUpdateDocument();
   const { mutateAsync: deleteDocument, isPending: isDeleting } = useDeleteDocument();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DocRow | null>(null);
@@ -209,8 +211,11 @@ export default function Documentation() {
       setOpen(false);
       setForm({ ...EMPTY_FORM });
       setErrors({});
-    } catch {
-      setErrors({ submit: `Failed to ${editTarget ? "update" : "create"} document.` });
+      toast({ title: editTarget ? "Document updated" : "Document created" });
+    } catch (err) {
+      const message = `Failed to ${editTarget ? "update" : "create"} document.`;
+      setErrors({ submit: message });
+      toast({ title: message, variant: "destructive" });
     }
   };
 
@@ -389,8 +394,8 @@ export default function Documentation() {
             </div>
           </ScrollArea>
           <DialogFooter className="px-6 py-4 border-t gap-2">
-            <Button variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isPending}>
+            <Button type="button" variant="outline" onClick={() => { setOpen(false); setForm({ ...EMPTY_FORM }); setErrors({}); }} disabled={isPending}>Cancel</Button>
+            <Button type="button" onClick={handleSubmit} disabled={isPending}>
               {isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{editTarget ? "Saving..." : "Adding..."}</> : editTarget ? "Save Changes" : "Add Document"}
             </Button>
           </DialogFooter>

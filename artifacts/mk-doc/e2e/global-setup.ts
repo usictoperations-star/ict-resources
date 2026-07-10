@@ -19,7 +19,21 @@ async function globalSetup() {
 
   await page.fill("#email", email);
   await page.fill("#password", password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+
+  const [loginResponse] = await Promise.all([
+    page.waitForResponse((resp) => resp.url().includes("/api/auth/login"), { timeout: 10_000 }),
+    page.getByRole("button", { name: "Sign in" }).click(),
+  ]);
+
+  if (!loginResponse.ok()) {
+    let body: { error?: string } = {};
+    try { body = await loginResponse.json(); } catch { /* ignore */ }
+    throw new Error(
+      `E2E auth setup failed: POST /api/auth/login returned ${loginResponse.status()}. ` +
+      `Server message: "${body.error ?? "unknown"}". ` +
+      `Check that the user "${email}" exists in the DB with the correct password hash.`
+    );
+  }
 
   await expect(page.getByRole("navigation")).toBeVisible({ timeout: 15_000 });
 
