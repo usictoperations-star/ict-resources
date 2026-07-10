@@ -11,6 +11,7 @@ import { CreateVulnerabilityBody } from "@workspace/api-zod";
 import { numericStringField, getFieldErrors } from "@/lib/form-validation";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { OwnerBadge } from "@/components/owner-badge";
+import { TeamBadge } from "@/components/team-badge";
 import { OwnerSelectField } from "@/components/owner-select-field";
 import { TeamSelectField } from "@/components/team-select-field";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -989,6 +990,7 @@ function VulnerabilitiesView() {
                       <TableHead className="text-xs font-medium h-8">Application</TableHead>
                       <TableHead className="text-xs font-medium h-8 w-32">Status</TableHead>
                       <TableHead className="text-xs font-medium h-8">Owner</TableHead>
+                      <TableHead className="text-xs font-medium h-8">Team</TableHead>
                       <TableHead className="w-16 h-8" />
                     </TableRow>
                   </TableHeader>
@@ -1017,6 +1019,9 @@ function VulnerabilitiesView() {
                           </TableCell>
                           <TableCell className="py-2.5">
                             <OwnerBadge ownerName={v.ownerName} />
+                          </TableCell>
+                          <TableCell className="py-2.5">
+                            <TeamBadge teamId={v.teamId} />
                           </TableCell>
                           <TableCell className="py-2.5">
                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -334,3 +334,73 @@ Use this endpoint for load balancer health checks and uptime monitoring.
 | PostgreSQL WAL (point-in-time) | Continuous | 7 days |
 | Object storage | Versioned | 90 days |
 | Application code | Git (all commits) | Forever |
+
+---
+
+## 13. IONOS with Plesk (Non-Profit Hosting)
+
+MK DOC is hosted on IONOS using Plesk as the server control panel. The following tips are specific to this setup.
+
+### Node.js App Setup in Plesk
+
+1. **Create the app in Plesk Node.js extension**
+   - Go to **Plesk → Websites & Domains → your domain → Node.js**
+   - Set **Application Root** to the repo root (e.g. `/var/www/vhosts/yourdomain.org/httpdocs`)
+   - Set **Application Startup File** to `artifacts/api-server/dist/index.js`
+   - Set **Node.js version** to 24.x (install via Plesk's Node.js extension if not listed)
+   - Set the **Document Root** to the built frontend: `artifacts/mk-doc/dist`
+
+2. **Environment variables**
+   - In Plesk → Node.js → **Environment Variables**, add all values from `.env.example`
+   - `NODE_ENV=production`
+   - `DATABASE_URL=postgresql://user:pass@localhost:5432/mkdoc`
+   - `PORT=5000` (Plesk will proxy port 80/443 → 5000)
+   - `SESSION_SECRET=<random 64-char hex>`
+
+3. **Static frontend**
+   - Run `pnpm run build` locally (or in Plesk's SSH terminal) to produce `artifacts/mk-doc/dist/`
+   - In Plesk → **Apache & nginx Settings**, add a location block to serve the static build directly without hitting Node:
+     ```nginx
+     location / {
+         root /var/www/vhosts/yourdomain.org/httpdocs/artifacts/mk-doc/dist;
+         try_files $uri $uri/ /index.html;
+     }
+     location /api/ {
+         proxy_pass http://127.0.0.1:5000;
+         proxy_set_header Host $host;
+         proxy_set_header X-Real-IP $remote_addr;
+     }
+     ```
+
+### PostgreSQL via Plesk
+
+- IONOS Plesk includes a local PostgreSQL instance managed under **Databases** in the Plesk UI
+- Create a database named `mkdoc` and note the credentials for `DATABASE_URL`
+- To push the schema from SSH: `pnpm --filter @workspace/db run push --force`
+- Enable **daily backups** in Plesk → Backup Manager (IONOS non-profit plans include scheduled backups)
+
+### SSL / HTTPS
+
+- IONOS provides **free Let's Encrypt** certificates through Plesk → SSL/TLS Certificates → Let's Encrypt
+- Enable **Force HTTPS redirect** in Plesk → Hosting Settings for the domain
+- MK DOC's Domains module will then pick up the expiry date automatically via the `/api/domains` endpoint
+
+### Deploying Updates
+
+```bash
+# On your local machine or via Plesk SSH terminal:
+git pull origin main
+pnpm install --frozen-lockfile
+pnpm run build                          # typechecks + builds all packages
+pnpm --filter @workspace/db run push --force   # apply any schema changes
+
+# Then in Plesk → Node.js → click "Restart App"
+```
+
+> **Tip:** IONOS SSH access is available under **Websites & Domains → SSH Access**. Use the Plesk-managed SSH key or set a password for the subscription user.
+
+### Non-Profit Plan Notes
+
+- IONOS non-profit plans typically cap at 1 or 2 PHP/Node workers per domain — set Plesk Node.js **Workers** to `2` to avoid 502 errors under light load
+- If the plan includes a cPanel-migrated stack, switch to the **nginx** web server mode in Plesk → Apache & nginx Settings for better Node.js proxy performance
+- Storage quotas apply to object uploads; configure `PRIVATE_OBJECT_DIR` to point within your allowed path (e.g. `/var/www/vhosts/yourdomain.org/private-storage`)
