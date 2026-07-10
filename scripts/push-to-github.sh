@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://shimgetgoal:${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/shimgetgoal/MK-software-inventory-system.git"
+REPO="https://shimgetgoal:${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/shimgetgoal/MK-software-inventory-system.git"
 
 echo "Setting remote..."
-git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
+git remote set-url origin "$REPO" 2>/dev/null || git remote add origin "$REPO"
 
-echo "Pushing to GitHub..."
-git push -u origin main --force
+echo "Pushing to GitHub (bypassing credential helper)..."
+GIT_TERMINAL_PROMPT=0 git -c credential.helper="" push -u origin main --force
 
 echo ""
-echo "Done! View at: https://github.com/shimgetgoal/MK-software-inventory-system"
+echo "Done! https://github.com/shimgetgoal/MK-software-inventory-system"
