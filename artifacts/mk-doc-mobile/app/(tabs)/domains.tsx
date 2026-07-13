@@ -209,7 +209,7 @@ export default function DomainsScreen() {
 
   const counts = useMemo(() => {
     const result = { expired: 0, critical: 0, warning: 0, ok: 0 };
-    for (const d of domains ?? []) {
+    for (const d of domains?.data ?? []) {
       const urgency = getUrgency(d);
       if (urgency === "expired") result.expired += 1;
       else if (urgency === "critical") result.critical += 1;
@@ -222,7 +222,7 @@ export default function DomainsScreen() {
   const upcomingCount = expiring?.length ?? 0;
 
   const filtered = useMemo(() => {
-    const list = domains ?? [];
+    const list = domains?.data ?? [];
     if (filter === "all") return list;
     return list.filter((d) => getUrgency(d) === filter);
   }, [domains, filter]);

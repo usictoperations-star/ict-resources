@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MK DOC",
+    "name": "Mahibere Kidusan",
     "slug": "mk-doc-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,10 @@
       "backgroundColor": "#0f2d5c"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to unlock Mahibere Kidusan Digital System Operations Center"
+      }
     },
     "android": {},
     "web": {

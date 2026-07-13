@@ -1,10 +1,12 @@
+import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
 import { setCookieGetter } from "@workspace/api-client-react";
 
 const COOKIE_KEY = "mk_doc_session_cookie";
+const BIOMETRIC_KEY = "mk_biometric_enabled";
 
 const BASE_URL = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 
@@ -21,8 +23,13 @@ export type AuthUser = {
 type AuthContextValue = {
   user: AuthUser | null;
   isLoading: boolean;
+  needsBiometricUnlock: boolean;
+  isBiometricEnabled: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  unlockBiometric: () => void;
+  enableBiometric: () => Promise<void>;
+  disableBiometric: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -54,6 +61,16 @@ async function clearCookie(): Promise<void> {
   }
 }
 
+async function getBiometricPref(): Promise<boolean> {
+  if (Platform.OS === "web") return false;
+  try {
+    const val = await SecureStore.getItemAsync(BIOMETRIC_KEY);
+    return val === "1";
+  } catch {
+    return false;
+  }
+}
+
 function parseCookieFromHeader(header: string): string | null {
   const part = header.split(";")[0].trim();
   return part || null;
@@ -62,6 +79,9 @@ function parseCookieFromHeader(header: string): string | null {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsBiometricUnlock, setNeedsBiometricUnlock] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+  const pendingUserRef = useRef<AuthUser | null>(null);
 
   useEffect(() => {
     async function initAuth() {
@@ -81,7 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch(`${BASE_URL}/api/auth/me`, { headers });
         if (res.ok) {
           const data = await res.json();
-          setUser(data);
+          const biometricOn = await getBiometricPref();
+          setIsBiometricEnabled(biometricOn);
+          if (biometricOn && Platform.OS !== "web") {
+            pendingUserRef.current = data;
+            setNeedsBiometricUnlock(true);
+          } else {
+            setUser(data);
+          }
         } else {
           await clearCookie();
           if (Platform.OS !== "web") {
@@ -129,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    setNeedsBiometricUnlock(false);
     setUser(userData);
   }, []);
 
@@ -148,11 +176,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS !== "web") {
       setCookieGetter(null);
     }
+    pendingUserRef.current = null;
+    setNeedsBiometricUnlock(false);
     setUser(null);
   }, []);
 
+  const unlockBiometric = useCallback(() => {
+    if (pendingUserRef.current) {
+      setUser(pendingUserRef.current);
+      pendingUserRef.current = null;
+      setNeedsBiometricUnlock(false);
+    }
+  }, []);
+
+  const enableBiometric = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!compatible || !enrolled) {
+        throw new Error("Biometric authentication is not available on this device.");
+      }
+      await SecureStore.setItemAsync(BIOMETRIC_KEY, "1");
+      setIsBiometricEnabled(true);
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  const disableBiometric = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    try {
+      await SecureStore.deleteItemAsync(BIOMETRIC_KEY);
+      setIsBiometricEnabled(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      needsBiometricUnlock,
+      isBiometricEnabled,
+      login,
+      logout,
+      unlockBiometric,
+      enableBiometric,
+      disableBiometric,
+    }}>
       {children}
     </AuthContext.Provider>
   );

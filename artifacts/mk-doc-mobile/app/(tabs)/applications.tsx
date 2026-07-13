@@ -127,7 +127,7 @@ export default function ApplicationsScreen() {
           <View>
             <Text style={styles.headerTitle}>Applications</Text>
             {data && (
-              <Text style={styles.headerCount}>{data.length} registered</Text>
+              <Text style={styles.headerCount}>{data.total} registered</Text>
             )}
           </View>
           <View style={[styles.headerIcon, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
@@ -173,7 +173,7 @@ export default function ApplicationsScreen() {
         />
       ) : (
         <FlatList
-          data={data ?? []}
+          data={data?.data ?? []}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
             <AppCard
@@ -194,7 +194,7 @@ export default function ApplicationsScreen() {
           refreshing={isRefetching}
           onRefresh={onRefresh}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!(data && data.length > 0)}
+          scrollEnabled={!!(data && data.total > 0)}
           ListEmptyComponent={
             <View style={[styles.empty, { borderColor: colors.border, backgroundColor: colors.card }]}>
               <Feather name="layers" size={32} color={colors.mutedForeground} />

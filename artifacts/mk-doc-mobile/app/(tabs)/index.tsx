@@ -3,7 +3,8 @@ import {
   useGetDashboardStats,
 } from "@workspace/api-client-react";
 import { Feather } from "@expo/vector-icons";
-import React, { useCallback } from "react";
+import * as SecureStore from "expo-secure-store";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -20,12 +21,45 @@ import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useAuth } from "@/contexts/auth";
 import { useColors } from "@/hooks/useColors";
 
+const DISMISSED_ALERTS_KEY = "mk_dismissed_alerts";
+
+async function loadDismissedIds(): Promise<number[]> {
+  if (Platform.OS === "web") return [];
+  try {
+    const raw = await SecureStore.getItemAsync(DISMISSED_ALERTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveDismissedIds(ids: number[]): Promise<void> {
+  if (Platform.OS === "web") return;
+  try {
+    await SecureStore.setItemAsync(DISMISSED_ALERTS_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
 type KPI = {
   label: string;
   value: string | number;
   icon: string;
   colorKey: "primary" | "critical" | "high" | "low" | "info";
   subtitle?: string;
+};
+
+type Alert = {
+  id: number;
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+  dueDate?: string | null;
+  createdAt: string;
 };
 
 function KPICard({ kpi }: { kpi: KPI }) {
@@ -45,17 +79,13 @@ function KPICard({ kpi }: { kpi: KPI }) {
   );
 }
 
-type Alert = {
-  id: number;
-  type: string;
-  severity: string;
-  title: string;
-  message: string;
-  dueDate?: string | null;
-  createdAt: string;
-};
-
-function AlertRow({ alert }: { alert: Alert }) {
+function AlertRow({
+  alert,
+  onDismiss,
+}: {
+  alert: Alert;
+  onDismiss: (id: number) => void;
+}) {
   const colors = useColors();
   const isCritical = alert.severity === "critical";
   const dotColor = isCritical ? colors.critical : colors.high;
@@ -70,10 +100,19 @@ function AlertRow({ alert }: { alert: Alert }) {
           {alert.message}
         </Text>
       </View>
-      <View style={[styles.alertBadge, { backgroundColor: dotColor + "20" }]}>
-        <Text style={[styles.alertBadgeText, { color: dotColor }]}>
-          {alert.severity.toUpperCase()}
-        </Text>
+      <View style={styles.alertRight}>
+        <View style={[styles.alertBadge, { backgroundColor: dotColor + "20" }]}>
+          <Text style={[styles.alertBadgeText, { color: dotColor }]}>
+            {alert.severity.toUpperCase()}
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => onDismiss(alert.id)}
+          hitSlop={10}
+          style={[styles.dismissBtn, { backgroundColor: colors.background }]}
+        >
+          <Feather name="x" size={12} color={colors.mutedForeground} />
+        </Pressable>
       </View>
     </View>
   );
@@ -84,6 +123,20 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const { logout } = useAuth();
+
+  const [dismissedIds, setDismissedIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    loadDismissedIds().then(setDismissedIds).catch(() => {});
+  }, []);
+
+  const handleDismiss = useCallback((id: number) => {
+    setDismissedIds((prev) => {
+      const next = [...prev, id];
+      void saveDismissedIds(next);
+      return next;
+    });
+  }, []);
 
   const {
     data: stats,
@@ -109,6 +162,8 @@ export default function DashboardScreen() {
   }, [refetchStats, refetchAlerts]);
 
   const isRefreshing = statsRefetching || alertsRefetching;
+
+  const visibleAlerts = (alerts ?? []).filter((a) => !dismissedIds.includes(a.id));
 
   const kpis: KPI[] = [
     {
@@ -149,7 +204,6 @@ export default function DashboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -161,8 +215,8 @@ export default function DashboardScreen() {
       >
         <View style={styles.headerInner}>
           <View>
-            <Text style={styles.headerTitle}>MK DOC</Text>
-            <Text style={styles.headerSub}>Operations Center</Text>
+            <Text style={styles.headerTitle}>Mahibere Kidusan</Text>
+            <Text style={styles.headerSub}>Digital System Operations Center</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.headerBadge, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
@@ -195,15 +249,11 @@ export default function DashboardScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* KPI Grid */}
         <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
           KEY METRICS
         </Text>
         {statsLoading ? (
-          <ActivityIndicator
-            color={colors.primary}
-            style={{ marginVertical: 24 }}
-          />
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 24 }} />
         ) : statsIsError ? (
           <ErrorState
             message={getErrorMessage(statsError)}
@@ -218,63 +268,50 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Secondary Stats */}
         {!statsLoading && stats && (
           <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>
-                {stats.servers ?? 0}
-              </Text>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.servers ?? 0}</Text>
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Servers</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>
-                {stats.databases ?? 0}
-              </Text>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.databases ?? 0}</Text>
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Databases</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>
-                {stats.domains ?? 0}
-              </Text>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.domains ?? 0}</Text>
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Domains</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.foreground }]}>
-                {stats.upcomingRenewals ?? 0}
-              </Text>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.upcomingRenewals ?? 0}</Text>
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Renewals</Text>
             </View>
           </View>
         )}
 
-        {/* Alerts */}
         <View style={styles.alertsHeader}>
           <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
             ACTIVE ALERTS
           </Text>
-          {alerts && alerts.length > 0 && (
+          {visibleAlerts.length > 0 && (
             <View style={[styles.alertCount, { backgroundColor: colors.critical }]}>
-              <Text style={styles.alertCountText}>{alerts.length}</Text>
+              <Text style={styles.alertCountText}>{visibleAlerts.length}</Text>
             </View>
           )}
         </View>
 
         {alertsLoading ? (
-          <ActivityIndicator
-            color={colors.primary}
-            style={{ marginVertical: 24 }}
-          />
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 24 }} />
         ) : alertsIsError ? (
           <ErrorState
             message={getErrorMessage(alertsError)}
             onRetry={refetchAlerts}
             retrying={alertsRefetching}
           />
-        ) : !alerts || alerts.length === 0 ? (
+        ) : visibleAlerts.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Feather name="check-circle" size={32} color={colors.low} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>All Clear</Text>
@@ -284,8 +321,8 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <View style={styles.alertList}>
-            {alerts.map((a) => (
-              <AlertRow key={a.id} alert={a} />
+            {visibleAlerts.map((a) => (
+              <AlertRow key={a.id} alert={a} onDismiss={handleDismiss} />
             ))}
           </View>
         )}
@@ -296,29 +333,22 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
+  header: { paddingHorizontal: 20, paddingBottom: 16 },
   headerInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700" as const,
     color: "#ffffff",
     fontFamily: "Inter_700Bold",
-    letterSpacing: 1,
+    letterSpacing: 0.3,
   },
   headerSub: {
-    fontSize: 12,
+    fontSize: 11,
     color: "rgba(255,255,255,0.7)",
     fontFamily: "Inter_400Regular",
     marginTop: 1,
@@ -331,11 +361,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
   },
-  headerBadgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+  headerBadgeText: { color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 8 },
   sectionTitle: {
@@ -345,12 +371,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 8,
   },
-  kpiGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 4,
-  },
+  kpiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 4 },
   kpiCard: {
     width: "47.5%",
     borderRadius: 12,
@@ -366,19 +387,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 4,
   },
-  kpiValue: {
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-    lineHeight: 30,
-  },
-  kpiLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  kpiSubtitle: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
+  kpiValue: { fontSize: 26, fontFamily: "Inter_700Bold", lineHeight: 30 },
+  kpiLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  kpiSubtitle: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   statsRow: {
     flexDirection: "row",
     borderRadius: 12,
@@ -404,11 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  alertCountText: {
-    color: "#fff",
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-  },
+  alertCountText: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" },
   alertList: { gap: 8 },
   alertRow: {
     flexDirection: "row",
@@ -428,13 +435,16 @@ const styles = StyleSheet.create({
   alertContent: { flex: 1, gap: 2 },
   alertTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   alertMessage: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
-  alertBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    flexShrink: 0,
-  },
+  alertRight: { alignItems: "flex-end", gap: 6 },
+  alertBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   alertBadgeText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  dismissBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptyState: {
     alignItems: "center",
     padding: 32,

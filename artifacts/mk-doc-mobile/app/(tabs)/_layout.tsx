@@ -5,11 +5,22 @@ import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { ActivityIndicator, Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/auth";
 import { useColors } from "@/hooks/useColors";
+import { useIsOnline } from "@/hooks/useIsOnline";
+
+function OfflineBanner() {
+  const colors = useColors();
+  return (
+    <View style={[bannerStyles.wrap, { backgroundColor: colors.high }]}>
+      <Feather name="wifi-off" size={12} color="#fff" />
+      <Text style={bannerStyles.text}>No connection — showing cached data</Text>
+    </View>
+  );
+}
 
 function NativeTabLayout() {
   return (
@@ -129,6 +140,7 @@ function ClassicTabLayout() {
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
   const colors = useColors();
+  const isOnline = useIsOnline();
 
   if (isLoading) {
     return (
@@ -142,8 +154,27 @@ export default function TabLayout() {
     return <Redirect href="/login" />;
   }
 
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
-  return <ClassicTabLayout />;
+  return (
+    <View style={{ flex: 1 }}>
+      {!isOnline && <OfflineBanner />}
+      {isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />}
+    </View>
+  );
 }
+
+const bannerStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    zIndex: 999,
+  },
+  text: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+});

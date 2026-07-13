@@ -1,4 +1,5 @@
 import {
+  useCreateVulnerability,
   useGetSecuritySummary,
   useListVulnerabilities,
 } from "@workspace/api-client-react";
@@ -7,11 +8,15 @@ import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,6 +36,7 @@ type Vuln = {
 };
 
 type SeverityFilter = "all" | "critical" | "high" | "medium" | "low";
+type Severity = "critical" | "high" | "medium" | "low";
 
 function severityColor(sev: string | null | undefined, colors: ReturnType<typeof useColors>) {
   switch (sev?.toLowerCase()) {
@@ -101,11 +107,192 @@ const FILTERS: { key: SeverityFilter; label: string }[] = [
   { key: "low", label: "Low" },
 ];
 
+const SEVERITY_OPTIONS: { key: Severity; label: string }[] = [
+  { key: "critical", label: "Critical" },
+  { key: "high", label: "High" },
+  { key: "medium", label: "Medium" },
+  { key: "low", label: "Low" },
+];
+
+function FlagVulnModal({
+  visible,
+  onClose,
+  onSuccess,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [title, setTitle] = useState("");
+  const [severity, setSeverity] = useState<Severity>("high");
+  const [cveId, setCveId] = useState("");
+  const [description, setDescription] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const { mutate: createVuln, isPending } = useCreateVulnerability({
+    mutation: {
+      onSuccess: () => {
+        setTitle("");
+        setSeverity("high");
+        setCveId("");
+        setDescription("");
+        setFormError(null);
+        onSuccess();
+      },
+      onError: (err) => {
+        setFormError(getErrorMessage(err));
+      },
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!title.trim()) {
+      setFormError("Title is required.");
+      return;
+    }
+    setFormError(null);
+    createVuln({
+      data: {
+        title: title.trim(),
+        severity,
+        status: "open",
+        cveId: cveId.trim() || undefined,
+        description: description.trim() || undefined,
+      },
+    });
+  };
+
+  const handleClose = () => {
+    setTitle("");
+    setSeverity("high");
+    setCveId("");
+    setDescription("");
+    setFormError(null);
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+      <KeyboardAvoidingView
+        style={[modalStyles.root, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={[modalStyles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
+          <Pressable onPress={handleClose} hitSlop={8}>
+            <Text style={[modalStyles.cancelBtn, { color: colors.mutedForeground }]}>Cancel</Text>
+          </Pressable>
+          <Text style={[modalStyles.headerTitle, { color: colors.foreground }]}>Flag Vulnerability</Text>
+          <Pressable
+            onPress={handleSubmit}
+            disabled={isPending}
+            hitSlop={8}
+          >
+            {isPending ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={[modalStyles.saveBtn, { color: colors.primary }]}>Submit</Text>
+            )}
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={modalStyles.scroll}
+          contentContainerStyle={[modalStyles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {formError ? (
+            <View style={[modalStyles.errorBox, { backgroundColor: colors.critical + "18", borderColor: colors.critical + "44" }]}>
+              <Feather name="alert-circle" size={14} color={colors.critical} />
+              <Text style={[modalStyles.errorText, { color: colors.critical }]}>{formError}</Text>
+            </View>
+          ) : null}
+
+          <View style={modalStyles.fieldWrap}>
+            <Text style={[modalStyles.label, { color: colors.mutedForeground }]}>TITLE *</Text>
+            <View style={[modalStyles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <TextInput
+                style={[modalStyles.input, { color: colors.foreground }]}
+                placeholder="Brief description of the vulnerability"
+                placeholderTextColor={colors.mutedForeground}
+                value={title}
+                onChangeText={setTitle}
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          <View style={modalStyles.fieldWrap}>
+            <Text style={[modalStyles.label, { color: colors.mutedForeground }]}>SEVERITY *</Text>
+            <View style={modalStyles.severityRow}>
+              {SEVERITY_OPTIONS.map((opt) => {
+                const active = severity === opt.key;
+                const sColor = severityColor(opt.key, colors);
+                return (
+                  <Pressable
+                    key={opt.key}
+                    onPress={() => setSeverity(opt.key)}
+                    style={[
+                      modalStyles.severityPill,
+                      {
+                        backgroundColor: active ? sColor : colors.card,
+                        borderColor: active ? sColor : colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[modalStyles.severityPillText, { color: active ? "#fff" : colors.mutedForeground }]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={modalStyles.fieldWrap}>
+            <Text style={[modalStyles.label, { color: colors.mutedForeground }]}>CVE ID (optional)</Text>
+            <View style={[modalStyles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <TextInput
+                style={[modalStyles.input, { color: colors.foreground }]}
+                placeholder="e.g. CVE-2024-12345"
+                placeholderTextColor={colors.mutedForeground}
+                value={cveId}
+                onChangeText={setCveId}
+                autoCapitalize="characters"
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          <View style={modalStyles.fieldWrap}>
+            <Text style={[modalStyles.label, { color: colors.mutedForeground }]}>DESCRIPTION (optional)</Text>
+            <View style={[modalStyles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border, minHeight: 96 }]}>
+              <TextInput
+                style={[modalStyles.input, { color: colors.foreground }]}
+                placeholder="Additional details about the vulnerability"
+                placeholderTextColor={colors.mutedForeground}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 export default function SecurityScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const [filter, setFilter] = useState<SeverityFilter>("all");
+  const [showFlagModal, setShowFlagModal] = useState(false);
 
   const {
     data: summary,
@@ -142,7 +329,6 @@ export default function SecurityScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -164,7 +350,6 @@ export default function SecurityScreen() {
           )}
         </View>
 
-        {/* Summary counts */}
         {!summaryLoading && summary && (
           <View style={styles.summaryRow}>
             {[
@@ -193,7 +378,6 @@ export default function SecurityScreen() {
           </View>
         )}
 
-        {/* Filter pills */}
         <View style={styles.filterRow}>
           {FILTERS.map((f) => {
             const active = filter === f.key;
@@ -232,12 +416,12 @@ export default function SecurityScreen() {
         />
       ) : (
         <FlatList
-          data={vulns ?? []}
+          data={vulns?.data ?? []}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => <VulnCard vuln={item} />}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: isWeb ? 34 : insets.bottom + 90 },
+            { paddingBottom: isWeb ? 100 : insets.bottom + 120 },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           refreshControl={
@@ -248,7 +432,6 @@ export default function SecurityScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!(vulns && vulns.length > 0)}
           ListEmptyComponent={
             <View style={[styles.empty, { borderColor: colors.border, backgroundColor: colors.card }]}>
               <Feather name="shield" size={32} color={colors.low} />
@@ -264,9 +447,76 @@ export default function SecurityScreen() {
           }
         />
       )}
+
+      {/* FAB — Flag Vulnerability */}
+      <Pressable
+        style={[styles.fab, { backgroundColor: colors.critical }]}
+        onPress={() => setShowFlagModal(true)}
+      >
+        <Feather name="alert-triangle" size={20} color="#fff" />
+        <Text style={styles.fabText}>Flag Vulnerability</Text>
+      </Pressable>
+
+      <FlagVulnModal
+        visible={showFlagModal}
+        onClose={() => setShowFlagModal(false)}
+        onSuccess={() => {
+          setShowFlagModal(false);
+          refetchVulns();
+          refetchSummary();
+        }}
+      />
     </View>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  root: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  headerTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  cancelBtn: { fontSize: 15, fontFamily: "Inter_400Regular" },
+  saveBtn: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 20, gap: 20 },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  errorText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular" },
+  fieldWrap: { gap: 8 },
+  label: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.6 },
+  inputWrap: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  input: {
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    minHeight: 24,
+  },
+  severityRow: { flexDirection: "row", gap: 8 },
+  severityPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  severityPillText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -304,10 +554,7 @@ const styles = StyleSheet.create({
   },
   scoreValue: { fontSize: 18, fontFamily: "Inter_700Bold" },
   scorePct: { fontSize: 10, fontFamily: "Inter_600SemiBold", marginTop: 4 },
-  summaryRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
+  summaryRow: { flexDirection: "row", gap: 8 },
   summaryItem: {
     flex: 1,
     alignItems: "center",
@@ -337,11 +584,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   filterRow: { flexDirection: "row", gap: 6 },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
+  filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   list: { padding: 16 },
   card: {
@@ -351,38 +594,15 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 8,
   },
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   cardTitleRow: { flex: 1 },
   vulnTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", lineHeight: 18 },
-  severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    flexShrink: 0,
-  },
-  severityText: {
-    color: "#fff",
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
-  },
-  cardMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  severityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexShrink: 0 },
+  severityText: { color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  cardMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  statusBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
+  statusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   statusText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   empty: {
     alignItems: "center",
@@ -394,4 +614,25 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold", marginTop: 8 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
+  fab: {
+    position: "absolute",
+    bottom: 100,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  fabText: {
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
 });
