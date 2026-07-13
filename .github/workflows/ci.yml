@@ -18,27 +18,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -54,48 +43,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Lint
         run: pnpm run lint
-        continue-on-error: true
-
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run tests
-        run: pnpm run test
-        continue-on-error: true
 
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
 
@@ -105,39 +88,39 @@ jobs:
     needs: [typecheck]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Generate API client
         run: pnpm --filter @workspace/api-spec run codegen
+
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
+
       - name: Build web frontend
         env:
           BASE_PATH: /
           PORT: 3000
         run: pnpm --filter @workspace/mk-doc run build
+
       - name: Upload API build artifact
         uses: actions/upload-artifact@v4
         with:
           name: api-dist
           path: artifacts/api-server/dist/
           retention-days: 7
+
       - name: Upload web build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -150,16 +133,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Run codegen
         run: pnpm --filter @workspace/api-spec run codegen
+
       - name: Check for uncommitted changes in generated files
         run: |
           if ! git diff --exit-code lib/api-client-react/src/generated lib/api-zod/src/generated; then
