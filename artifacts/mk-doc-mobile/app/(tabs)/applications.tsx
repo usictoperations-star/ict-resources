@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useColors } from "@/hooks/useColors";
+import { MAX_CONTENT_WIDTH, useBreakpoint } from "@/hooks/useBreakpoint";
 
 type App = {
   id: number;
@@ -97,6 +98,8 @@ export default function ApplicationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isWeb = Platform.OS === "web";
+  const { isTablet, width: screenWidth } = useBreakpoint();
+  const hPad = isTablet ? Math.max(16, (screenWidth - MAX_CONTENT_WIDTH) / 2) : 16;
   const [search, setSearch] = useState("");
 
   const {
@@ -188,7 +191,7 @@ export default function ApplicationsScreen() {
           )}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: isWeb ? 34 : insets.bottom + 90 },
+            { paddingBottom: isWeb ? 34 : insets.bottom + 90, paddingHorizontal: hPad },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           refreshing={isRefetching}

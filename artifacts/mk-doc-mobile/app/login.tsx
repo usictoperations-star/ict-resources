@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/auth";
 import { useColors } from "@/hooks/useColors";
+import { MAX_CARD_WIDTH, useBreakpoint } from "@/hooks/useBreakpoint";
 
 function BiometricGate({
   onUnlock,
@@ -28,6 +29,7 @@ function BiometricGate({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { isTablet } = useBreakpoint();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,14 +62,14 @@ function BiometricGate({
 
   return (
     <View style={[bgateStyles.root, { backgroundColor: colors.background }]}>
-      <View style={[bgateStyles.inner, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 32 }]}>
+      <View style={[bgateStyles.inner, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 32 }, isTablet && bgateStyles.innerTablet]}>
         <View style={[bgateStyles.logo, { backgroundColor: colors.primary }]}>
           <Feather name="activity" size={28} color="#fff" />
         </View>
         <Text style={[bgateStyles.name, { color: colors.foreground }]}>Mahibere Kidusan</Text>
         <Text style={[bgateStyles.sub, { color: colors.mutedForeground }]}>Digital System Operations Center</Text>
 
-        <View style={[bgateStyles.lockCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[bgateStyles.lockCard, { backgroundColor: colors.card, borderColor: colors.border }, isTablet && bgateStyles.lockCardTablet]}>
           <View style={[bgateStyles.lockIcon, { backgroundColor: colors.primary + "18" }]}>
             <Feather name="lock" size={32} color={colors.primary} />
           </View>
@@ -114,6 +116,7 @@ function BiometricGate({
 export default function LoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { isTablet } = useBreakpoint();
   const router = useRouter();
   const { login, needsBiometricUnlock, unlockBiometric, enableBiometric, isBiometricEnabled } = useAuth();
 
@@ -205,10 +208,12 @@ export default function LoginScreen() {
         contentContainerStyle={[
           styles.scroll,
           { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+          isTablet && styles.scrollTablet,
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <View style={isTablet ? styles.innerTablet : undefined}>
         <View style={styles.headerWrap}>
           <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
             <Feather name="activity" size={28} color="#fff" />
@@ -298,6 +303,7 @@ export default function LoginScreen() {
         <Text style={[styles.footer, { color: colors.mutedForeground }]}>
           Mahibere Kidusan Digital System Operations Center · Internal Use Only
         </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -310,6 +316,9 @@ const bgateStyles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     gap: 12,
+  },
+  innerTablet: {
+    paddingHorizontal: 40,
   },
   logo: {
     width: 64,
@@ -338,6 +347,9 @@ const bgateStyles = StyleSheet.create({
     marginTop: 16,
     alignItems: "center",
     gap: 12,
+  },
+  lockCardTablet: {
+    maxWidth: MAX_CARD_WIDTH,
   },
   lockIcon: {
     width: 72,
@@ -399,6 +411,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     justifyContent: "center",
     gap: 24,
+  },
+  scrollTablet: {
+    paddingHorizontal: 40,
+    alignItems: "center",
+  },
+  innerTablet: {
+    width: "100%",
+    maxWidth: MAX_CARD_WIDTH,
   },
   headerWrap: {
     alignItems: "center",

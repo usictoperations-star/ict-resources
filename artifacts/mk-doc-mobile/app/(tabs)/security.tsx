@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useColors } from "@/hooks/useColors";
+import { MAX_CONTENT_WIDTH, useBreakpoint } from "@/hooks/useBreakpoint";
 
 type Vuln = {
   id: number;
@@ -291,6 +292,8 @@ export default function SecurityScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
+  const { isTablet, width: screenWidth } = useBreakpoint();
+  const hPad = isTablet ? Math.max(16, (screenWidth - MAX_CONTENT_WIDTH) / 2) : 16;
   const [filter, setFilter] = useState<SeverityFilter>("all");
   const [showFlagModal, setShowFlagModal] = useState(false);
 
@@ -421,7 +424,7 @@ export default function SecurityScreen() {
           renderItem={({ item }) => <VulnCard vuln={item} />}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: isWeb ? 100 : insets.bottom + 120 },
+            { paddingBottom: isWeb ? 100 : insets.bottom + 120, paddingHorizontal: hPad },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           refreshControl={

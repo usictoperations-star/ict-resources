@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { MAX_CONTENT_WIDTH, useBreakpoint } from "@/hooks/useBreakpoint";
 
 type Domain = {
   id: number;
@@ -206,6 +207,8 @@ export default function DomainsScreen() {
   const isRefreshing = domainsRefetching || expiringRefetching;
   const isLoading = domainsLoading || expiringLoading;
   const topPadding = isWeb ? 67 : insets.top;
+  const { isTablet, width: screenWidth } = useBreakpoint();
+  const hPad = isTablet ? Math.max(16, (screenWidth - MAX_CONTENT_WIDTH) / 2) : 16;
 
   const counts = useMemo(() => {
     const result = { expired: 0, critical: 0, warning: 0, ok: 0 };
@@ -313,7 +316,7 @@ export default function DomainsScreen() {
           renderItem={({ item }) => <DomainCard domain={item} />}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: isWeb ? 34 : insets.bottom + 90 },
+            { paddingBottom: isWeb ? 34 : insets.bottom + 90, paddingHorizontal: hPad },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           refreshControl={

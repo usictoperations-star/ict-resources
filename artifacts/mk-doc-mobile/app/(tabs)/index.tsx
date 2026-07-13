@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ErrorState, getErrorMessage } from "@/components/ErrorState";
 import { useAuth } from "@/contexts/auth";
 import { useColors } from "@/hooks/useColors";
+import { MAX_CONTENT_WIDTH, useBreakpoint } from "@/hooks/useBreakpoint";
 
 const DISMISSED_ALERTS_KEY = "mk_dismissed_alerts";
 
@@ -62,11 +63,11 @@ type Alert = {
   createdAt: string;
 };
 
-function KPICard({ kpi }: { kpi: KPI }) {
+function KPICard({ kpi, isTablet }: { kpi: KPI; isTablet?: boolean }) {
   const colors = useColors();
   const accent = colors[kpi.colorKey] ?? colors.primary;
   return (
-    <View style={[styles.kpiCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.kpiCard, { backgroundColor: colors.card, borderColor: colors.border, width: isTablet ? "23%" : "47.5%" }]}>
       <View style={[styles.kpiIconWrap, { backgroundColor: accent + "18" }]}>
         <Feather name={kpi.icon as never} size={18} color={accent} />
       </View>
@@ -201,6 +202,8 @@ export default function DashboardScreen() {
   ];
 
   const topPadding = isWeb ? 67 : insets.top;
+  const { isTablet, width: screenWidth } = useBreakpoint();
+  const hPad = isTablet ? Math.max(16, (screenWidth - MAX_CONTENT_WIDTH) / 2) : 16;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -239,6 +242,7 @@ export default function DashboardScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: isWeb ? 34 : insets.bottom + 90 },
+          { paddingHorizontal: hPad },
         ]}
         refreshControl={
           <RefreshControl
@@ -263,7 +267,7 @@ export default function DashboardScreen() {
         ) : (
           <View style={styles.kpiGrid}>
             {kpis.map((k) => (
-              <KPICard key={k.label} kpi={k} />
+              <KPICard key={k.label} kpi={k} isTablet={isTablet} />
             ))}
           </View>
         )}
