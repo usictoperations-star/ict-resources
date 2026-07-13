@@ -1,4 +1,5 @@
-import { pgTable, serial, text, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, index, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,7 +14,10 @@ export const usersTable = pgTable("users", {
   lastLoginAt: text("last_login_at"),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  check("users_role_check", sql`${table.role} IN ('admin', 'editor', 'analyst', 'viewer')`),
+  check("users_status_check", sql`${table.status} IN ('Active', 'Inactive', 'Suspended')`),
+]);
 
 export const sessionsTable = pgTable("sessions", {
   sid: text("sid").primaryKey(),

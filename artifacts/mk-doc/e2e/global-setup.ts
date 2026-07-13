@@ -9,7 +9,13 @@ export const AUTH_STATE_PATH = path.join(__dirname, ".auth/session.json");
 async function globalSetup() {
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:80";
   const email = process.env.E2E_EMAIL ?? "admin@mk.gov";
-  const password = process.env.E2E_PASSWORD ?? "Admin@2026!";
+  const password = process.env.E2E_PASSWORD;
+  if (!password) {
+    throw new Error(
+      "E2E_PASSWORD environment variable is required. " +
+      "Set it in your .env.test file or CI secrets."
+    );
+  }
 
   const browser = await chromium.launch();
   const context = await browser.newContext();

@@ -52,8 +52,8 @@ app.use(
   }),
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(createSessionMiddleware());
 
 // Require application/json Content-Type on POST and PATCH requests that

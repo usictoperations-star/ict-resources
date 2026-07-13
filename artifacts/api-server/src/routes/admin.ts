@@ -128,10 +128,10 @@ router.get("/users", async (req: Request, res: Response) => {
 
 router.post("/users", async (req: Request, res: Response) => {
   try {
-    const password = typeof req.body.password === "string" ? req.body.password.trim() : undefined;
+    const password = typeof req.body.password === "string" ? req.body.password : undefined;
     const body = CreateUserBody.parse(req.body);
 
-    if (!password) {
+    if (!password || password.length === 0) {
       return sendError(res, 400, "Password is required when creating a user");
     }
 
@@ -142,7 +142,17 @@ router.post("/users", async (req: Request, res: Response) => {
 
     const [item] = await db.insert(usersTable).values(values).returning();
     await logAudit(req, "CREATE", "User", item.id, item.name);
-    return res.status(201).json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
+    return res.status(201).json({
+      id: item.id,
+      name: item.name,
+      email: item.email,
+      role: item.role,
+      phone: item.phone ?? null,
+      department: item.department ?? null,
+      status: item.status,
+      createdAt: item.createdAt.toISOString(),
+      hasPassword: Boolean(item.passwordHash),
+    });
   } catch (err) {
     req.log.error({ err }, "Error creating user");
     if (isDuplicateEmail(err)) return sendError(res, 409, "A user with this email already exists");
@@ -153,18 +163,28 @@ router.post("/users", async (req: Request, res: Response) => {
 router.patch("/users/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const password = typeof req.body.password === "string" ? req.body.password.trim() : undefined;
+    const password = typeof req.body.password === "string" ? req.body.password : undefined;
     const body = UpdateUserBody.parse(req.body);
 
     const values: Partial<typeof usersTable.$inferInsert> = { ...body };
-    if (password) {
+    if (password && password.length > 0) {
       values.passwordHash = await bcrypt.hash(password, 12);
     }
 
     const [item] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
     if (!item) return sendError(res, 404, "Not found");
     await logAudit(req, "UPDATE", "User", item.id, item.name);
-    return res.json({ ...item, createdAt: item.createdAt.toISOString(), hasPassword: !!item.passwordHash });
+    return res.json({
+      id: item.id,
+      name: item.name,
+      email: item.email,
+      role: item.role,
+      phone: item.phone ?? null,
+      department: item.department ?? null,
+      status: item.status,
+      createdAt: item.createdAt.toISOString(),
+      hasPassword: Boolean(item.passwordHash),
+    });
   } catch (err) {
     req.log.error({ err }, "Error updating user");
     if (isDuplicateEmail(err)) return sendError(res, 409, "A user with this email already exists");
@@ -175,8 +195,26 @@ router.patch("/users/:id", async (req: Request, res: Response) => {
 router.delete("/users/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const [item] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning();
-    if (!item) return sendError(res, 404, "Not found");
+
+    if (id === req.user?.id) {
+      return sendError(res, 400, "You cannot delete your own account");
+    }
+
+    const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+    if (!target) return sendError(res, 404, "Not found");
+
+    if (target.role === "admin") {
+      const [{ adminCount }] = await db
+        .select({ adminCount: count() })
+        .from(usersTable)
+        .where(eq(usersTable.role, "admin"));
+      if (Number(adminCount) <= 1) {
+        return sendError(res, 400, "Cannot delete the last administrator account");
+      }
+    }
+
+    await db.delete(usersTable).where(eq(usersTable.id, id));
+    await logAudit(req, "DELETE", "User", target.id, target.name);
     return res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Error deleting user");
