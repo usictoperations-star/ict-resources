@@ -115,14 +115,14 @@ jobs:
         run: pnpm --filter @workspace/mk-doc run build
 
       - name: Upload API build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-dist
           path: artifacts/api-server/dist/
           retention-days: 7
 
       - name: Upload web build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-dist
           path: artifacts/mk-doc/dist/
