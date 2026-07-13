@@ -9,6 +9,7 @@
     "reset-admin-password": "tsx ./src/reset-admin-password.ts",
     "backfill-password-hash": "tsx ./src/backfill-password-hash.ts",
     "migrate-roles-field": "tsx ./src/migrate-roles-field.ts",
+    "cleanup-e2e-records": "tsx ./src/cleanup-e2e-records.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
