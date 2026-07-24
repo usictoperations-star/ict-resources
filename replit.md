@@ -1,4 +1,4 @@
-# MK Digital Operations Center (MK DOC)
+# MK Digital Operations Center - MK DOC
 
 A centralized internal platform to register, monitor, secure, and manage all digital assets, applications, infrastructure, databases, repositories, releases, and technology operations from one dashboard.
 
